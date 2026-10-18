@@ -2,16 +2,16 @@
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>德语 A2 学习本</title>
-<link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#1f5f8b"><link rel="icon" href="icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="icon-180.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="德语学习">
+<link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#f6f4ee"><link rel="icon" href="icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="icon-180.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="德语学习">
 <style>
-:root{--bg:#f6f4ee;--fg:#1d2a33;--mut:#6a7680;--card:#fff;--bd:#dcd8cc;--acc:#1f5f8b;--acc2:#e8f0f6;--ok:#2e7d4f;--hl:#fff3c4;
+:root{color-scheme:light;--bg:#f6f4ee;--fg:#1d2a33;--mut:#6a7680;--card:#fff;--bd:#dcd8cc;--acc:#1f5f8b;--acc2:#e8f0f6;--ok:#2e7d4f;--hl:#fff3c4;
 box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){color-scheme:dark;--bg:#14191d;--fg:#e8ecef;--mut:#93a0a9;--card:#1d252b;--bd:#323d45;--acc:#6db3e0;--acc2:#21323d;--ok:#6fcf97;--hl:#4a4220}}
 :root[data-theme="dark"]{color-scheme:dark;--bg:#14191d;--fg:#e8ecef;--mut:#93a0a9;--card:#1d252b;--bd:#323d45;--acc:#6db3e0;--acc2:#21323d;--ok:#6fcf97;--hl:#4a4220}
 *{box-sizing:border-box}
-html,body{margin:0}
+html,body{margin:0;touch-action:manipulation;-webkit-text-size-adjust:100%}
 body{background:var(--bg);color:var(--fg);font:16px/1.55 "Iowan Old Style","Palatino Linotype",Georgia,"Noto Serif SC","Songti SC",serif;padding-bottom:84px}
 h1,h2{font-family:"Avenir Next","Helvetica Neue",Arial,"PingFang SC",sans-serif;margin:0}
 button,input,textarea{font:inherit;color:inherit}
@@ -56,6 +56,8 @@ select{background:var(--bg);border:1px solid var(--bd);border-radius:10px;paddin
 .card{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:24px 16px;text-align:center;margin:12px 0}
 .mut{color:var(--mut);font-size:14px}
 a{color:var(--acc)}
+a.dl{display:inline-block;margin-right:12px;padding:4px 0}
+.ed{display:flex;gap:6px;margin-top:6px}.ed button{padding:2px 12px;min-height:34px}
 </style>
 </head>
 <body>
@@ -80,26 +82,34 @@ const T=[
 {id:"news",e:"📰",n:"简易新闻（示例）",l:[["Heute regnet es in ganz Deutschland.","今天德国各地都在下雨。"],["Viele Menschen fahren jetzt mit dem Deutschlandticket.","现在很多人用德国通票出行。"],["Die Preise für Obst und Gemüse sind gestiegen.","水果和蔬菜价格上涨了。"],["Am Wochenende wird es wieder sonnig.","周末又会放晴。"]]}
 ];
 let S;try{S=JSON.parse(localStorage.getItem("dl")||"null")}catch(e){}
-S=S||{};S.m=S.m||{};S.v=S.v||[];S.imp=S.imp||[];S.sp=S.sp||0.8;
+S=S||{};S.m=S.m||{};S.v=S.v||[];S.imp=S.imp||[];S.sp=S.sp||0.8;S.del=S.del||{};S.vd=S.vd||{};S.o=S.o||[];S.so=S.so||"custom";
 let C={};try{C=JSON.parse(localStorage.getItem("dl_cfg")||"{}")}catch(e){}
 const saveC=()=>{try{localStorage.setItem("dl_cfg",JSON.stringify(C))}catch(e){}};
 const persist=()=>{try{localStorage.setItem("dl",JSON.stringify(S))}catch(e){}};
+function applyTheme(){const t=C.theme||"auto",r=document.documentElement;
+  if(t==="auto")r.removeAttribute("data-theme");else r.setAttribute("data-theme",t);
+  const dk=t==="dark"||(t==="auto"&&matchMedia("(prefers-color-scheme: dark)").matches);
+  document.querySelectorAll('meta[name="theme-color"]').forEach(m=>m.content=dk?"#14191d":"#f6f4ee")}
+applyTheme();try{matchMedia("(prefers-color-scheme: dark)").addEventListener("change",applyTheme)}catch(e){}
+["gesturestart","gesturechange","gestureend"].forEach(n=>document.addEventListener(n,e=>e.preventDefault()));
+document.addEventListener("touchmove",e=>{if(e.touches.length>1)e.preventDefault()},{passive:false});
 const save=()=>{S.u=Date.now();S.d=1;persist();schedPush()};
 let syncMsg="",pt=null,syncing=false;
-const payload=()=>({m:S.m,v:S.v,imp:S.imp,sp:S.sp,u:S.u});
+const payload=()=>({m:S.m,v:S.v,imp:S.imp,sp:S.sp,del:S.del,vd:S.vd,o:S.o,so:S.so,u:S.u});
 const paintSync=()=>{const e=document.getElementById("sy");if(e)e.textContent=syncMsg};
 function schedPush(){if(!C.gas)return;clearTimeout(pt);pt=setTimeout(()=>sync(),3000)}
 async function gas(body){
   const r=await fetch(C.gas,{method:"POST",headers:{"content-type":"text/plain;charset=utf-8"},body:JSON.stringify(Object.assign({token:C.tok||""},body))});
   const j=await r.json();if(!j.ok)throw new Error(j.error||"同步失败");return j;
 }
+const mm2=(a,b)=>{const r=Object.assign({},b);for(const k in a)if(!(k in r)||Math.abs(a[k])>=Math.abs(r[k]))r[k]=a[k];return r};
 function merge(a,b){
-  const m=Object.assign({},b.m,a.m),vm={},im={};
-  [].concat(b.v||[],a.v||[]).forEach(x=>{const k=x.w.toLowerCase();if(!vm[k]||(x.due||0)>=(vm[k].due||0))vm[k]=x});
-  [].concat(b.imp||[],a.imp||[]).forEach(x=>{im[x.id]=x});
-  return{m,v:Object.values(vm),imp:Object.values(im),sp:a.sp||b.sp,u:Date.now()};
+  const del=mm2(a.del||{},b.del||{}),vd=mm2(a.vd||{},b.vd||{}),m=Object.assign({},b.m,a.m),vm={},im={};
+  [].concat(b.v||[],a.v||[]).forEach(x=>{const k=x.w.toLowerCase();if(vd[k]>0)return;if(!vm[k]||(x.due||0)>=(vm[k].due||0))vm[k]=x});
+  [].concat(b.imp||[],a.imp||[]).forEach(x=>{if(del[x.id]>0)return;im[x.id]=x});
+  return{m,v:Object.values(vm),imp:Object.values(im),sp:a.sp||b.sp,del,vd,o:(a.o&&a.o.length?a.o:b.o)||[],so:a.so||b.so||"custom",u:Date.now()};
 }
-function saveCfg(){C.key=$("#ck").value.trim();C.model=$("#cm").value.trim();C.gas=$("#cg").value.trim();C.tok=$("#ct").value.trim();saveC();
+function saveCfg(){C.prov=$("#cp").value;C.base=$("#cb").value.trim();C.dict=$("#cd").value.trim();C.key=$("#ck").value.trim();C.model=$("#cm").value.trim();C.gas=$("#cg").value.trim();C.tok=$("#ct").value.trim();saveC();
   if(C.gas&&!/^https:\/\/script\.google(usercontent)?\.com\//.test(C.gas))alert("同步网址看起来不是 Apps Script 网址")}
 async function sync(){
   if(!C.gas||syncing)return;syncing=true;syncMsg="同步中…";paintSync();
@@ -109,7 +119,7 @@ async function sync(){
     if(!rd){await gas({action:"set",data:payload()});S.s=S.u;S.d=0}
     else{
       const ch=rd.u!==S.s;
-      if(ch&&!S.d){Object.assign(S,{m:rd.m||{},v:rd.v||[],imp:rd.imp||[],sp:rd.sp||S.sp,u:rd.u});S.s=rd.u;if(!["set","imp","ai"].includes(view))render()}
+      if(ch&&!S.d){Object.assign(S,{m:rd.m||{},v:rd.v||[],imp:rd.imp||[],sp:rd.sp||S.sp,del:rd.del||{},vd:rd.vd||{},o:rd.o||[],so:rd.so||"custom",u:rd.u});S.s=rd.u;if(!["set","imp","ai"].includes(view))render()}
       else if(S.d){if(ch)Object.assign(S,merge(payload(),rd));S.u=Date.now();await gas({action:"set",data:payload()});S.s=S.u;S.d=0}
     }
     persist();syncMsg="已同步 "+new Date().toTimeString().slice(0,5);
@@ -118,9 +128,16 @@ async function sync(){
 }
 const $=s=>document.querySelector(s);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-const all=()=>T.concat(S.imp);
+const alive=t=>!(S.del[t.id]>0);
+const pct=t=>{const L=t.l.filter(p=>!p[2]);return L.length?t.l.filter((p,i)=>!p[2]&&S.m[t.id+i]).length/L.length:1};
+const all=()=>{let a=T.concat(S.imp).filter(alive);const so=S.so;
+  if(so==="name")a.sort((x,y)=>x.n.localeCompare(y.n,"zh"));
+  else if(so==="prog")a.sort((x,y)=>pct(x)-pct(y));
+  else if(so==="new")a=S.imp.filter(alive).slice().reverse().concat(T.filter(alive));
+  else{const o=S.o;a.sort((x,y)=>{const i=o.indexOf(x.id),j=o.indexOf(y.id);return(i<0?1e6:i)-(j<0?1e6:j)})}
+  return a};
 let view="home",cur=null,showM=false,playing=false,curLine=-1,rev=null,flip=false;
-let lkInfo="",lkLemma="",lkForms="",lkForm="",trBusy=null,busy="",gq="",gl="A2",gn=8,gen=null;
+let edit=false,lkInfo="",lkLemma="",lkForms="",lkForm="",trBusy=null,busy="",gq="",gl="A2",gn=8,gen=null;
 
 function speak(t,cb){
   if(!("speechSynthesis" in window)){alert("当前浏览器不支持语音合成");return}
@@ -134,7 +151,7 @@ function speak(t,cb){
 function stopAll(){playing=false;curLine=-1;try{speechSynthesis.cancel()}catch(e){}}
 function playFrom(i){
   const t=all().find(x=>x.id===cur);
-  while(i<t.l.length&&!showM&&S.m[cur+i])i++;
+  while(i<t.l.length&&(t.l[i][2]||(!showM&&S.m[cur+i])))i++;
   if(!playing||i>=t.l.length){stopAll();hi();return}
   curLine=i;hi();
   const el=document.getElementById("l"+i);if(el)el.scrollIntoView({block:"center",behavior:"smooth"});
@@ -147,15 +164,17 @@ function render(){
   ["n1","n2","n3","n4","n5"].forEach((id,k)=>$("#"+id).classList.toggle("on",["home","vocab","ai","imp","set"][k]===(view==="topic"?"home":view==="rev"?"vocab":view)));
   const A=$("#app");
   if(view==="home"){
-    A.innerHTML='<div class="top"><h1>德语 A2 学习本</h1></div><p class="sub">选一个想学的主题，点句子听发音，点单词加入生词本。</p><div class="grid">'+
-    all().map(t=>{const d=t.l.filter((_,i)=>S.m[t.id+i]).length;return '<button class="tile" data-a="open" data-id="'+t.id+'"><b>'+(t.e||"📥")+" "+esc(t.n)+'</b><small>已掌握 '+d+" / "+t.l.length+'</small><div class="bar"><i style="width:'+(100*d/t.l.length)+'%"></i></div></button>'}).join("")+"</div>";
+    const L=all();
+    A.innerHTML='<div class="top"><h1>德语 A2 学习本</h1></div><p class="sub">选一个想学的主题，点句子听发音，点单词加入生词本。</p><div class="tools"><select id="so" aria-label="排序">'+[["custom","自定义顺序"],["name","按名称"],["prog","按进度（低→高）"],["new","最新添加"]].map(o=>'<option value="'+o[0]+'"'+(S.so===o[0]?" selected":"")+">"+o[1]+"</option>").join("")+'</select><button data-a="edit" class="'+(edit?"on":"")+'">'+(edit?"完成":"编辑")+"</button></div>"+
+    '<div class="grid">'+L.map((t,k)=>{const n=t.l.filter(p=>!p[2]).length,d=t.l.filter((p,i)=>!p[2]&&S.m[t.id+i]).length;return '<div><button class="tile" style="width:100%" data-a="open" data-id="'+t.id+'"><b>'+(t.e||"📥")+" "+esc(t.n)+'</b><small>已掌握 '+d+" / "+n+'</small><div class="bar"><i style="width:'+(n?100*d/n:0)+'%"></i></div></button>'+(edit?'<div class="ed"><button data-a="up" data-id="'+t.id+'"'+(k?"":" disabled")+' aria-label="上移">↑</button><button data-a="dn" data-id="'+t.id+'"'+(k<L.length-1?"":" disabled")+' aria-label="下移">↓</button><button data-a="dt" data-id="'+t.id+'" aria-label="删除">🗑</button></div>':"")+"</div>"}).join("")+"</div>"+(L.length?"":'<p class="sub">主题都删掉了。可在“AI 生成”或“导入”里新增，或到设置里恢复内置主题。</p>');
+    $("#so").onchange=e=>{S.so=e.target.value;save();render()};
   }else if(view==="topic"){
     const t=all().find(x=>x.id===cur);
     A.innerHTML='<div class="top"><button data-a="back">‹ 返回</button><h1>'+esc(t.n)+'</h1></div>'+
     '<p class="sub">💡 点句子里的任意德语单词，即可自动查义并加入生词本。</p><div class="tools"><button class="p" id="pa" data-a="pall">▶ 连续播放</button>'+
     [0.6,0.8,1].map(r=>'<button data-a="sp" data-r="'+r+'" class="'+(S.sp==r?"on":"")+'">'+r+"×</button>").join("")+
-    '<button data-a="sm" class="'+(showM?"on":"")+'">显示已掌握</button><button data-a="allm">全部标为已掌握</button>'+(t.l.some(p=>!p[1])||trBusy===cur?'<button data-a="tr"'+(trBusy===cur?" disabled":"")+'>'+(trBusy===cur?"AI 翻译中…":"AI 翻译缺失句子")+"</button>":"")+'</div>'+
-    t.l.map((p,i)=>{const d=S.m[cur+i];if(d&&!showM)return"";return '<div class="line'+(d?" done":"")+'" id="l'+i+'" data-i="'+i+'"><div class="txt"><div class="de">'+words(p[0])+'</div>'+(p[1]?'<div class="zh">'+esc(p[1])+"</div>":"")+'</div><div class="act"><button data-a="play" data-i="'+i+'" aria-label="播放">▶</button><button data-a="mast" data-i="'+i+'" aria-label="已掌握">'+(d?"↺":"✓")+"</button></div></div>"}).join("")||'<p class="sub">这个主题已全部掌握 🎉</p>';
+    '<button data-a="sm" class="'+(showM?"on":"")+'">显示已掌握</button><button data-a="allm">全部标为已掌握</button>'+(t.l.some(p=>!p[1]&&!p[2])||trBusy===cur?'<button data-a="tr"'+(trBusy===cur?" disabled":"")+'>'+(trBusy===cur?"AI 翻译中…":"AI 翻译缺失句子")+"</button>":"")+'</div>'+
+    t.l.map((p,i)=>{if(p[2])return"";const d=S.m[cur+i];if(d&&!showM)return"";return '<div class="line'+(d?" done":"")+'" id="l'+i+'" data-i="'+i+'"><div class="txt"><div class="de">'+words(p[0])+'</div>'+(p[1]?'<div class="zh">'+esc(p[1])+"</div>":"")+'</div><div class="act"><button data-a="play" data-i="'+i+'" aria-label="播放">▶</button><button data-a="mast" data-i="'+i+'" aria-label="已掌握">'+(d?"↺":"✓")+"</button>"+(String(cur).startsWith("imp")?'<button data-a="dl" data-i="'+i+'" aria-label="删除这句">🗑</button>':"")+"</div></div>"}).join("")||'<p class="sub">这个主题已全部掌握 🎉</p>';
   }else if(view==="vocab"){
     const due=S.v.filter(x=>x.due<=Date.now()).length;
     A.innerHTML='<div class="top"><h1>生词本</h1><button class="p" data-a="rev"'+(due?"":" disabled")+'>复习 '+due+"</button></div>"+
@@ -168,12 +187,19 @@ function render(){
     if(!flip)speak(rev.w);
   }else if(view==="set"){
     A.innerHTML='<div class="top"><h1>设置</h1></div><p class="sub">以下信息只保存在这台设备的浏览器里，不会写入代码仓库，也不会随学习数据上传到云端。</p>'+
-    '<label class="mut">Claude API Key</label><input id="ck" type="password" autocomplete="off" placeholder="sk-ant-…" value="'+esc(C.key||"")+'">'+
-    '<label class="mut">模型</label><input id="cm" value="'+esc(C.model||"claude-haiku-5-5")+'">'+
+    '<label class="mut">AI 服务（可不填，仅用免费机器翻译查词）</label><select id="cp" style="width:100%"><option value="anthropic"'+(C.prov==="openai"?"":" selected")+'>Claude（Anthropic）</option><option value="openai"'+(C.prov==="openai"?" selected":"")+'>OpenAI 兼容接口</option></select>'+
+    '<div id="brow" style="display:'+(C.prov==="openai"?"":"none")+'"><select id="cpre" style="width:100%;margin-top:6px"><option value="">常用预设…</option>'+Object.keys(PRE).map(k=>"<option>"+k+"</option>").join("")+'</select><label class="mut">接口地址（Base URL）</label><input id="cb" placeholder="https://api.openai.com/v1" value="'+esc(C.base||"")+'"></div>'+
+    '<label class="mut">API Key</label><input id="ck" type="password" autocomplete="off" placeholder="sk-…" value="'+esc(C.key||"")+'">'+
+    '<label class="mut">模型</label><input id="cm" value="'+esc(C.model||(C.prov==="openai"?"":"claude-haiku-5-5"))+'">'+
     '<label class="mut">Google Apps Script 网址</label><input id="cg" placeholder="https://script.google.com/macros/s/…/exec" value="'+esc(C.gas||"")+'">'+
     '<label class="mut">同步口令（与脚本属性 TOKEN 相同）</label><input id="ct" type="password" autocomplete="off" value="'+esc(C.tok||"")+'">'+
+    '<label class="mut">自定义词典网址（可选，用 {w} 代表单词）</label><input id="cd" placeholder="https://example.com/search?q={w}" value="'+esc(C.dict||"")+'">'+
+    '<label class="mut">外观</label><select id="cth" style="width:100%">'+[["auto","跟随系统（默认）"],["light","浅色"],["dark","深色"]].map(o=>'<option value="'+o[0]+'"'+((C.theme||"auto")===o[0]?" selected":"")+">"+o[1]+"</option>").join("")+'</select>'+
     '<div class="row" style="margin-top:8px"><button class="p" data-a="csave">保存设置</button><button data-a="ctest">测试 AI</button><button data-a="sync">立即同步</button></div><p class="mut" id="sy">'+esc(syncMsg)+'</p>'+
-    '<h2 style="font-size:17px;margin:20px 0 8px">本地备份</h2><div class="row"><button data-a="exp">导出备份</button><input type="file" id="bk" accept=".json" style="flex:1"></div><p class="mut">选择备份文件会与当前数据合并，不会覆盖。</p><button data-a="wipe" style="margin-top:8px">清除本机学习数据</button>';
+    '<h2 style="font-size:17px;margin:20px 0 8px">主题管理</h2><button data-a="restore">恢复已删除的内置主题</button><h2 style="font-size:17px;margin:20px 0 8px">本地备份</h2><div class="row"><button data-a="exp">导出备份</button><input type="file" id="bk" accept=".json" style="flex:1"></div><p class="mut">选择备份文件会与当前数据合并，不会覆盖。</p><button data-a="wipe" style="margin-top:8px">清除本机学习数据</button>';
+    $("#cp").onchange=()=>{const o=$("#cp").value==="openai";$("#brow").style.display=o?"":"none";$("#cm").value=o?"":"claude-haiku-5-5"};
+    $("#cpre").onchange=e=>{const q=PRE[e.target.value];if(q){$("#cb").value=q[0];$("#cm").value=q[1]}};
+    $("#cth").onchange=()=>{C.theme=$("#cth").value;saveC();applyTheme()};
     $("#bk").onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{Object.assign(S,merge(payload(),JSON.parse(r.result)));save();alert("已合并备份");render()}catch(x){alert("备份文件无效")}};r.readAsText(f)};
   }else if(view==="ai"){
     A.innerHTML='<div class="top"><h1>AI 生成对话</h1></div><p class="sub">输入想学的场景，AI 会生成带中文翻译的德语对话，满意后可保存为新主题。</p><input id="gt" placeholder="例如：和孩子聊学校的一天" value="'+esc(gq)+'"><div class="row"><select id="gl">'+["A1","A2","B1"].map(x=>'<option'+(x===gl?" selected":"")+">"+x+"</option>").join("")+'</select><select id="gn">'+[6,8,12].map(x=>'<option value="'+x+'"'+(x===gn?" selected":"")+">"+x+" 句</option>").join("")+'</select><button class="p" data-a="gen"'+(busy?" disabled":"")+'>'+(busy?"生成中…":"生成")+"</button></div>"+(gen?'<h2 style="font-size:17px;margin:18px 0 8px">'+esc(gen.n)+'</h2>'+gen.l.map(p=>'<div class="line"><div class="txt"><div class="de">'+esc(p[0])+'</div><div class="zh">'+esc(p[1])+'</div></div><div class="act"><button data-a="say" data-w="'+esc(p[0])+'">▶</button></div></div>').join("")+'<div class="row"><button class="p" data-a="gsave">保存为主题</button><button data-a="gen">重新生成</button></div>':"");
@@ -185,25 +211,45 @@ function render(){
 }
 function openSheet(w,ctx){
   const ex=S.v.find(x=>x.w.toLowerCase()===w.toLowerCase());
-  $("#sheetin").innerHTML='<div class="row"><span class="big">'+esc(w)+'</span><button data-a="say" data-w="'+esc(w)+'">▶ 发音</button><a href="https://de.wiktionary.org/wiki/'+encodeURIComponent(w)+'" target="_blank" rel="noopener">查词典</a></div><div class="mut" id="lk" style="margin:6px 0">AI 查询中…</div><input id="mz" placeholder="中文释义" value="'+esc(ex?ex.zh:"")+'"><div class="row"><button data-a="close">取消</button><button class="p" data-a="addw" data-w="'+esc(w)+'" data-c="'+esc(ctx)+'" id="addb">'+(ex?"更新":"加入生词本")+"</button></div>";
+  $("#sheetin").innerHTML='<div class="row"><span class="big">'+esc(w)+'</span><button data-a="say" data-w="'+esc(w)+'">▶ 发音</button></div><div class="mut" style="margin:6px 0">查词典：<span id="dls">'+dictHtml(w)+'</span></div><div class="mut" id="lk" style="margin:6px 0">AI 查询中…</div><input id="mz" placeholder="中文释义" value="'+esc(ex?ex.zh:"")+'"><div class="row"><button data-a="close">取消</button><button class="p" data-a="addw" data-w="'+esc(w)+'" data-c="'+esc(ctx)+'" id="addb">'+(ex?"更新":"加入生词本")+"</button></div>";
   $("#sheet").classList.add("show");speak(w);lookup(w,ctx);
 }
+const PRE={"OpenAI":["https://api.openai.com/v1","gpt-4o-mini"],"DeepSeek":["https://api.deepseek.com/v1","deepseek-chat"],"通义千问":["https://dashscope.aliyuncs.com/compatible-mode/v1","qwen-plus"],"Gemini":["https://generativelanguage.googleapis.com/v1beta/openai","gemini-2.0-flash"]};
+const DICT=[["德语助手","https://dict.eudic.net/dicts/de/{w}"],["Langenscheidt","https://en.langenscheidt.com/german-chinese/{w}"],["有道","https://dict.youdao.com/result?word={w}&lang=de"],["Linguee","https://cn.linguee.com/中文-德语/search?source=auto&query={w}"],["Wiktionary","https://de.wiktionary.org/wiki/{w}"]];
+const dictHtml=w=>(C.dict?[["我的词典",C.dict]]:[]).concat(DICT).map(x=>'<a class="dl" href="'+esc(x[1].replace("{w}",encodeURIComponent(w)))+'" target="_blank" rel="noopener">'+x[0]+"</a>").join("");
+const bare=l=>l.split(/\s+/).pop();
+const local=()=>/localhost|127\.0\.0\.1/.test(C.base||"");
+const hasAI=()=>!!C.key||(C.prov==="openai"&&local());
+async function post(url,headers,body){
+  let r;try{r=await fetch(url,{method:"POST",headers,body:JSON.stringify(body)})}catch(e){throw new Error("无法连接（网络问题，或该服务不允许浏览器直接调用）")}
+  const j=await r.json().catch(()=>({}));
+  if(!r.ok)throw new Error((j.error&&(j.error.message||j.error))||("HTTP "+r.status));
+  return j;
+}
 async function ask(p){
-  if(!C.key)throw new Error("请先在“设置”里填写 API Key");
-  const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"content-type":"application/json","x-api-key":C.key,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},body:JSON.stringify({model:C.model||"claude-haiku-5-5",max_tokens:2000,messages:[{role:"user",content:p}]})});
-  const j=await r.json();
-  if(!r.ok)throw new Error((j.error&&j.error.message)||("HTTP "+r.status));
+  if(!hasAI())throw new Error("未配置 AI：请在“设置”里填写 API Key");
+  if(C.prov==="openai"){
+    const j=await post((C.base||"https://api.openai.com/v1").replace(/\/+$/,"")+"/chat/completions",Object.assign({"content-type":"application/json"},C.key?{authorization:"Bearer "+C.key}:{}),{model:C.model,messages:[{role:"user",content:p}]});
+    return j.choices[0].message.content;
+  }
+  const j=await post("https://api.anthropic.com/v1/messages",{"content-type":"application/json","x-api-key":C.key,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},{model:C.model||"claude-haiku-5-5",max_tokens:2000,messages:[{role:"user",content:p}]});
   return j.content.filter(x=>x.type==="text").map(x=>x.text).join("");
+}
+async function mymem(q){
+  let r;try{r=await fetch("https://api.mymemory.translated.net/get?q="+encodeURIComponent(q)+"&langpair=de|zh-CN")}catch(e){throw new Error("无法连接免费翻译服务")}
+  const j=await r.json().catch(()=>({}));const t=j.responseData&&j.responseData.translatedText;
+  if(!t||/MYMEMORY WARNING|QUERY LENGTH/i.test(t))throw new Error(j.responseDetails||"免费额度用完或无结果");
+  return t;
 }
 function parseJ(s){const m=s.replace(/```json|```/g,"").match(/[\[{][\s\S]*[\]}]/);return JSON.parse(m?m[0]:s)}
 async function lookup(w,ctx){
-  lkInfo=lkLemma=lkForms=lkForm="";const key="v2|"+w.toLowerCase()+"|"+ctx;const box=()=>$("#lk");
+  lkInfo=lkLemma=lkForms=lkForm="";const key=(hasAI()?"v2|":"f|")+w.toLowerCase()+"|"+ctx;const box=()=>$("#lk");
   try{
     let r=S.c&&S.c[key];
-    if(!r){r=parseJ(await ask('中文母语的 A2 德语学习者点击了句子中的单词。句子：'+ctx+'\n单词：'+w+'\n请结合句子，只输出 JSON：{"lemma":"原形（名词带冠词，如 das Frühstück）","pos":"词性（中文）","zh":"在此句中的简明中文释义","form":"该词在句中的变形说明，如：第二人称单数现在时、第三格复数、过去分词；若本身就是原形则留空","forms":"主要变形：动词写 Infinitiv – 第三人称现在时 – Präteritum – Perfekt（如 gehen – geht – ging – ist gegangen）；名词写 单数 – 复数（如 das Kind – die Kinder）；其他词性留空","note":"一句简短用法提示，可为空"}'));S.c=S.c||{};S.c[key]=r;persist()}
+    if(!r){r=!hasAI()?{zh:await mymem(w)}:parseJ(await ask('中文母语的 A2 德语学习者点击了句子中的单词。句子：'+ctx+'\n单词：'+w+'\n请结合句子，只输出 JSON：{"lemma":"原形（名词带冠词，如 das Frühstück）","pos":"词性（中文）","zh":"在此句中的简明中文释义","form":"该词在句中的变形说明，如：第二人称单数现在时、第三格复数、过去分词；若本身就是原形则留空","forms":"主要变形：动词写 Infinitiv – 第三人称现在时 – Präteritum – Perfekt（如 gehen – geht – ging – ist gegangen）；名词写 单数 – 复数（如 das Kind – die Kinder）；其他词性留空","note":"一句简短用法提示，可为空"}'));S.c=S.c||{};S.c[key]=r;persist()}
     const b=$("#addb");if(!box()||!b||b.dataset.w!==w)return;
-    lkInfo=r.pos||"";lkLemma=r.lemma||"";lkForms=r.forms||"";lkForm=r.form||"";
-    box().innerHTML='<b>原形：'+esc(r.lemma||w)+'</b> '+esc(r.pos||"")+(r.lemma&&r.lemma.toLowerCase().split(" ").pop()!==w.toLowerCase()?'<div class="mut">句中的“'+esc(w)+'”是'+esc(r.form||"变形")+'</div>':"")+(r.forms?'<div>'+esc(r.forms)+"</div>":"")+(r.note?'<div>'+esc(r.note)+"</div>":"");
+    lkInfo=r.pos||"";lkLemma=r.lemma||"";lkForms=r.forms||"";lkForm=r.form||"";const dl=$("#dls");if(dl&&r.lemma)dl.innerHTML=dictHtml(bare(r.lemma));
+    box().innerHTML=!r.lemma?'<span class="mut">机器翻译（MyMemory），仅供参考；配置 AI 后可显示原形、词性和变形。</span>':'<b>原形：'+esc(r.lemma||w)+'</b> '+esc(r.pos||"")+(r.lemma&&r.lemma.toLowerCase().split(" ").pop()!==w.toLowerCase()?'<div class="mut">句中的“'+esc(w)+'”是'+esc(r.form||"变形")+'</div>':"")+(r.forms?'<div>'+esc(r.forms)+"</div>":"")+(r.note?'<div>'+esc(r.note)+"</div>":"");
     const mz=$("#mz");if(mz&&!mz.value)mz.value=r.zh||"";
   }catch(e){if(box())box().textContent="自动查义不可用（"+(e.message||e.code||"出错")+"），可点“查词典”手动查。"}
 }
@@ -211,10 +257,10 @@ async function translateTopic(id){
   const t=S.imp.find(x=>x.id===id);if(!t)return;
   trBusy=id;
   try{
-    const idx=t.l.map((p,i)=>p[1]?-1:i).filter(i=>i>=0);
+    const idx=t.l.map((p,i)=>p[1]||p[2]?-1:i).filter(i=>i>=0);
     for(let k=0;k<idx.length;k+=15){
       const part=idx.slice(k,k+15);
-      const a=parseJ(await ask('把下列德语句子逐句翻译成自然的简体中文。只输出 JSON 字符串数组，长度必须是 '+part.length+'，不要 Markdown。\n'+JSON.stringify(part.map(i=>t.l[i][0]))));
+      let a;if(!hasAI()){a=[];for(const i of part)a.push(await mymem(t.l[i][0]))}else a=parseJ(await ask('把下列德语句子逐句翻译成自然的简体中文。只输出 JSON 字符串数组，长度必须是 '+part.length+'，不要 Markdown。\n'+JSON.stringify(part.map(i=>t.l[i][0]))));
       part.forEach((i,j)=>{if(a[j])t.l[i][1]=String(a[j])});
       save();if(view==="topic"&&cur===id)render();
     }
@@ -244,9 +290,9 @@ document.addEventListener("click",e=>{
   else if(a==="mast"){const k=cur+d.i;if(S.m[k])delete S.m[k];else S.m[k]=1;save();render()}
   else if(a==="word"){const li=b.closest(".line");const t=all().find(x=>x.id===cur);openSheet(d.w,t.l[li.dataset.i][0])}
   else if(a==="close"){$("#sheet").classList.remove("show")}
-  else if(a==="addw"){const zh=$("#mz").value.trim();const hw=lkLemma||d.w;const ex=S.v.find(x=>x.w.toLowerCase()===hw.toLowerCase()||x.w.toLowerCase()===d.w.toLowerCase());const extra={info:lkInfo,forms:lkForms,form:hw.toLowerCase()!==d.w.toLowerCase()?d.w+(lkForm?"（"+lkForm+"）":""):""};if(ex){ex.zh=zh;if(lkLemma){ex.w=hw;Object.assign(ex,extra)}}else S.v.unshift(Object.assign({w:hw,zh,ctx:d.c,due:Date.now(),iv:0},extra));save();$("#sheet").classList.remove("show");if(view==="vocab")render()}
+  else if(a==="addw"){const zh=$("#mz").value.trim();const hw=lkLemma||d.w;[hw,d.w].forEach(k=>{k=k.toLowerCase();if(S.vd[k])S.vd[k]=-Date.now()});const ex=S.v.find(x=>x.w.toLowerCase()===hw.toLowerCase()||x.w.toLowerCase()===d.w.toLowerCase());const extra={info:lkInfo,forms:lkForms,form:hw.toLowerCase()!==d.w.toLowerCase()?d.w+(lkForm?"（"+lkForm+"）":""):""};if(ex){ex.zh=zh;if(lkLemma){ex.w=hw;Object.assign(ex,extra)}}else S.v.unshift(Object.assign({w:hw,zh,ctx:d.c,due:Date.now(),iv:0},extra));save();$("#sheet").classList.remove("show");if(view==="vocab")render()}
   else if(a==="say"){speak(d.w)}
-  else if(a==="del"){S.v.splice(+d.i,1);save();render()}
+  else if(a==="del"){const x=S.v.splice(+d.i,1)[0];S.vd[x.w.toLowerCase()]=Date.now();save();render()}
   else if(a==="rev"){view="rev";flip=false;render()}
   else if(a==="flip"){flip=true;render()}
   else if(a==="yes"){rev.iv=Math.max(1,rev.iv*2);rev.due=Date.now()+rev.iv*864e5;save();flip=false;render()}
@@ -264,6 +310,11 @@ document.addEventListener("click",e=>{
   else if(a==="exp"){const u=URL.createObjectURL(new Blob([JSON.stringify(payload(),null,1)],{type:"application/json"}));const l=document.createElement("a");l.href=u;l.download="deutsch-backup-"+new Date().toISOString().slice(0,10)+".json";l.click();setTimeout(()=>URL.revokeObjectURL(u),1000)}
   else if(a==="wipe"){if(confirm("清除本机的主题进度、生词本和导入内容？（设置保留，云端数据不受影响）")){try{localStorage.removeItem("dl")}catch(x){}location.reload()}}
   else if(a==="tr"){translateTopic(cur);render()}
+  else if(a==="edit"){edit=!edit;render()}
+  else if(a==="up"||a==="dn"){const ids=all().map(x=>x.id),i=ids.indexOf(d.id),j=a==="up"?i-1:i+1;if(j<0||j>=ids.length)return;[ids[i],ids[j]]=[ids[j],ids[i]];S.o=ids;S.so="custom";save();render()}
+  else if(a==="dt"){const t=all().find(x=>x.id===d.id),im=String(t.id).startsWith("imp");if(confirm("删除主题“"+t.n+"”？"+(im?"":"（内置主题可在设置里恢复）"))){S.del[t.id]=Date.now();if(im)S.imp=S.imp.filter(x=>x.id!==t.id);save();render()}}
+  else if(a==="dl"){const t=S.imp.find(x=>x.id===cur);if(t&&confirm("删除这一句？")){t.l[d.i][2]=1;save();render()}}
+  else if(a==="restore"){T.forEach(t=>{if(S.del[t.id]>0)S.del[t.id]=-Date.now()});save();alert("已恢复内置主题")}
   else if(a==="gen"){const q=$("#gt").value.trim();if(!q){alert("请先输入想学的场景");return}gq=q;gl=$("#gl").value;gn=+$("#gn").value;genRun()}
   else if(a==="gsave"){const id="imp"+Date.now();S.imp.push({id,n:gen.n,e:"✨",l:gen.l});save();gen=null;cur=id;view="topic";render();scrollTo(0,0)}
   else if(a==="delimp"){const t=S.imp[+d.i];if(confirm("删除“"+t.n+"”？")){S.imp.splice(+d.i,1);save();render()}}
