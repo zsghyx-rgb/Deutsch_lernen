@@ -29,6 +29,7 @@ main{max-width:640px;margin:0 auto;padding:16px}
 .bar{height:4px;background:var(--bd);border-radius:2px;overflow:hidden;margin-top:6px}
 .bar i{display:block;height:100%;background:var(--ok)}
 .tools{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.tools.sm button{font-size:13px;padding:5px 10px;min-height:34px}
 .tools .on{background:var(--acc2);border-color:var(--acc);color:var(--acc)}
 .line{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:12px;margin-bottom:8px;display:flex;gap:10px;align-items:flex-start}
 .line.cur{background:var(--hl)}
@@ -139,7 +140,7 @@ const all=()=>{let a=T.concat(S.imp).filter(alive);const so=S.so;
   else{const o=S.o;a.sort((x,y)=>{const i=o.indexOf(x.id),j=o.indexOf(y.id);return(i<0?1e6:i)-(j<0?1e6:j)})}
   return a};
 let view="home",cur=null,showM=false,playing=false,curLine=-1,rev=null,flip=false;
-let tzIn="",tzRes=null,tzMsg="",tzBusy=false,lkSrc="",edit=false,lkInfo="",lkLemma="",lkForms="",lkForm="",trBusy=null,busy="",gq="",gl="A2",gn=8,gen=null;
+let manage=false,tzIn="",tzRes=null,tzMsg="",tzBusy=false,lkSrc="",edit=false,lkInfo="",lkLemma="",lkForms="",lkForm="",trBusy=null,busy="",gq="",gl="A2",gn=8,gen=null;
 
 function speak(t,cb){
   if(!("speechSynthesis" in window)){alert("当前浏览器不支持语音合成");return}
@@ -159,7 +160,7 @@ function playFrom(i){
   const el=document.getElementById("l"+i);if(el)el.scrollIntoView({block:"center",behavior:"smooth"});
   speak(t.l[i][0],()=>{if(playing)setTimeout(()=>playFrom(i+1),500)});
 }
-function hi(){document.querySelectorAll(".line").forEach((e,k)=>e.classList.toggle("cur",+e.dataset.i===curLine));const b=$("#pa");if(b)b.textContent=playing?"■ 停止":"▶ 连续播放"}
+function hi(){document.querySelectorAll(".line").forEach((e,k)=>e.classList.toggle("cur",+e.dataset.i===curLine));const b=$("#pa");if(b)b.textContent=playing?"停止":"连续播放"}
 function words(s){return esc(s).replace(/[A-Za-zÄÖÜäöüß]+(?:-[A-Za-zÄÖÜäöüß]+)*/g,w=>'<span class="w" data-a="word" data-w="'+w+'">'+w+"</span>")}
 
 function render(){
@@ -173,10 +174,10 @@ function render(){
   }else if(view==="topic"){
     const t=all().find(x=>x.id===cur);
     A.innerHTML='<div class="top"><button data-a="back">‹ 返回</button><h1>'+esc(t.n)+'</h1></div>'+
-    '<p class="sub">💡 点句子里的任意德语单词，即可自动查义并加入生词本。</p><div class="tools"><button class="p" id="pa" data-a="pall">▶ 连续播放</button>'+
+    '<p class="sub">💡 点句子里的任意德语单词，即可自动查义并加入生词本。点“管理”可标记已掌握或删除句子。</p><div class="tools sm"><button class="p" id="pa" data-a="pall">连续播放</button>'+
     [0.6,0.8,1].map(r=>'<button data-a="sp" data-r="'+r+'" class="'+(S.sp==r?"on":"")+'">'+r+"×</button>").join("")+
-    '<button data-a="sm" class="'+(showM?"on":"")+'">显示已掌握</button><button data-a="allm">全部标为已掌握</button>'+(t.l.some(p=>!p[1]&&!p[2])||trBusy===cur?'<button data-a="tr"'+(trBusy===cur?" disabled":"")+'>'+(trBusy===cur?"AI 翻译中…":"AI 翻译缺失句子")+"</button>":"")+'</div>'+
-    t.l.map((p,i)=>{if(p[2])return"";const d=S.m[cur+i];if(d&&!showM)return"";return '<div class="line'+(d?" done":"")+'" id="l'+i+'" data-i="'+i+'"><div class="txt"><div class="de">'+words(p[0])+'</div>'+(p[1]?'<div class="zh">'+esc(p[1])+"</div>":"")+'</div><div class="act"><button data-a="play" data-i="'+i+'" aria-label="播放">▶</button><button data-a="mast" data-i="'+i+'" aria-label="已掌握">'+(d?"↺":"✓")+"</button>"+(String(cur).startsWith("imp")?'<button data-a="dl" data-i="'+i+'" aria-label="删除这句">🗑</button>':"")+"</div></div>"}).join("")||'<p class="sub">这个主题已全部掌握 🎉</p>';
+    '<button data-a="sm" class="'+(showM?"on":"")+'">显示已掌握</button><button data-a="mg" class="'+(manage?"on":"")+'">管理</button>'+(t.l.some(p=>!p[1]&&!p[2])||trBusy===cur?'<button data-a="tr"'+(trBusy===cur?" disabled":"")+'>'+(trBusy===cur?"AI 翻译中…":"AI 翻译缺失句子")+"</button>":"")+'</div>'+
+    t.l.map((p,i)=>{if(p[2])return"";const d=S.m[cur+i];if(d&&!showM)return"";return '<div class="line'+(d?" done":"")+'" id="l'+i+'" data-i="'+i+'"><div class="txt"><div class="de">'+words(p[0])+'</div>'+(p[1]?'<div class="zh">'+esc(p[1])+"</div>":"")+'</div><div class="act"><button data-a="play" data-i="'+i+'" aria-label="播放">▶</button>'+(manage?'<button data-a="mast" data-i="'+i+'" aria-label="已掌握">'+(d?"↺":"✓")+"</button>"+(String(cur).startsWith("imp")?'<button data-a="dl" data-i="'+i+'" aria-label="删除这句">🗑</button>':""):"")+"</div></div>"}).join("")||'<p class="sub">这个主题已全部掌握 🎉</p>';
   }else if(view==="vocab"){
     const due=S.v.filter(x=>x.due<=Date.now()).length;
     A.innerHTML='<div class="top"><h1>生词本</h1><button class="p" data-a="rev"'+(due?"":" disabled")+'>复习 '+due+"</button></div>"+
@@ -238,8 +239,9 @@ async function tzRun(){
   const zs=tzIn.split(/\n+/).map(x=>x.trim()).filter(Boolean).slice(0,20);
   try{
     let de,src;
-    if(hasAI()){de=parseJ(await ask('把下列中文逐句翻译成自然、常用、适合 A2 水平学习者的德语。只输出 JSON 字符串数组，长度必须是 '+zs.length+'，不要 Markdown。\n'+JSON.stringify(zs)));src=srcAI()}
-    else{de=[];for(const z of zs)de.push(await mymem(z,"zh-CN|de"));src="MyMemory 机器翻译"}
+    const free=async()=>{const o=[];for(const z of zs)o.push(await mymem(z,"zh-CN|de"));return o};
+    if(hasAI()){try{de=parseJ(await ask('把下列中文逐句翻译成自然、常用、适合 A2 水平学习者的德语。只输出 JSON 字符串数组，长度必须是 '+zs.length+'，不要 Markdown。\n'+JSON.stringify(zs)));src=srcAI()}catch(e){de=await free();src="MyMemory 机器翻译（AI 失败："+(e.message||"出错")+"，已改用免费翻译）"}}
+    else{de=await free();src="MyMemory 机器翻译"}
     tzRes={src,l:zs.map((z,i)=>[String(de[i]||""),z])};
   }catch(e){alert("翻译失败："+(e.message||"请稍后重试"))}
   tzBusy=false;if(view==="tz")render();
@@ -271,25 +273,29 @@ function parseJ(s){const m=s.replace(/```json|```/g,"").match(/[\[{][\s\S]*[\]}]
 async function lookup(w,ctx){
   lkInfo=lkLemma=lkForms=lkForm=lkSrc="";const key=(hasAI()?"v2|":"f|")+w.toLowerCase()+"|"+ctx;const box=()=>$("#lk");
   try{
-    let r=S.c&&S.c[key];
-    if(!r){r=!hasAI()?{zh:await mymem(w)}:parseJ(await ask('中文母语的 A2 德语学习者点击了句子中的单词。句子：'+ctx+'\n单词：'+w+'\n请结合句子，只输出 JSON：{"lemma":"原形（名词带冠词，如 das Frühstück）","pos":"词性（中文）","zh":"在此句中的简明中文释义","form":"该词在句中的变形说明，如：第二人称单数现在时、第三格复数、过去分词；若本身就是原形则留空","forms":"主要变形：动词写 Infinitiv – 第三人称现在时 – Präteritum – Perfekt（如 gehen – geht – ging – ist gegangen）；名词写 单数 – 复数（如 das Kind – die Kinder）；其他词性留空","note":"一句简短用法提示，可为空"}'));r.src=hasAI()?srcAI():"MyMemory 机器翻译";S.c=S.c||{};S.c[key]=r;persist()}
+    let fb="",r=S.c&&S.c[key];
+    if(!r){let ai=hasAI(),k2=key;
+    if(ai){try{r=parseJ(await ask('中文母语的 A2 德语学习者点击了句子中的单词。句子：'+ctx+'\n单词：'+w+'\n请结合句子，只输出 JSON：{"lemma":"原形（名词带冠词，如 das Frühstück）","pos":"词性（中文）","zh":"在此句中的简明中文释义","form":"该词在句中的变形说明，如：第二人称单数现在时、第三格复数、过去分词；若本身就是原形则留空","forms":"主要变形：动词写 Infinitiv – 第三人称现在时 – Präteritum – Perfekt（如 gehen – geht – ging – ist gegangen）；名词写 单数 – 复数（如 das Kind – die Kinder）；其他词性留空","note":"一句简短用法提示，可为空"}'));r.src=srcAI()}catch(e){fb=e.message||"出错";ai=false}}
+    if(!ai){k2="f|"+w.toLowerCase()+"|"+ctx;r=S.c&&S.c[k2];if(!r)r={zh:await mymem(w),src:"MyMemory 机器翻译"}}
+    S.c=S.c||{};S.c[k2]=r;persist()}
     const b=$("#addb");if(!box()||!b||b.dataset.w!==w)return;
     lkInfo=r.pos||"";lkSrc=r.src||(hasAI()?"AI 翻译":"MyMemory 机器翻译");lkLemma=r.lemma||"";lkForms=r.forms||"";lkForm=r.form||"";const dl=$("#dls");if(dl&&r.lemma)dl.innerHTML=dictHtml(bare(r.lemma));
-    box().innerHTML=!r.lemma?'<span class="tag">'+esc(lkSrc)+'</span> <span class="mut">仅供参考；配置 AI 后可显示原形、词性和变形。</span>':'<span class="tag">'+esc(lkSrc)+'</span> <b>原形：'+esc(r.lemma||w)+'</b> '+esc(r.pos||"")+(r.lemma&&r.lemma.toLowerCase().split(" ").pop()!==w.toLowerCase()?'<div class="mut">句中的“'+esc(w)+'”是'+esc(r.form||"变形")+'</div>':"")+(r.forms?'<div>'+esc(r.forms)+"</div>":"")+(r.note?'<div>'+esc(r.note)+"</div>":"");
+    box().innerHTML=!r.lemma?'<span class="tag">'+esc(lkSrc)+'</span> <span class="mut">'+(fb?"AI 失败（"+esc(fb)+"），已改用免费翻译，仅供参考。":"仅供参考；配置 AI 后可显示原形、词性和变形。")+'</span>':'<span class="tag">'+esc(lkSrc)+'</span> <b>原形：'+esc(r.lemma||w)+'</b> '+esc(r.pos||"")+(r.lemma&&r.lemma.toLowerCase().split(" ").pop()!==w.toLowerCase()?'<div class="mut">句中的“'+esc(w)+'”是'+esc(r.form||"变形")+'</div>':"")+(r.forms?'<div>'+esc(r.forms)+"</div>":"")+(r.note?'<div>'+esc(r.note)+"</div>":"");
     const mz=$("#mz");if(mz&&!mz.value)mz.value=r.zh||"";
   }catch(e){if(box())box().textContent="自动查义不可用（"+(e.message||e.code||"出错")+"），可点“查词典”手动查。"}
 }
 async function translateTopic(id){
   const t=S.imp.find(x=>x.id===id);if(!t)return;
-  trBusy=id;
+  trBusy=id;let fbN=0;
   try{
     const idx=t.l.map((p,i)=>p[1]||p[2]?-1:i).filter(i=>i>=0);
     for(let k=0;k<idx.length;k+=15){
       const part=idx.slice(k,k+15);
-      let a;if(!hasAI()){a=[];for(const i of part)a.push(await mymem(t.l[i][0]))}else a=parseJ(await ask('把下列德语句子逐句翻译成自然的简体中文。只输出 JSON 字符串数组，长度必须是 '+part.length+'，不要 Markdown。\n'+JSON.stringify(part.map(i=>t.l[i][0]))));
+      let a;const free=async()=>{const o=[];for(const i of part)o.push(await mymem(t.l[i][0]));return o};if(!hasAI())a=await free();else try{a=parseJ(await ask('把下列德语句子逐句翻译成自然的简体中文。只输出 JSON 字符串数组，长度必须是 '+part.length+'，不要 Markdown。\n'+JSON.stringify(part.map(i=>t.l[i][0]))))}catch(e){fbN=1;a=await free()}
       part.forEach((i,j)=>{if(a[j])t.l[i][1]=String(a[j])});
       save();if(view==="topic"&&cur===id)render();
     }
+  if(fbN)alert("AI 翻译失败，已改用免费翻译（质量较低）。");
   }catch(e){alert("AI 翻译失败："+(e.message||e.code||"请稍后重试"))}
   trBusy=null;if(view==="topic"&&cur===id)render();
 }
@@ -306,12 +312,12 @@ document.addEventListener("click",e=>{
   const b=e.target.closest("[data-a]");if(!b)return;
   const a=b.dataset.a,d=b.dataset;
   if(a==="nav"){stopAll();view=d.v;flip=false;$("#sheet").classList.remove("show");render()}
-  else if(a==="open"){cur=d.id;view="topic";render();scrollTo(0,0)}
-  else if(a==="back"){stopAll();view="home";render()}
+  else if(a==="open"){cur=d.id;view="topic";manage=false;render();scrollTo(0,0)}
+  else if(a==="back"){stopAll();manage=false;view="home";render()}
   else if(a==="pall"){if(playing){stopAll();hi()}else{playing=true;playFrom(0)}}
   else if(a==="sp"){S.sp=+d.r;save();render()}
   else if(a==="sm"){showM=!showM;render()}
-  else if(a==="allm"){const t=all().find(x=>x.id===cur);t.l.forEach((_,i)=>S.m[cur+i]=1);save();stopAll();render()}
+  else if(a==="mg"){manage=!manage;render()}
   else if(a==="play"){stopAll();const t=all().find(x=>x.id===cur);curLine=+d.i;hi();speak(t.l[d.i][0],()=>{curLine=-1;hi()})}
   else if(a==="mast"){const k=cur+d.i;if(S.m[k])delete S.m[k];else S.m[k]=1;save();render()}
   else if(a==="word"){const li=b.closest(".line");const t=all().find(x=>x.id===cur);openSheet(d.w,t.l[li.dataset.i][0])}
