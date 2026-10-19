@@ -33,6 +33,8 @@ main{max-width:640px;margin:0 auto;padding:16px}
 .tools .on{background:var(--acc2);border-color:var(--acc);color:var(--acc)}
 .line{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:12px;margin-bottom:8px;display:flex;gap:10px;align-items:flex-start}
 .line.cur{background:var(--hl)}
+.vi.cur{background:var(--hl)}
+.tools.sm select{font-size:13px;padding:4px 6px;min-height:34px}
 .line.done{opacity:.55}
 .txt{flex:1}
 .de{font-size:19px;line-height:1.5}
@@ -112,7 +114,7 @@ function merge(a,b){
   [].concat(b.imp||[],a.imp||[]).forEach(x=>{if(del[x.id]>0)return;im[x.id]=x});
   return{m,v:Object.values(vm),imp:Object.values(im),sp:a.sp||b.sp,del,vd,o:(a.o&&a.o.length?a.o:b.o)||[],so:a.so||b.so||"custom",u:Date.now()};
 }
-function saveCfg(){C.prov=$("#cp").value;C.base=$("#cb").value.trim();C.dict=$("#cd").value.trim();C.key=$("#ck").value.trim();C.model=$("#cm").value.trim();C.gas=$("#cg").value.trim();C.tok=$("#ct").value.trim();saveC();
+function saveCfg(){C.prov=$("#cp").value;C.base=$("#cb").value.trim();C.dict=$("#cd").value.trim();C.te=$("#te").value;C.tk=$("#tk").value.trim();C.tg=$("#tg").value.trim();C.tvd=$("#tvd").value.trim();C.tvz=$("#tvz").value.trim();C.vde=$("#vde").value;C.vzh=$("#vzh").value;C.key=$("#ck").value.trim();C.model=$("#cm").value.trim();C.gas=$("#cg").value.trim();C.tok=$("#ct").value.trim();saveC();
   if(C.gas&&!/^https:\/\/script\.google(usercontent)?\.com\//.test(C.gas))alert("同步网址看起来不是 Apps Script 网址")}
 async function sync(){
   if(!C.gas||syncing)return;syncing=true;syncMsg="同步中…";paintSync();
@@ -142,25 +144,123 @@ const all=()=>{let a=T.concat(S.imp).filter(alive);const so=S.so;
 let view="home",cur=null,showM=false,playing=false,curLine=-1,rev=null,flip=false;
 let manage=false,tzIn="",tzRes=null,tzMsg="",tzBusy=false,lkSrc="",edit=false,lkInfo="",lkLemma="",lkForms="",lkForm="",trBusy=null,busy="",gq="",gl="A2",gn=8,gen=null;
 
-function speak(t,cb){
+let ga=new Audio(),spk=0,warnTTS=false,bgOn=false,bgBusy=false,SIL="";
+const xesc=t=>String(t).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+const cloud=()=>C.te==="azure"&&!!C.tk;
+const zhOn=()=>view==="vocab"?C.pzv!==false:!!C.pzt;
+function wavBlob(parts,bytes){
+  const h=new DataView(new ArrayBuffer(44));const w=(o,t)=>{for(let k=0;k<t.length;k++)h.setUint8(o+k,t.charCodeAt(k))};
+  w(0,"RIFF");h.setUint32(4,36+bytes,true);w(8,"WAVEfmt ");h.setUint32(16,16,true);h.setUint16(20,1,true);h.setUint16(22,1,true);h.setUint32(24,24000,true);h.setUint32(28,48000,true);h.setUint16(32,2,true);h.setUint16(34,16,true);w(36,"data");h.setUint32(40,bytes,true);
+  return new Blob([h.buffer].concat(parts),{type:"audio/wav"});
+}
+function pcmOf(buf){
+  const v=new DataView(buf);let p=12;
+  while(p+8<=v.byteLength){
+    const id=String.fromCharCode(v.getUint8(p),v.getUint8(p+1),v.getUint8(p+2),v.getUint8(p+3));let sz=v.getUint32(p+4,true);const rem=v.byteLength-p-8;
+    if(id==="data"){if(!sz||sz>rem)sz=rem;return new Uint8Array(buf,p+8,sz-(sz%2))}
+    p+=8+sz+(sz&1);
+  }
+  throw new Error("音频格式无法解析");
+}
+function unlockAudio(){if(!cloud()||ga.dataset.u)return;ga.dataset.u="1";if(!SIL)SIL=URL.createObjectURL(wavBlob([new Uint8Array(960)],960));ga.src=SIL;ga.play().catch(()=>{})}
+async function azTTS(text,lang){
+  lang=lang==="zh"?"zh":"de";
+  const vz=lang==="zh"?(C.tvz||"zh-CN-XiaoxiaoNeural"):(C.tvd||"de-DE-KatjaNeural");
+  const ck="https://tts.local/"+encodeURIComponent(vz)+"/"+encodeURIComponent(text);
+  let cache=null;try{cache=await caches.open("dl-tts");const m=await cache.match(ck);if(m)return await m.arrayBuffer()}catch(e){}
+  let r;try{r=await fetch("https://"+(C.tg||"germanywestcentral")+".tts.speech.microsoft.com/cognitiveservices/v1",{method:"POST",headers:{"Ocp-Apim-Subscription-Key":C.tk,"Content-Type":"application/ssml+xml","X-Microsoft-OutputFormat":"riff-24khz-16bit-mono-pcm"},body:"<speak version='1.0' xml:lang='"+(lang==="zh"?"zh-CN":"de-DE")+"'><voice name='"+vz+"'>"+xesc(text)+"</voice></speak>"})}catch(e){throw new Error("无法连接 Azure 语音（网络、区域，或浏览器跨域限制）")}
+  if(!r.ok)throw new Error("Azure 语音出错 HTTP "+r.status+(r.status===401||r.status===403?"（Key 或区域不对）":""));
+  const buf=await r.arrayBuffer();
+  try{if(cache)await cache.put(ck,new Response(buf.slice(0),{headers:{"content-type":"audio/wav"}}))}catch(e){}
+  return buf;
+}
+function voiceFor(lang){
+  const vs=speechSynthesis.getVoices(),want=lang==="zh"?C.vzh:C.vde;
+  return (want&&vs.find(x=>x.voiceURI===want))||vs.find(x=>x.lang&&x.lang.replace("_","-").toLowerCase().startsWith(lang==="zh"?"zh":"de"));
+}
+function speakSys(t,cb,lang){
   if(!("speechSynthesis" in window)){alert("当前浏览器不支持语音合成");return}
   speechSynthesis.cancel();
-  const u=new SpeechSynthesisUtterance(t);u.lang="de-DE";u.rate=S.sp;
-  const v=speechSynthesis.getVoices().find(x=>x.lang&&x.lang.replace("_","-").startsWith("de"));
-  if(v)u.voice=v;
+  const u=new SpeechSynthesisUtterance(t);u.lang=lang==="zh"?"zh-CN":"de-DE";u.rate=lang==="zh"?1:S.sp;
+  const v=voiceFor(lang);if(v)u.voice=v;
   u.onend=()=>cb&&cb();u.onerror=()=>cb&&cb();
   speechSynthesis.speak(u);
 }
-function stopAll(){playing=false;curLine=-1;try{speechSynthesis.cancel()}catch(e){}}
-function playFrom(i){
-  const t=all().find(x=>x.id===cur);
-  while(i<t.l.length&&(t.l[i][2]||(!showM&&S.m[cur+i])))i++;
-  if(!playing||i>=t.l.length){stopAll();hi();return}
-  curLine=i;hi();
-  const el=document.getElementById("l"+i);if(el)el.scrollIntoView({block:"center",behavior:"smooth"});
-  speak(t.l[i][0],()=>{if(playing)setTimeout(()=>playFrom(i+1),500)});
+function halt(){spk++;try{speechSynthesis.cancel()}catch(e){}ga.onended=ga.onerror=ga.ontimeupdate=null;try{ga.pause()}catch(e){}}
+async function speak(t,cb,lang){
+  halt();const my=spk;lang=lang||"de";
+  if(cloud()){
+    try{
+      const buf=await azTTS(t,lang);if(my!==spk)return;
+      const url=URL.createObjectURL(new Blob([buf],{type:"audio/wav"}));
+      ga.onended=ga.onerror=()=>{URL.revokeObjectURL(url);if(my===spk&&cb)cb()};
+      ga.src=url;ga.playbackRate=lang==="zh"?1:S.sp;await ga.play();return;
+    }catch(e){if(my!==spk)return;if(!warnTTS){warnTTS=true;alert("云端语音失败，已改用系统语音："+e.message)}}
+  }
+  speakSys(t,()=>{if(my===spk&&cb)cb()},lang);
 }
-function hi(){document.querySelectorAll(".line").forEach((e,k)=>e.classList.toggle("cur",+e.dataset.i===curLine));const b=$("#pa");if(b)b.textContent=playing?"停止":"连续播放"}
+function stopAll(){playing=false;bgOn=false;curLine=-1;halt();if("mediaSession" in navigator)try{navigator.mediaSession.playbackState="none"}catch(e){}}
+function qList(){
+  if(view==="vocab")return S.v.map((x,i)=>({i,de:x.w,zh:x.zh||""}));
+  const t=all().find(x=>x.id===cur);
+  return t.l.map((p,i)=>({i,de:p[0],zh:p[1]||"",skip:!!p[2]||(!showM&&!!S.m[cur+i])})).filter(x=>!x.skip);
+}
+function playList(L,k,r){
+  if(!playing||k>=L.length){stopAll();hi();return}
+  const it=L[k],rep=C.rp||1;curLine=it.i;hi();
+  const el=document.getElementById("l"+it.i);if(el)el.scrollIntoView({block:"center",behavior:"smooth"});
+  const next=()=>{if(playing)setTimeout(()=>playList(L,k+1,0),800)};
+  speak(it.de,()=>{
+    if(!playing)return;
+    if(r+1<rep)setTimeout(()=>playList(L,k,r+1),700);
+    else if(zhOn()&&it.zh)setTimeout(()=>{if(playing)speak(it.zh,next,"zh")},500);
+    else next();
+  },"de");
+}
+function hi(){
+  document.querySelectorAll(".line,.vi").forEach(e=>e.classList.toggle("cur",+e.dataset.i===curLine));
+  const b=$("#pa");if(b)b.textContent=playing&&!bgOn?"停止":"连续播放";
+  const c=$("#pb");if(c)c.textContent=bgOn?"停止后台播放":bgBusy?"准备中…":"后台播放";
+}
+async function bgPlay(){
+  if(bgOn||bgBusy||playing){stopAll();bgBusy=false;hi();return}
+  if(!cloud()){alert("息屏后继续播放需要云端语音：请先在“设置→语音发音”里配置 Azure 语音（有免费额度）。系统语音在息屏后会停止。");return}
+  const L=qList();if(!L.length)return;
+  const title=view==="vocab"?"生词本":((all().find(x=>x.id===cur)||{}).n||"主题");
+  stopAll();bgBusy=true;hi();
+  const rep=C.rp||1,zon=zhOn(),uniq=new Map();
+  L.forEach(it=>{uniq.set("de|"+it.de,["de",it.de]);if(zon&&it.zh)uniq.set("zh|"+it.zh,["zh",it.zh])});
+  const q=[...uniq.entries()],bufs=new Map();let done=0;
+  try{
+    await Promise.all([0,1,2].map(async()=>{while(q.length){const e=q.shift();bufs.set(e[0],pcmOf(await azTTS(e[1][1],e[1][0])));const c=$("#pb");if(c&&bgBusy)c.textContent="准备音频 "+(++done)+"/"+uniq.size}}));
+    if(!bgBusy)return;
+    const sil=ms=>new Uint8Array(48*ms),S7=sil(700),S5=sil(500),S9=sil(900),parts=[],marks=[];let bytes=0;
+    for(const it of L){
+      const d=bufs.get("de|"+it.de),z=zon&&it.zh?bufs.get("zh|"+it.zh):null;
+      const need=d.length*rep+S7.length*(rep-1)+(z?z.length+S5.length:0)+S9.length;
+      if(bytes+need>48e6)break;
+      marks.push({t:bytes/48000,i:it.i});
+      for(let r=0;r<rep;r++){parts.push(d);if(r<rep-1)parts.push(S7)}
+      if(z)parts.push(S5,z);
+      parts.push(S9);bytes+=need;
+    }
+    if(marks.length<L.length)alert("音频较长，只生成了前 "+marks.length+" 项");
+    ga.onended=ga.onerror=null;
+    ga.src=URL.createObjectURL(wavBlob(parts,bytes));ga.playbackRate=S.sp;
+    ga.ontimeupdate=()=>{let k=0;while(k+1<marks.length&&marks[k+1].t<=ga.currentTime)k++;const m=marks[k];if(m&&m.i!==curLine){curLine=m.i;hi();const el=document.getElementById("l"+m.i);if(el)el.scrollIntoView({block:"center"})}};
+    ga.onended=()=>{stopAll();hi()};
+    playing=true;bgOn=true;bgBusy=false;
+    if("mediaSession" in navigator)try{
+      navigator.mediaSession.metadata=new MediaMetadata({title:"德语学习 · 连续播放",artist:title});
+      navigator.mediaSession.setActionHandler("play",()=>ga.play());
+      navigator.mediaSession.setActionHandler("pause",()=>ga.pause());
+      navigator.mediaSession.setActionHandler("stop",()=>{stopAll();hi()});
+    }catch(e){}
+    await ga.play();hi();
+  }catch(e){stopAll();bgBusy=false;hi();alert("后台播放失败："+e.message)}
+}
+const playCtl=()=>'<select id="rp" aria-label="重复次数">'+[1,2,3,5].map(n=>'<option value="'+n+'"'+((C.rp||1)===n?" selected":"")+">重复"+n+"次</option>").join("")+'</select><button data-a="zt" class="'+(zhOn()?"on":"")+'">含中文</button><button id="pb" data-a="pb">后台播放</button>';
+const vopt=(lg,cur)=>{const vs=("speechSynthesis" in window?speechSynthesis.getVoices():[]).filter(v=>v.lang.replace("_","-").toLowerCase().startsWith(lg));return '<option value="">自动</option>'+vs.map(v=>'<option value="'+esc(v.voiceURI)+'"'+(v.voiceURI===cur?" selected":"")+">"+esc(v.name)+"（"+esc(v.lang)+"）</option>").join("")};
 function words(s){return esc(s).replace(/[A-Za-zÄÖÜäöüß]+(?:-[A-Za-zÄÖÜäöüß]+)*/g,w=>'<span class="w" data-a="word" data-w="'+w+'">'+w+"</span>")}
 
 function render(){
@@ -174,14 +274,14 @@ function render(){
   }else if(view==="topic"){
     const t=all().find(x=>x.id===cur);
     A.innerHTML='<div class="top"><button data-a="back">‹ 返回</button><h1>'+esc(t.n)+'</h1></div>'+
-    '<p class="sub">💡 点句子里的任意德语单词，即可自动查义并加入生词本。点“管理”可标记已掌握或删除句子。</p><div class="tools sm"><button class="p" id="pa" data-a="pall">连续播放</button>'+
+    '<p class="sub">💡 点句子里的任意德语单词，即可自动查义并加入生词本。点“管理”可标记已掌握或删除句子。</p><div class="tools sm"><button class="p" id="pa" data-a="pall">连续播放</button>'+playCtl()+
     [0.6,0.8,1].map(r=>'<button data-a="sp" data-r="'+r+'" class="'+(S.sp==r?"on":"")+'">'+r+"×</button>").join("")+
     '<button data-a="sm" class="'+(showM?"on":"")+'">显示已掌握</button><button data-a="mg" class="'+(manage?"on":"")+'">管理</button>'+(t.l.some(p=>!p[1]&&!p[2])||trBusy===cur?'<button data-a="tr"'+(trBusy===cur?" disabled":"")+'>'+(trBusy===cur?"AI 翻译中…":"AI 翻译缺失句子")+"</button>":"")+'</div>'+
     t.l.map((p,i)=>{if(p[2])return"";const d=S.m[cur+i];if(d&&!showM)return"";return '<div class="line'+(d?" done":"")+'" id="l'+i+'" data-i="'+i+'"><div class="txt"><div class="de">'+words(p[0])+'</div>'+(p[1]?'<div class="zh">'+esc(p[1])+"</div>":"")+'</div><div class="act"><button data-a="play" data-i="'+i+'" aria-label="播放">▶</button>'+(manage?'<button data-a="mast" data-i="'+i+'" aria-label="已掌握">'+(d?"↺":"✓")+"</button>"+(String(cur).startsWith("imp")?'<button data-a="dl" data-i="'+i+'" aria-label="删除这句">🗑</button>':""):"")+"</div></div>"}).join("")||'<p class="sub">这个主题已全部掌握 🎉</p>';
   }else if(view==="vocab"){
     const due=S.v.filter(x=>x.due<=Date.now()).length;
-    A.innerHTML='<div class="top"><h1>生词本</h1><button class="p" data-a="rev"'+(due?"":" disabled")+'>复习 '+due+"</button></div>"+
-    (S.v.length?S.v.map((x,i)=>'<div class="vi"><button data-a="say" data-w="'+esc(x.w)+'">▶</button><div><b>'+esc(x.w)+"</b> <span class=\"mut\">"+esc(x.zh||"（未填释义）")+"</span>"+(x.src?'<div class="mut">来源：'+esc(x.src)+"</div>":"")+(x.info?'<div class="mut">'+esc(x.info)+"</div>":"")+(x.form?'<div class="mut">句中形式：'+esc(x.form)+"</div>":"")+(x.forms?'<div class="mut">变形：'+esc(x.forms)+"</div>":"")+(x.ctx?'<div class="mut">'+esc(x.ctx)+"</div>":"")+'</div><button data-a="del" data-i="'+i+'" aria-label="删除">✕</button></div>').join(""):'<p class="sub">还没有生词。在主题页点任意单词即可添加。</p>');
+    A.innerHTML='<div class="top"><h1>生词本</h1><button class="p" data-a="rev"'+(due?"":" disabled")+'>复习 '+due+"</button></div>"+(S.v.length?'<div class="tools sm"><button class="p" id="pa" data-a="pall">连续播放</button>'+playCtl()+[0.6,0.8,1].map(r=>'<button data-a="sp" data-r="'+r+'" class="'+(S.sp==r?"on":"")+'">'+r+"×</button>").join("")+'</div>':"")+
+    (S.v.length?S.v.map((x,i)=>'<div class="vi" id="l'+i+'" data-i="'+i+'"><button data-a="say" data-w="'+esc(x.w)+'">▶</button><div><b>'+esc(x.w)+"</b> <span class=\"mut\">"+esc(x.zh||"（未填释义）")+"</span>"+(x.src?'<div class="mut">来源：'+esc(x.src)+"</div>":"")+(x.info?'<div class="mut">'+esc(x.info)+"</div>":"")+(x.form?'<div class="mut">句中形式：'+esc(x.form)+"</div>":"")+(x.forms?'<div class="mut">变形：'+esc(x.forms)+"</div>":"")+(x.ctx?'<div class="mut">'+esc(x.ctx)+"</div>":"")+'</div><button data-a="del" data-i="'+i+'" aria-label="删除">✕</button></div>').join(""):'<p class="sub">还没有生词。在主题页点任意单词即可添加。</p>');
   }else if(view==="rev"){
     const q=S.v.filter(x=>x.due<=Date.now());
     if(!q.length){view="vocab";return render()}
@@ -200,12 +300,18 @@ function render(){
     '<label class="mut">模型</label><input id="cm" value="'+esc(C.model||(C.prov==="openai"?"":"claude-haiku-5-5"))+'">'+
     '<label class="mut">Google Apps Script 网址</label><input id="cg" placeholder="https://script.google.com/macros/s/…/exec" value="'+esc(C.gas||"")+'">'+
     '<label class="mut">同步口令（与脚本属性 TOKEN 相同）</label><input id="ct" type="password" autocomplete="off" value="'+esc(C.tok||"")+'">'+
+    '<h2 style="font-size:17px;margin:20px 0 8px">语音发音</h2><p class="mut">想要更标准的发音：iPhone 可到“设置→辅助功能→朗读内容→声音→德语”下载“增强版/高音质”声音，下方通常就能选到；也可以用 Azure 云端语音（每月约 50 万字符免费，以官网为准），并支持息屏播放。</p>'+
+    '<label class="mut">系统德语声音</label><select id="vde" style="width:100%">'+vopt("de",C.vde)+'</select>'+
+    '<label class="mut">系统中文声音</label><select id="vzh" style="width:100%">'+vopt("zh",C.vzh)+'</select>'+
+    '<label class="mut">语音引擎</label><select id="te" style="width:100%"><option value="">系统语音（默认，免费、离线）</option><option value="azure"'+(C.te==="azure"?" selected":"")+'>Azure 语音（云端，更自然）</option></select>'+
+    '<div id="azrow" style="display:'+(C.te==="azure"?"":"none")+'"><label class="mut">Azure 语音 Key</label><input id="tk" type="password" autocomplete="off" value="'+esc(C.tk||"")+'"><label class="mut">Azure 区域（如 germanywestcentral、westeurope）</label><input id="tg" value="'+esc(C.tg||"")+'" placeholder="germanywestcentral"><label class="mut">德语声音</label><input id="tvd" value="'+esc(C.tvd||"")+'" placeholder="de-DE-KatjaNeural"><label class="mut">中文声音</label><input id="tvz" value="'+esc(C.tvz||"")+'" placeholder="zh-CN-XiaoxiaoNeural"><button data-a="ttest" style="margin-top:6px">保存并试听</button></div>'+
     '<label class="mut">自定义词典网址（可选，用 {w} 代表单词）</label><input id="cd" placeholder="https://example.com/search?q={w}" value="'+esc(C.dict||"")+'">'+
     '<label class="mut">外观</label><select id="cth" style="width:100%">'+[["auto","跟随系统（默认）"],["light","浅色"],["dark","深色"]].map(o=>'<option value="'+o[0]+'"'+((C.theme||"auto")===o[0]?" selected":"")+">"+o[1]+"</option>").join("")+'</select>'+
     '<div class="row" style="margin-top:8px"><button class="p" data-a="csave">保存设置</button><button data-a="ctest">测试 AI</button><button data-a="sync">立即同步</button></div><p class="mut" id="sy">'+esc(syncMsg)+'</p>'+
     '<h2 style="font-size:17px;margin:20px 0 8px">主题管理</h2><button data-a="restore">恢复已删除的内置主题</button><h2 style="font-size:17px;margin:20px 0 8px">本地备份</h2><div class="row"><button data-a="exp">导出备份</button><input type="file" id="bk" accept=".json" style="flex:1"></div><p class="mut">选择备份文件会与当前数据合并，不会覆盖。</p><button data-a="wipe" style="margin-top:8px">清除本机学习数据</button>';
     $("#cp").onchange=()=>{const o=$("#cp").value==="openai";$("#brow").style.display=o?"":"none";$("#cm").value=o?"":"claude-haiku-5-5"};
     $("#cpre").onchange=e=>{const q=PRE[e.target.value];if(q){$("#cb").value=q[0];$("#cm").value=q[1]}};
+    $("#te").onchange=()=>{$("#azrow").style.display=$("#te").value==="azure"?"":"none"};
     $("#cth").onchange=()=>{C.theme=$("#cth").value;saveC();applyTheme()};
     $("#bk").onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{Object.assign(S,merge(payload(),JSON.parse(r.result)));save();alert("已合并备份");render()}catch(x){alert("备份文件无效")}};r.readAsText(f)};
   }else if(view==="ai"){
@@ -308,14 +414,18 @@ async function genRun(){
   }catch(e){alert("生成失败："+(e.message||e.code||"请稍后重试"))}
   busy="";if(view==="ai")render();
 }
-document.addEventListener("click",e=>{
+document.addEventListener("change",e=>{if(e.target.id==="rp"){C.rp=+e.target.value;saveC()}});
+document.addEventListener("click",e=>{unlockAudio();
   const b=e.target.closest("[data-a]");if(!b)return;
   const a=b.dataset.a,d=b.dataset;
   if(a==="nav"){stopAll();view=d.v;flip=false;$("#sheet").classList.remove("show");render()}
   else if(a==="open"){cur=d.id;view="topic";manage=false;render();scrollTo(0,0)}
   else if(a==="back"){stopAll();manage=false;view="home";render()}
-  else if(a==="pall"){if(playing){stopAll();hi()}else{playing=true;playFrom(0)}}
-  else if(a==="sp"){S.sp=+d.r;save();render()}
+  else if(a==="pall"){if(playing){stopAll();hi()}else{playing=true;playList(qList(),0,0)}}
+  else if(a==="pb"){bgPlay()}
+  else if(a==="zt"){const v=!zhOn();if(view==="vocab")C.pzv=v;else C.pzt=v;saveC();b.classList.toggle("on",v)}
+  else if(a==="ttest"){saveCfg();warnTTS=false;ga.dataset.u="";unlockAudio();speak("Guten Tag! Schön, dich zu sehen.",null,"de")}
+  else if(a==="sp"){S.sp=+d.r;ga.playbackRate=S.sp;save();render()}
   else if(a==="sm"){showM=!showM;render()}
   else if(a==="mg"){manage=!manage;render()}
   else if(a==="play"){stopAll();const t=all().find(x=>x.id===cur);curLine=+d.i;hi();speak(t.l[d.i][0],()=>{curLine=-1;hi()})}
