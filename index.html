@@ -38,6 +38,11 @@ main{max-width:640px;margin:0 auto;padding:16px}
 .pnl{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:10px;margin-bottom:10px}
 .pnl input{margin:0 0 8px}
 .line .ed{flex-basis:100%;margin-top:0}
+.seg{display:flex;gap:6px;margin:0 0 12px}.seg button{flex:1}
+.seg .on{background:var(--acc2);border-color:var(--acc);color:var(--acc)}
+.vb{cursor:pointer;padding:4px 0}
+.dr{display:flex;gap:10px;padding:9px 0;border-top:1px solid var(--bd)}.dr:first-child{border-top:0}.dr>span{width:62px;flex:none}.dr>div{flex:1;word-break:break-word}
+#sheet{max-height:88vh;overflow-y:auto}
 .vi.cur{background:var(--hl)}
 .tools.sm select{font-size:13px;padding:4px 6px;min-height:34px}
 .line.done{opacity:.55}
@@ -75,10 +80,8 @@ a.dl{display:inline-block;margin-right:12px;padding:4px 0}
 <nav>
 <button data-a="nav" data-v="home" id="n1">主题</button>
 <button data-a="nav" data-v="vocab" id="n2">生词本</button>
-<button data-a="nav" data-v="ai" id="n3">生成</button>
-<button data-a="nav" data-v="tz" id="n6">翻译</button>
-<button data-a="nav" data-v="imp" id="n4">导入</button>
-<button data-a="nav" data-v="set" id="n5">设置</button>
+<button data-a="nav" data-v="add" id="n3">添加</button>
+<button data-a="nav" data-v="set" id="n4">设置</button>
 </nav>
 <script>
 const T=[
@@ -147,7 +150,7 @@ const all=()=>{let a=T.concat(S.imp).filter(alive);const so=S.so;
   else{const o=S.o;a.sort((x,y)=>{const i=o.indexOf(x.id),j=o.indexOf(y.id);return(i<0?1e6:i)-(j<0?1e6:j)})}
   return a};
 let view="home",cur=null,showM=false,playing=false,curLine=-1,rev=null,flip=false;
-let pnl=false,fq="",manage=false,tzIn="",tzRes=null,tzMsg="",tzBusy=false,lkSrc="",edit=false,lkInfo="",lkLemma="",lkForms="",lkForm="",trBusy=null,busy="",gq="",gl="A2",gn=8,gen=null;
+let addLast="ai",srch=false,vdi=0,pnl=false,fq="",manage=false,tzIn="",tzRes=null,tzMsg="",tzBusy=false,lkSrc="",edit=false,lkInfo="",lkLemma="",lkForms="",lkForm="",trBusy=null,busy="",gq="",gl="A2",gn=8,gen=null;
 
 let ga=new Audio(),spk=0,warnTTS=false,bgOn=false,bgBusy=false,SIL="";
 const xesc=t=>String(t).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
@@ -206,7 +209,7 @@ async function speak(t,cb,lang){
 }
 function stopAll(){playing=false;bgOn=false;curLine=-1;halt();if("mediaSession" in navigator)try{navigator.mediaSession.playbackState="none"}catch(e){}}
 function qList(){
-  if(view==="vocab")return S.v.map((x,i)=>({i,de:x.w,zh:x.zh||"",x})).filter(o=>mat(fq,o.x.w,o.x.zh,o.x.ctx));
+  if(view==="vocab")return vorder().filter(o=>mat(fq,o.x.w,o.x.zh,o.x.ctx,o.x.form,o.x.forms,o.x.info)).map(o=>({i:o.i,de:o.x.w,zh:o.x.zh||""}));
   const t=all().find(x=>x.id===cur);
   return t.l.map((p,i)=>({i,de:p[0],zh:p[1]||"",skip:!!p[2]||(!showM&&!!S.m[cur+i])})).filter(x=>!x.skip&&mat(fq,x.de,x.zh));
 }
@@ -266,9 +269,22 @@ async function bgPlay(){
 }
 const playCtl=()=>'<select id="rp" aria-label="重复次数">'+[1,2,3,5].map(n=>'<option value="'+n+'"'+((C.rp||1)===n?" selected":"")+">重复"+n+"次</option>").join("")+'</select><button data-a="zt" class="'+(zhOn()?"on":"")+'">含中文</button><button id="pb" data-a="pb">'+(bgOn?"停止后台播放":bgBusy?"准备中…":"后台播放")+'</button>';
 const vopt=(lg,cur)=>{const vs=("speechSynthesis" in window?speechSynthesis.getVoices():[]).filter(v=>v.lang.replace("_","-").toLowerCase().startsWith(lg));return '<option value="">自动</option>'+vs.map(v=>'<option value="'+esc(v.voiceURI)+'"'+(v.voiceURI===cur?" selected":"")+">"+esc(v.name)+"（"+esc(v.lang)+"）</option>").join("")};
+const seg=k=>'<div class="top"><h1>添加内容</h1></div><div class="seg">'+[["ai","AI 生成"],["tz","中译德"],["imp","导入"]].map(o=>'<button data-a="nav" data-v="'+o[0]+'" class="'+(k===o[0]?"on":"")+'">'+o[1]+"</button>").join("")+"</div>";
+const posOf=x=>{const t=x.info||"";if(!t)return"未知";if(/代词|代名词/.test(t))return"其他";if(/动词/.test(t))return"动词";if(/名词/.test(t))return"名词";if(/形容词/.test(t))return"形容词";if(/副词/.test(t))return"副词";return"其他"};
+const genOf=x=>{const m=/^(der|die|das)\s/i.exec(x.w||"");return m?m[1].toLowerCase():""};
+const GN={der:"阳性（der）",die:"阴性（die）",das:"中性（das）"};
+const vdirNow=()=>C.vdr||((C.vs||"time")==="time"?"desc":"asc");
+function vorder(){
+  const L=S.v.map((x,i)=>({x,i,k:String(x.w).replace(/^(der|die|das)\s+/i,"").toLowerCase(),t:x.t||(1e12-i)}));
+  const m=C.vs||"time",PO=["动词","名词","形容词","副词","其他","未知"],GE=["der","die","das",""],ab=(a,b)=>a.k.localeCompare(b.k,"de");
+  L.sort(m==="alpha"?ab:m==="pos"?(a,b)=>PO.indexOf(posOf(a.x))-PO.indexOf(posOf(b.x))||ab(a,b):m==="gender"?(a,b)=>GE.indexOf(genOf(a.x))-GE.indexOf(genOf(b.x))||ab(a,b):(a,b)=>a.t-b.t);
+  if(vdirNow()==="desc")L.reverse();
+  return L;
+}
+const sortRow=()=>'<div class="tools sm" style="margin-bottom:10px"><select id="vs" aria-label="排序方式">'+[["time","添加时间"],["alpha","字母顺序"],["pos","词类（动词、名词…）"],["gender","名词性别（der/die/das）"]].map(o=>'<option value="'+o[0]+'"'+((C.vs||"time")===o[0]?" selected":"")+">"+o[1]+"</option>").join("")+'</select><button data-a="vdir">'+(vdirNow()==="desc"?"降序 ↓":"升序 ↑")+"</button></div>";
 const mat=(f,...xs)=>{if(!f)return true;f=f.toLowerCase();return xs.some(x=>String(x||"").toLowerCase().includes(f))};
-const barHTML=(topic,t)=>'<div class="stk"><div class="tools sm"><button class="p" id="pa" data-a="pall">'+(bgBusy?"准备中…":playing?"停止":"连续播放")+'</button><button data-a="mg" class="'+(manage?"on":"")+'">管理</button><button data-a="pn" class="'+(pnl||fq?"on":"")+'">设置'+(fq?" ●":"")+(pnl?" ▴":" ▾")+'</button></div></div>'+
-  (pnl?'<div class="pnl"><input id="qs" type="search" placeholder="搜索中文或德语" value="'+esc(fq)+'" autocomplete="off" autocapitalize="off"><div class="tools sm">'+playCtl()+[0.6,0.8,1].map(r=>'<button data-a="sp" data-r="'+r+'" class="'+(S.sp==r?"on":"")+'">'+r+"×</button>").join("")+(topic?'<button data-a="sm" class="'+(showM?"on":"")+'">显示已掌握</button>'+(t&&(t.l.some(p=>!p[1]&&!p[2])||trBusy===cur)?'<button data-a="tr"'+(trBusy===cur?" disabled":"")+'>'+(trBusy===cur?"AI 翻译中…":"AI 翻译缺失句子")+"</button>":""):"")+"</div></div>":"");
+const barHTML=(topic,t)=>'<div class="stk"><div class="tools sm"><button class="p" id="pa" data-a="pall">'+(bgBusy?"准备中…":playing?"停止":"连续播放")+'</button><button data-a="mg" class="'+(manage?"on":"")+'">管理</button><button data-a="pn" class="'+(pnl?"on":"")+'">设置'+(pnl?" ▴":" ▾")+'</button><button data-a="sr" class="'+(srch||fq?"on":"")+'" aria-label="搜索">🔍</button></div>'+(srch?'<input id="qs" type="search" placeholder="搜索中文或德语" value="'+esc(fq)+'" autocomplete="off" autocapitalize="off" style="margin:8px 0 0">':"")+'</div>'+
+  (pnl?'<div class="pnl"><div class="tools sm">'+playCtl()+[0.6,0.8,1].map(r=>'<button data-a="sp" data-r="'+r+'" class="'+(S.sp==r?"on":"")+'">'+r+"×</button>").join("")+(topic?'<button data-a="sm" class="'+(showM?"on":"")+'">显示已掌握</button>'+(t&&(t.l.some(p=>!p[1]&&!p[2])||trBusy===cur)?'<button data-a="tr"'+(trBusy===cur?" disabled":"")+'>'+(trBusy===cur?"AI 翻译中…":"AI 翻译缺失句子")+"</button>":""):"")+"</div></div>":"");
 function topicList(){
   const t=all().find(x=>x.id===cur);if(!t)return"";
   let h=manage?'<button data-a="ad" style="width:100%;margin-bottom:8px">＋ 添加句子</button>':"",n=0;
@@ -280,10 +296,10 @@ function topicList(){
   return h+(n?"":'<p class="sub">'+(fq?"没有匹配的句子。":"这个主题已全部掌握 🎉")+"</p>");
 }
 function vocabList(){
-  let h="",n=0;
-  S.v.forEach((x,i)=>{
-    if(!mat(fq,x.w,x.zh,x.ctx,x.form,x.forms,x.info))return;n++;
-    h+='<div class="vi" id="l'+i+'" data-i="'+i+'"><button data-a="say" data-w="'+esc(x.w)+'" aria-label="播放">▶</button><div'+(manage?' data-a="ved" data-i="'+i+'"':"")+'><b>'+esc(x.w)+'</b> <span class="mut">'+esc(x.zh||"（未填释义）")+"</span>"+(x.src?'<div class="mut">来源：'+esc(x.src)+"</div>":"")+(x.info?'<div class="mut">'+esc(x.info)+"</div>":"")+(x.form?'<div class="mut">句中形式：'+esc(x.form)+"</div>":"")+(x.forms?'<div class="mut">变形：'+esc(x.forms)+"</div>":"")+(x.ctx?'<div class="mut">'+esc(x.ctx)+"</div>":"")+"</div>"+(manage?'<button data-a="del" data-i="'+i+'" aria-label="删除">🗑</button>':"")+"</div>";
+  let h="";
+  vorder().forEach(o=>{
+    const x=o.x,i=o.i;if(!mat(fq,x.w,x.zh,x.ctx,x.form,x.forms,x.info))return;
+    h+='<div class="vi" id="l'+i+'" data-i="'+i+'"><div class="vb" data-a="vd" data-i="'+i+'"><b>'+esc(x.w)+'</b> <span class="mut">'+esc(x.zh||"（未填释义）")+'</span></div><button data-a="say" data-w="'+esc(x.w)+'" aria-label="播放">▶</button>'+(manage?'<button data-a="del" data-i="'+i+'" aria-label="删除">🗑</button>':"")+"</div>";
   });
   return h||'<p class="sub">'+(S.v.length?"没有匹配的单词。":"还没有生词。在主题页点任意单词即可添加。")+"</p>";
 }
@@ -305,13 +321,13 @@ function openEdit(i){
 }
 function openVEdit(i){
   const x=S.v[i];if(!x)return;
-  $("#sheetin").innerHTML='<div class="mut">编辑生词</div><label class="mut">单词</label><input id="ve1" value="'+esc(x.w)+'"><label class="mut">中文释义</label><input id="ve2" value="'+esc(x.zh||"")+'"><label class="mut">例句</label><textarea id="ve3" style="min-height:60px">'+esc(x.ctx||"")+'</textarea><div class="row" style="margin-top:8px"><button data-a="close">取消</button><button class="p" data-a="vsave" data-i="'+i+'">保存</button></div>';
+  $("#sheetin").innerHTML='<div class="mut">编辑生词</div><label class="mut">单词</label><input id="ve1" value="'+esc(x.w)+'"><label class="mut">中文释义</label><input id="ve2" value="'+esc(x.zh||"")+'"><label class="mut">词性（如 名词、动词）</label><input id="ve4" value="'+esc(x.info||"")+'"><label class="mut">变形</label><input id="ve5" value="'+esc(x.forms||"")+'"><label class="mut">例句</label><textarea id="ve3" style="min-height:60px">'+esc(x.ctx||"")+'</textarea><div class="row" style="margin-top:8px"><button data-a="close">取消</button><button class="p" data-a="vsave" data-i="'+i+'">保存</button></div>';
   $("#sheet").classList.add("show");
 }
 function words(s){return esc(s).replace(/[A-Za-zÄÖÜäöüß]+(?:-[A-Za-zÄÖÜäöüß]+)*/g,w=>'<span class="w" data-a="word" data-w="'+w+'">'+w+"</span>")}
 
 function render(){
-  ["n1","n2","n3","n4","n5","n6"].forEach((id,k)=>$("#"+id).classList.toggle("on",["home","vocab","ai","imp","set","tz"][k]===(view==="topic"?"home":view==="rev"?"vocab":view)));
+  ["n1","n2","n3","n4"].forEach((id,k)=>$("#"+id).classList.toggle("on",["home","vocab","add","set"][k]===(view==="topic"?"home":(view==="rev"||view==="vd")?"vocab":["ai","tz","imp"].includes(view)?"add":view)));
   const A=$("#app");
   if(view==="home"){
     const L=all();
@@ -323,7 +339,13 @@ function render(){
     A.innerHTML='<div class="top"><button data-a="back">‹ 返回</button><h1>'+esc(t.n)+'</h1></div>'+barHTML(true,t)+'<p class="sub">'+(manage?"管理模式：点句子可编辑；↑↓ 调整顺序。":"点句子里的德语单词，可查义并加入生词本。")+'</p><div id="lst">'+topicList()+"</div>";
   }else if(view==="vocab"){
     const due=S.v.filter(x=>x.due<=Date.now()).length;
-    A.innerHTML='<div class="top"><h1>生词本</h1><button class="p" data-a="rev"'+(due?"":" disabled")+'>复习 '+due+"</button></div>"+(S.v.length?barHTML(false):"")+'<div id="lst">'+vocabList()+"</div>";
+    A.innerHTML='<div class="top"><h1>生词本</h1><button class="p" data-a="rev"'+(due?"":" disabled")+'>复习 '+due+"</button></div>"+(S.v.length?barHTML(false)+(manage?sortRow():""):"")+'<div id="lst">'+vocabList()+"</div>";
+  }else if(view==="vd"){
+    const x=S.v[vdi];if(!x){view="vocab";return render()}
+    const g=genOf(x),r=(k,v)=>'<div class="dr"><span class="mut">'+k+'</span><div>'+v+'</div></div>';
+    A.innerHTML='<div class="top"><button data-a="vback">‹ 返回</button><h1>生词详情</h1></div><div class="card" style="text-align:left"><div class="big">'+esc(x.w)+'</div><div style="font-size:18px;margin:4px 0 10px">'+esc(x.zh||"（未填释义）")+'</div><button data-a="say" data-w="'+esc(x.w)+'">▶ 发音</button></div>'+
+    '<div class="card" style="text-align:left;padding:6px 14px;margin-top:0">'+r("词性",esc(x.info||"—")+(g?"　"+GN[g]:""))+r("变形",esc(x.forms||"—"))+(x.form?r("句中形式",esc(x.form)):"")+r("来源",esc(srcName(x.src)||"—"))+r("例句",x.ctx?esc(x.ctx)+' <button data-a="say" data-w="'+esc(x.ctx)+'" aria-label="播放例句">▶</button>':"—")+"</div>"+
+    '<div class="row" style="margin-top:12px"><button data-a="vedit">编辑</button><button data-a="del" data-i="'+vdi+'">删除</button></div>';
   }else if(view==="rev"){
     const q=S.v.filter(x=>x.due<=Date.now());
     if(!q.length){view="vocab";return render()}
@@ -331,7 +353,7 @@ function render(){
     A.innerHTML='<div class="top"><button data-a="nav" data-v="vocab">‹ 返回</button><h1>复习（剩 '+q.length+'）</h1></div><div class="card"><div class="big">'+esc(rev.w)+'</div><p><button data-a="say" data-w="'+esc(rev.w)+'">▶ 发音</button></p>'+(flip?'<p>'+esc(rev.zh||"（未填释义）")+'</p><p class="mut">'+esc(rev.ctx||"")+'</p><div class="row" style="justify-content:center"><button data-a="no">忘了</button><button class="p" data-a="yes">记得</button></div>':'<button data-a="flip">看释义</button>')+"</div>";
     if(!flip)speak(rev.w);
   }else if(view==="tz"){
-    A.innerHTML='<div class="top"><h1>中译德</h1></div><p class="sub">输入中文（可多行，每行一句），翻译成德语后可存入主题，留着以后学习。</p><textarea id="zt" style="min-height:90px" placeholder="例如：请问最近的药店在哪里？">'+esc(tzIn)+'</textarea><div class="row"><button class="p" data-a="tzgo"'+(tzBusy?" disabled":"")+'>'+(tzBusy?"翻译中…":"翻译成德语")+"</button></div>"+
+    A.innerHTML=seg("tz")+'<p class="sub">输入中文（可多行，每行一句），翻译成德语后可存入主题，留着以后学习。</p><textarea id="zt" style="min-height:90px" placeholder="例如：请问最近的药店在哪里？">'+esc(tzIn)+'</textarea><div class="row"><button class="p" data-a="tzgo"'+(tzBusy?" disabled":"")+'>'+(tzBusy?"翻译中…":"翻译成德语")+"</button></div>"+
     (tzRes?'<div style="margin:14px 0 8px"><span class="tag">'+esc(tzRes.src)+'</span></div>'+tzRes.l.map((p,i)=>'<div class="line"><div class="txt"><input class="rt" value="'+esc(p[0])+'" aria-label="德语译文" style="margin:0"><div class="zh">'+esc(p[1])+'</div></div><div class="act"><button data-a="tzsay" data-i="'+i+'" aria-label="播放">▶</button></div></div>').join("")+
     '<label class="mut" style="display:block;margin-top:8px">存入主题</label><select id="tt" style="width:100%"><option value="">新建 / 按名称合并</option>'+S.imp.map(t=>'<option value="'+t.id+'">'+esc(t.n)+"</option>").join("")+'</select><input id="tn" list="tl2" placeholder="主题名称，默认：我的句子"><datalist id="tl2">'+S.imp.map(t=>'<option value="'+esc(t.n)+'">').join("")+'</datalist><button class="p" data-a="tzsave">保存到主题</button>'+(tzMsg?'<p class="mut">'+esc(tzMsg)+"</p>":""):"");
   }else if(view==="set"){
@@ -357,9 +379,9 @@ function render(){
     $("#cth").onchange=()=>{C.theme=$("#cth").value;saveC();applyTheme()};
     $("#bk").onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{Object.assign(S,merge(payload(),JSON.parse(r.result)));save();alert("已合并备份");render()}catch(x){alert("备份文件无效")}};r.readAsText(f)};
   }else if(view==="ai"){
-    A.innerHTML='<div class="top"><h1>AI 生成对话</h1></div><p class="sub">输入想学的场景，AI 会生成带中文翻译的德语对话，满意后可保存为新主题。</p><input id="gt" placeholder="例如：和孩子聊学校的一天" value="'+esc(gq)+'"><div class="row"><select id="gl">'+["A1","A2","B1"].map(x=>'<option'+(x===gl?" selected":"")+">"+x+"</option>").join("")+'</select><select id="gn">'+[6,8,12].map(x=>'<option value="'+x+'"'+(x===gn?" selected":"")+">"+x+" 句</option>").join("")+'</select><button class="p" data-a="gen"'+(busy?" disabled":"")+'>'+(busy?"生成中…":"生成")+"</button></div>"+(gen?'<label class="mut" style="display:block;margin-top:16px">主题名称（与已有主题同名会自动合并）</label><input id="gnm" list="tl" value="'+esc(gen.n)+'"><datalist id="tl">'+S.imp.map(t=>'<option value="'+esc(t.n)+'">').join("")+'</datalist>'+gen.l.map(p=>'<div class="line"><div class="txt"><div class="de">'+esc(p[0])+'</div><div class="zh">'+esc(p[1])+'</div></div><div class="act"><button data-a="say" data-w="'+esc(p[0])+'">▶</button></div></div>').join("")+'<div class="row"><button class="p" data-a="gsave">保存为主题</button><button data-a="gen">重新生成</button></div>':"");
+    A.innerHTML=seg("ai")+'<p class="sub">输入想学的场景，AI 会生成带中文翻译的德语对话，满意后可保存为新主题。</p><input id="gt" placeholder="例如：和孩子聊学校的一天" value="'+esc(gq)+'"><div class="row"><select id="gl">'+["A1","A2","B1"].map(x=>'<option'+(x===gl?" selected":"")+">"+x+"</option>").join("")+'</select><select id="gn">'+[6,8,12].map(x=>'<option value="'+x+'"'+(x===gn?" selected":"")+">"+x+" 句</option>").join("")+'</select><button class="p" data-a="gen"'+(busy?" disabled":"")+'>'+(busy?"生成中…":"生成")+"</button></div>"+(gen?'<label class="mut" style="display:block;margin-top:16px">主题名称（与已有主题同名会自动合并）</label><input id="gnm" list="tl" value="'+esc(gen.n)+'"><datalist id="tl">'+S.imp.map(t=>'<option value="'+esc(t.n)+'">').join("")+'</datalist>'+gen.l.map(p=>'<div class="line"><div class="txt"><div class="de">'+esc(p[0])+'</div><div class="zh">'+esc(p[1])+'</div></div><div class="act"><button data-a="say" data-w="'+esc(p[0])+'">▶</button></div></div>').join("")+'<div class="row"><button class="p" data-a="gsave">保存为主题</button><button data-a="gen">重新生成</button></div>':"");
   }else{
-    A.innerHTML='<div class="top"><h1>导入内容</h1></div><p class="sub">粘贴你想学的德语文本（新闻、课文、歌词以外的自有材料均可）。只需粘贴德文，会自动分段、分句，并可用 AI 翻译成中文；也可以写成“德语 | 中文”自带翻译。</p><input id="in" placeholder="标题，例如：工作邮件"><textarea id="tx" placeholder="直接粘贴德文即可，例如：Ich lerne seit einem Jahr Deutsch. Das macht mir Spaß."></textarea><label class="mut"><input type="checkbox" id="trc" checked style="width:auto;margin:0 6px 0 0">用 AI 自动翻译成中文</label><div class="row"><input type="file" id="fl" accept=".txt,.md" style="flex:1"><button class="p" data-a="imp">保存并开始学</button></div>'+
+    A.innerHTML=seg("imp")+'<p class="sub">粘贴你想学的德语文本（新闻、课文、歌词以外的自有材料均可）。只需粘贴德文，会自动分段、分句，并可用 AI 翻译成中文；也可以写成“德语 | 中文”自带翻译。</p><input id="in" placeholder="标题，例如：工作邮件"><textarea id="tx" placeholder="直接粘贴德文即可，例如：Ich lerne seit einem Jahr Deutsch. Das macht mir Spaß."></textarea><label class="mut"><input type="checkbox" id="trc" checked style="width:auto;margin:0 6px 0 0">用 AI 自动翻译成中文</label><div class="row"><input type="file" id="fl" accept=".txt,.md" style="flex:1"><button class="p" data-a="imp">保存并开始学</button></div>'+
     (S.imp.length?'<h2 style="font-size:17px;margin:20px 0 8px">已导入</h2>'+S.imp.map((t,i)=>'<div class="vi"><div>'+esc(t.n)+' <span class="mut">'+t.l.length+' 句</span></div><button data-a="delimp" data-i="'+i+'">删除</button></div>').join(""):"");
     $("#fl").onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{$("#tx").value=r.result;if(!$("#in").value)$("#in").value=f.name.replace(/\.\w+$/,"")};r.readAsText(f)};
   }
@@ -370,10 +392,11 @@ function openSheet(w,ctx){
   $("#sheet").classList.add("show");speak(w);lookup(w,ctx);
 }
 const PRE={"OpenAI":["https://api.openai.com/v1","gpt-4o-mini"],"DeepSeek":["https://api.deepseek.com/v1","deepseek-chat"],"通义千问":["https://dashscope.aliyuncs.com/compatible-mode/v1","qwen-plus"],"Gemini":["https://generativelanguage.googleapis.com/v1beta/openai","gemini-2.0-flash"]};
-const DICT=[["德语助手","https://dict.eudic.net/dicts/de/{w}"],["Langenscheidt","https://en.langenscheidt.com/german-chinese/{w}"],["有道","https://dict.youdao.com/result?word={w}&lang=de"],["Linguee","https://cn.linguee.com/中文-德语/search?source=auto&query={w}"],["Wiktionary","https://de.wiktionary.org/wiki/{w}"]];
+const DICT=[["德语助手","https://dict.eudic.net/dicts/de/{w}"],["Langenscheidt","https://en.langenscheidt.com/german-chinese/{w}"],["Wiktionary","https://de.wiktionary.org/wiki/{w}"]];
 const dictHtml=w=>(C.dict?[["我的词典",C.dict]]:[]).concat(DICT).map(x=>'<a class="dl" href="'+esc(x[1].replace("{w}",encodeURIComponent(w)))+'" target="_blank" rel="noopener">'+x[0]+"</a>").join("");
 const bare=l=>l.split(/\s+/).pop();
-const srcAI=()=>{const m=C.model||(C.prov==="openai"?"":"claude-haiku-5-5");return "AI 翻译"+(m?"（"+m+"）":"")};
+const srcAI=()=>"AI 翻译";
+const srcName=x=>/MyMemory/i.test(x||"")?"MyMemory 翻译":/^AI/.test(x||"")?"AI 翻译":(x||"");
 function addToTopic(name,lines,e){
   const k=x=>String(x).trim().toLowerCase().replace(/\s+/g," ");
   let t=S.imp.find(x=>k(x.n)===k(name));const ex=!!t;
@@ -388,8 +411,8 @@ async function tzRun(){
   try{
     let de,src;
     const free=async()=>{const o=[];for(const z of zs)o.push(await mymem(z,"zh-CN|de"));return o};
-    if(hasAI()){try{de=parseJ(await ask('把下列中文逐句翻译成自然、常用、适合 A2 水平学习者的德语。只输出 JSON 字符串数组，长度必须是 '+zs.length+'，不要 Markdown。\n'+JSON.stringify(zs)));src=srcAI()}catch(e){de=await free();src="MyMemory 机器翻译（AI 失败："+(e.message||"出错")+"，已改用免费翻译）"}}
-    else{de=await free();src="MyMemory 机器翻译"}
+    if(hasAI()){try{de=parseJ(await ask('把下列中文逐句翻译成自然、常用、适合 A2 水平学习者的德语。只输出 JSON 字符串数组，长度必须是 '+zs.length+'，不要 Markdown。\n'+JSON.stringify(zs)));src=srcAI()}catch(e){de=await free();src="MyMemory 翻译（AI 失败，已改用）"}}
+    else{de=await free();src="MyMemory 翻译"}
     tzRes={src,l:zs.map((z,i)=>[String(de[i]||""),z])};
   }catch(e){alert("翻译失败："+(e.message||"请稍后重试"))}
   tzBusy=false;if(view==="tz")render();
@@ -424,10 +447,10 @@ async function lookup(w,ctx){
     let fb="",r=S.c&&S.c[key];
     if(!r){let ai=hasAI(),k2=key;
     if(ai){try{r=parseJ(await ask('中文母语的 A2 德语学习者点击了句子中的单词。句子：'+ctx+'\n单词：'+w+'\n请结合句子，只输出 JSON：{"lemma":"原形（名词带冠词，如 das Frühstück）","pos":"词性（中文）","zh":"在此句中的简明中文释义","form":"该词在句中的变形说明，如：第二人称单数现在时、第三格复数、过去分词；若本身就是原形则留空","forms":"主要变形：动词写 Infinitiv – 第三人称现在时 – Präteritum – Perfekt（如 gehen – geht – ging – ist gegangen）；名词写 单数 – 复数（如 das Kind – die Kinder）；其他词性留空","note":"一句简短用法提示，可为空"}'));r.src=srcAI()}catch(e){fb=e.message||"出错";ai=false}}
-    if(!ai){k2="f|"+w.toLowerCase()+"|"+ctx;r=S.c&&S.c[k2];if(!r)r={zh:await mymem(w),src:"MyMemory 机器翻译"}}
+    if(!ai){k2="f|"+w.toLowerCase()+"|"+ctx;r=S.c&&S.c[k2];if(!r)r={zh:await mymem(w),src:"MyMemory 翻译"}}
     S.c=S.c||{};S.c[k2]=r;persist()}
     const b=$("#addb");if(!box()||!b||b.dataset.w!==w)return;
-    lkInfo=r.pos||"";lkSrc=r.src||(hasAI()?"AI 翻译":"MyMemory 机器翻译");lkLemma=r.lemma||"";lkForms=r.forms||"";lkForm=r.form||"";const dl=$("#dls");if(dl&&r.lemma)dl.innerHTML=dictHtml(bare(r.lemma));
+    lkInfo=r.pos||"";lkSrc=srcName(r.src||(hasAI()?"AI 翻译":"MyMemory 翻译"));lkLemma=r.lemma||"";lkForms=r.forms||"";lkForm=r.form||"";const dl=$("#dls");if(dl&&r.lemma)dl.innerHTML=dictHtml(bare(r.lemma));
     box().innerHTML=!r.lemma?'<span class="tag">'+esc(lkSrc)+'</span> <span class="mut">'+(fb?"AI 失败（"+esc(fb)+"），已改用免费翻译，仅供参考。":"仅供参考；配置 AI 后可显示原形、词性和变形。")+'</span>':'<span class="tag">'+esc(lkSrc)+'</span> <b>原形：'+esc(r.lemma||w)+'</b> '+esc(r.pos||"")+(r.lemma&&r.lemma.toLowerCase().split(" ").pop()!==w.toLowerCase()?'<div class="mut">句中的“'+esc(w)+'”是'+esc(r.form||"变形")+'</div>':"")+(r.forms?'<div>'+esc(r.forms)+"</div>":"")+(r.note?'<div>'+esc(r.note)+"</div>":"");
     const mz=$("#mz");if(mz&&!mz.value)mz.value=r.zh||"";
   }catch(e){if(box())box().textContent="自动查义不可用（"+(e.message||e.code||"出错")+"），可点“查词典”手动查。"}
@@ -457,13 +480,13 @@ async function genRun(){
   busy="";if(view==="ai")render();
 }
 document.addEventListener("input",e=>{if(e.target.id==="qs"){fq=e.target.value;paintList()}});
-document.addEventListener("change",e=>{if(e.target.id==="rp"){C.rp=+e.target.value;saveC()}});
+document.addEventListener("change",e=>{if(e.target.id==="vs"){C.vs=e.target.value;delete C.vdr;saveC();render()}if(e.target.id==="rp"){C.rp=+e.target.value;saveC()}});
 document.addEventListener("click",e=>{unlockAudio();
   const b=e.target.closest("[data-a]");if(!b)return;
   const a=b.dataset.a,d=b.dataset;
-  if(a==="nav"){stopAll();view=d.v;flip=false;fq="";pnl=false;manage=false;$("#sheet").classList.remove("show");render()}
-  else if(a==="open"){cur=d.id;view="topic";manage=false;fq="";pnl=false;render();scrollTo(0,0)}
-  else if(a==="back"){stopAll();manage=false;fq="";pnl=false;view="home";render()}
+  if(a==="nav"){stopAll();view=d.v==="add"?addLast:d.v;if(["ai","tz","imp"].includes(view))addLast=view;flip=false;fq="";pnl=false;srch=false;manage=false;$("#sheet").classList.remove("show");render()}
+  else if(a==="open"){cur=d.id;view="topic";manage=false;fq="";pnl=false;srch=false;render();scrollTo(0,0)}
+  else if(a==="back"){stopAll();manage=false;fq="";pnl=false;srch=false;view="home";render()}
   else if(a==="pall"){if(playing||bgBusy){stopAll();bgBusy=false;hi()}else{playing=true;playList(qList(),0,0)}}
   else if(a==="pb"){bgPlay()}
   else if(a==="pn"){pnl=!pnl;const y=scrollY;render();scrollTo(0,y)}
@@ -488,11 +511,15 @@ document.addEventListener("click",e=>{unlockAudio();
     const de=$("#ed1").value.trim();if(!de)return;b.disabled=true;b.textContent="翻译中…";
     (async()=>{try{let zh;if(hasAI()){try{zh=(await ask("把这句德语翻译成简体中文，只输出译文：\n"+de)).trim()}catch(e){zh=await mymem(de)}}else zh=await mymem(de);$("#ed2").value=zh}catch(e){alert("翻译失败："+e.message)}b.disabled=false;b.textContent="德→中翻译"})();
   }
-  else if(a==="ved"){openVEdit(+d.i)}
+  else if(a==="vd"){stopAll();view="vd";vdi=+d.i;render();scrollTo(0,0)}
+  else if(a==="vback"){view="vocab";render()}
+  else if(a==="vedit"){openVEdit(vdi)}
+  else if(a==="vdir"){C.vdr=vdirNow()==="desc"?"asc":"desc";saveC();const y=scrollY;render();scrollTo(0,y)}
+  else if(a==="sr"){srch=!srch;if(!srch)fq="";const y=scrollY;render();scrollTo(0,y);if(srch){const i=$("#qs");if(i)i.focus()}}
   else if(a==="vsave"){
     const x=S.v[+d.i];if(!x)return;const nw=$("#ve1").value.trim();if(!nw){alert("单词不能为空");return}
     if(nw.toLowerCase()!==x.w.toLowerCase()){S.vd[x.w.toLowerCase()]=Date.now();if(S.vd[nw.toLowerCase()])S.vd[nw.toLowerCase()]=-Date.now()}
-    x.w=nw;x.zh=$("#ve2").value.trim();x.ctx=$("#ve3").value.trim();save();$("#sheet").classList.remove("show");render();
+    x.w=nw;x.zh=$("#ve2").value.trim();x.ctx=$("#ve3").value.trim();x.info=$("#ve4").value.trim();x.forms=$("#ve5").value.trim();save();$("#sheet").classList.remove("show");render();
   }
   else if(a==="zt"){const v=!zhOn();if(view==="vocab")C.pzv=v;else C.pzt=v;saveC();b.classList.toggle("on",v)}
   else if(a==="ttest"){saveCfg();warnTTS=false;ga.dataset.u="";unlockAudio();speak("Guten Tag! Schön, dich zu sehen.",null,"de")}
@@ -503,9 +530,9 @@ document.addEventListener("click",e=>{unlockAudio();
   else if(a==="mast"){const k=cur+d.i;if(S.m[k])delete S.m[k];else S.m[k]=1;save();render()}
   else if(a==="word"){const li=b.closest(".line");const t=all().find(x=>x.id===cur);openSheet(d.w,t.l[li.dataset.i][0])}
   else if(a==="close"){$("#sheet").classList.remove("show")}
-  else if(a==="addw"){const zh=$("#mz").value.trim();const hw=lkLemma||d.w;[hw,d.w].forEach(k=>{k=k.toLowerCase();if(S.vd[k])S.vd[k]=-Date.now()});const ex=S.v.find(x=>x.w.toLowerCase()===hw.toLowerCase()||x.w.toLowerCase()===d.w.toLowerCase());const extra={src:lkSrc,info:lkInfo,forms:lkForms,form:hw.toLowerCase()!==d.w.toLowerCase()?d.w+(lkForm?"（"+lkForm+"）":""):""};if(ex){ex.zh=zh;if(lkSrc)ex.src=lkSrc;if(lkLemma){ex.w=hw;Object.assign(ex,extra)}}else S.v.unshift(Object.assign({w:hw,zh,ctx:d.c,due:Date.now(),iv:0},extra));save();$("#sheet").classList.remove("show");if(view==="vocab")render()}
+  else if(a==="addw"){const zh=$("#mz").value.trim();const hw=lkLemma||d.w;[hw,d.w].forEach(k=>{k=k.toLowerCase();if(S.vd[k])S.vd[k]=-Date.now()});const ex=S.v.find(x=>x.w.toLowerCase()===hw.toLowerCase()||x.w.toLowerCase()===d.w.toLowerCase());const extra={src:lkSrc,info:lkInfo,forms:lkForms,form:hw.toLowerCase()!==d.w.toLowerCase()?d.w+(lkForm?"（"+lkForm+"）":""):""};if(ex){ex.zh=zh;if(lkSrc)ex.src=lkSrc;if(lkLemma){ex.w=hw;Object.assign(ex,extra)}}else S.v.unshift(Object.assign({w:hw,zh,ctx:d.c,t:Date.now(),due:Date.now(),iv:0},extra));save();$("#sheet").classList.remove("show");if(view==="vocab")render()}
   else if(a==="say"){speak(d.w)}
-  else if(a==="del"){if(!confirm("删除这个生词？"))return;const x=S.v.splice(+d.i,1)[0];S.vd[x.w.toLowerCase()]=Date.now();save();render()}
+  else if(a==="del"){if(!confirm("删除这个生词？"))return;const x=S.v.splice(+d.i,1)[0];S.vd[x.w.toLowerCase()]=Date.now();save();if(view==="vd")view="vocab";render()}
   else if(a==="rev"){view="rev";flip=false;render()}
   else if(a==="flip"){flip=true;render()}
   else if(a==="yes"){rev.iv=Math.max(1,rev.iv*2);rev.due=Date.now()+rev.iv*864e5;save();flip=false;render()}
