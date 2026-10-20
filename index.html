@@ -31,8 +31,13 @@ main{max-width:640px;margin:0 auto;padding:16px}
 .tools{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
 .tools.sm button{font-size:13px;padding:5px 10px;min-height:34px}
 .tools .on{background:var(--acc2);border-color:var(--acc);color:var(--acc)}
-.line{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:12px;margin-bottom:8px;display:flex;gap:10px;align-items:flex-start}
+.line{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:12px;margin-bottom:8px;display:flex;flex-wrap:wrap;gap:10px;align-items:flex-start}
 .line.cur{background:var(--hl)}
+.stk{position:sticky;top:env(safe-area-inset-top,0px);z-index:4;background:var(--bg);margin:0 -16px 10px;padding:6px 16px 8px}
+.stk .tools,.pnl .tools{margin:0}
+.pnl{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:10px;margin-bottom:10px}
+.pnl input{margin:0 0 8px}
+.line .ed{flex-basis:100%;margin-top:0}
 .vi.cur{background:var(--hl)}
 .tools.sm select{font-size:13px;padding:4px 6px;min-height:34px}
 .line.done{opacity:.55}
@@ -142,7 +147,7 @@ const all=()=>{let a=T.concat(S.imp).filter(alive);const so=S.so;
   else{const o=S.o;a.sort((x,y)=>{const i=o.indexOf(x.id),j=o.indexOf(y.id);return(i<0?1e6:i)-(j<0?1e6:j)})}
   return a};
 let view="home",cur=null,showM=false,playing=false,curLine=-1,rev=null,flip=false;
-let manage=false,tzIn="",tzRes=null,tzMsg="",tzBusy=false,lkSrc="",edit=false,lkInfo="",lkLemma="",lkForms="",lkForm="",trBusy=null,busy="",gq="",gl="A2",gn=8,gen=null;
+let pnl=false,fq="",manage=false,tzIn="",tzRes=null,tzMsg="",tzBusy=false,lkSrc="",edit=false,lkInfo="",lkLemma="",lkForms="",lkForm="",trBusy=null,busy="",gq="",gl="A2",gn=8,gen=null;
 
 let ga=new Audio(),spk=0,warnTTS=false,bgOn=false,bgBusy=false,SIL="";
 const xesc=t=>String(t).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
@@ -201,9 +206,9 @@ async function speak(t,cb,lang){
 }
 function stopAll(){playing=false;bgOn=false;curLine=-1;halt();if("mediaSession" in navigator)try{navigator.mediaSession.playbackState="none"}catch(e){}}
 function qList(){
-  if(view==="vocab")return S.v.map((x,i)=>({i,de:x.w,zh:x.zh||""}));
+  if(view==="vocab")return S.v.map((x,i)=>({i,de:x.w,zh:x.zh||"",x})).filter(o=>mat(fq,o.x.w,o.x.zh,o.x.ctx));
   const t=all().find(x=>x.id===cur);
-  return t.l.map((p,i)=>({i,de:p[0],zh:p[1]||"",skip:!!p[2]||(!showM&&!!S.m[cur+i])})).filter(x=>!x.skip);
+  return t.l.map((p,i)=>({i,de:p[0],zh:p[1]||"",skip:!!p[2]||(!showM&&!!S.m[cur+i])})).filter(x=>!x.skip&&mat(fq,x.de,x.zh));
 }
 function playList(L,k,r){
   if(!playing||k>=L.length){stopAll();hi();return}
@@ -219,7 +224,7 @@ function playList(L,k,r){
 }
 function hi(){
   document.querySelectorAll(".line,.vi").forEach(e=>e.classList.toggle("cur",+e.dataset.i===curLine));
-  const b=$("#pa");if(b)b.textContent=playing&&!bgOn?"停止":"连续播放";
+  const b=$("#pa");if(b)b.textContent=bgBusy?"准备中…":playing?"停止":"连续播放";
   const c=$("#pb");if(c)c.textContent=bgOn?"停止后台播放":bgBusy?"准备中…":"后台播放";
 }
 async function bgPlay(){
@@ -232,7 +237,7 @@ async function bgPlay(){
   L.forEach(it=>{uniq.set("de|"+it.de,["de",it.de]);if(zon&&it.zh)uniq.set("zh|"+it.zh,["zh",it.zh])});
   const q=[...uniq.entries()],bufs=new Map();let done=0;
   try{
-    await Promise.all([0,1,2].map(async()=>{while(q.length){const e=q.shift();bufs.set(e[0],pcmOf(await azTTS(e[1][1],e[1][0])));const c=$("#pb");if(c&&bgBusy)c.textContent="准备音频 "+(++done)+"/"+uniq.size}}));
+    await Promise.all([0,1,2].map(async()=>{while(q.length){const e=q.shift();bufs.set(e[0],pcmOf(await azTTS(e[1][1],e[1][0])));const c=$("#pb"),pa0=$("#pa"),tx="准备音频 "+(++done)+"/"+uniq.size;if(bgBusy){if(c)c.textContent=tx;if(pa0)pa0.textContent=tx}}}));
     if(!bgBusy)return;
     const sil=ms=>new Uint8Array(48*ms),S7=sil(700),S5=sil(500),S9=sil(900),parts=[],marks=[];let bytes=0;
     for(const it of L){
@@ -259,8 +264,50 @@ async function bgPlay(){
     await ga.play();hi();
   }catch(e){stopAll();bgBusy=false;hi();alert("后台播放失败："+e.message)}
 }
-const playCtl=()=>'<select id="rp" aria-label="重复次数">'+[1,2,3,5].map(n=>'<option value="'+n+'"'+((C.rp||1)===n?" selected":"")+">重复"+n+"次</option>").join("")+'</select><button data-a="zt" class="'+(zhOn()?"on":"")+'">含中文</button><button id="pb" data-a="pb">后台播放</button>';
+const playCtl=()=>'<select id="rp" aria-label="重复次数">'+[1,2,3,5].map(n=>'<option value="'+n+'"'+((C.rp||1)===n?" selected":"")+">重复"+n+"次</option>").join("")+'</select><button data-a="zt" class="'+(zhOn()?"on":"")+'">含中文</button><button id="pb" data-a="pb">'+(bgOn?"停止后台播放":bgBusy?"准备中…":"后台播放")+'</button>';
 const vopt=(lg,cur)=>{const vs=("speechSynthesis" in window?speechSynthesis.getVoices():[]).filter(v=>v.lang.replace("_","-").toLowerCase().startsWith(lg));return '<option value="">自动</option>'+vs.map(v=>'<option value="'+esc(v.voiceURI)+'"'+(v.voiceURI===cur?" selected":"")+">"+esc(v.name)+"（"+esc(v.lang)+"）</option>").join("")};
+const mat=(f,...xs)=>{if(!f)return true;f=f.toLowerCase();return xs.some(x=>String(x||"").toLowerCase().includes(f))};
+const barHTML=(topic,t)=>'<div class="stk"><div class="tools sm"><button class="p" id="pa" data-a="pall">'+(bgBusy?"准备中…":playing?"停止":"连续播放")+'</button><button data-a="mg" class="'+(manage?"on":"")+'">管理</button><button data-a="pn" class="'+(pnl||fq?"on":"")+'">设置'+(fq?" ●":"")+(pnl?" ▴":" ▾")+'</button></div></div>'+
+  (pnl?'<div class="pnl"><input id="qs" type="search" placeholder="搜索中文或德语" value="'+esc(fq)+'" autocomplete="off" autocapitalize="off"><div class="tools sm">'+playCtl()+[0.6,0.8,1].map(r=>'<button data-a="sp" data-r="'+r+'" class="'+(S.sp==r?"on":"")+'">'+r+"×</button>").join("")+(topic?'<button data-a="sm" class="'+(showM?"on":"")+'">显示已掌握</button>'+(t&&(t.l.some(p=>!p[1]&&!p[2])||trBusy===cur)?'<button data-a="tr"'+(trBusy===cur?" disabled":"")+'>'+(trBusy===cur?"AI 翻译中…":"AI 翻译缺失句子")+"</button>":""):"")+"</div></div>":"");
+function topicList(){
+  const t=all().find(x=>x.id===cur);if(!t)return"";
+  let h=manage?'<button data-a="ad" style="width:100%;margin-bottom:8px">＋ 添加句子</button>':"",n=0;
+  t.l.forEach((p,i)=>{
+    if(p[2])return;const d=S.m[cur+i];if(d&&!showM)return;if(!mat(fq,p[0],p[1]))return;n++;
+    h+='<div class="line'+(d?" done":"")+'" id="l'+i+'" data-i="'+i+'"><div class="txt"'+(manage?' data-a="ed" data-i="'+i+'"':"")+'><div class="de">'+(manage?esc(p[0]):words(p[0]))+"</div>"+(p[1]?'<div class="zh">'+esc(p[1])+"</div>":"")+'</div><div class="act"><button data-a="play" data-i="'+i+'" aria-label="播放">▶</button></div>'+
+      (manage?'<div class="ed"><button data-a="lu" data-i="'+i+'" aria-label="上移">↑</button><button data-a="ld" data-i="'+i+'" aria-label="下移">↓</button><button data-a="mast" data-i="'+i+'" aria-label="已掌握">'+(d?"↺":"✓")+'</button><button data-a="dl" data-i="'+i+'" aria-label="删除">🗑</button></div>':"")+"</div>";
+  });
+  return h+(n?"":'<p class="sub">'+(fq?"没有匹配的句子。":"这个主题已全部掌握 🎉")+"</p>");
+}
+function vocabList(){
+  let h="",n=0;
+  S.v.forEach((x,i)=>{
+    if(!mat(fq,x.w,x.zh,x.ctx,x.form,x.forms,x.info))return;n++;
+    h+='<div class="vi" id="l'+i+'" data-i="'+i+'"><button data-a="say" data-w="'+esc(x.w)+'" aria-label="播放">▶</button><div'+(manage?' data-a="ved" data-i="'+i+'"':"")+'><b>'+esc(x.w)+'</b> <span class="mut">'+esc(x.zh||"（未填释义）")+"</span>"+(x.src?'<div class="mut">来源：'+esc(x.src)+"</div>":"")+(x.info?'<div class="mut">'+esc(x.info)+"</div>":"")+(x.form?'<div class="mut">句中形式：'+esc(x.form)+"</div>":"")+(x.forms?'<div class="mut">变形：'+esc(x.forms)+"</div>":"")+(x.ctx?'<div class="mut">'+esc(x.ctx)+"</div>":"")+"</div>"+(manage?'<button data-a="del" data-i="'+i+'" aria-label="删除">🗑</button>':"")+"</div>";
+  });
+  return h||'<p class="sub">'+(S.v.length?"没有匹配的单词。":"还没有生词。在主题页点任意单词即可添加。")+"</p>";
+}
+function paintList(){const l=$("#lst");if(l)l.innerHTML=view==="vocab"?vocabList():topicList()}
+function own(){
+  const t=all().find(x=>x.id===cur);if(!t)return null;
+  if(String(t.id).startsWith("imp"))return S.imp.find(x=>x.id===cur)||null;
+  if(!confirm("内置主题需要先复制成可编辑的主题（原内置主题会被隐藏，可在设置里恢复）。继续？"))return null;
+  const id="imp"+Date.now(),n={id,n:t.n,e:t.e,l:t.l.map(p=>[p[0],p[1]||""])};
+  S.imp.push(n);
+  t.l.forEach((_,i)=>{if(S.m[t.id+i]){S.m[id+i]=1;delete S.m[t.id+i]}});
+  S.del[t.id]=Date.now();const k=S.o.indexOf(t.id);if(k>=0)S.o[k]=id;
+  cur=id;save();render();return n;
+}
+function openEdit(i){
+  const t=S.imp.find(x=>x.id===cur);if(!t)return;const p=i>=0?t.l[i]:["",""];
+  $("#sheetin").innerHTML='<div class="mut">'+(i>=0?"编辑句子":"添加句子")+'</div><label class="mut">德语</label><textarea id="ed1" style="min-height:70px" autocapitalize="off">'+esc(p[0])+'</textarea><label class="mut">中文</label><textarea id="ed2" style="min-height:60px">'+esc(p[1]||"")+'</textarea><div class="row" style="margin-top:6px"><button data-a="edtr">德→中翻译</button>'+(i>=0?'<button data-a="eddel" data-i="'+i+'">删除</button>':"")+'</div><div class="row" style="margin-top:8px"><button data-a="close">取消</button><button class="p" data-a="edsave" data-i="'+i+'">保存</button></div>';
+  $("#sheet").classList.add("show");
+}
+function openVEdit(i){
+  const x=S.v[i];if(!x)return;
+  $("#sheetin").innerHTML='<div class="mut">编辑生词</div><label class="mut">单词</label><input id="ve1" value="'+esc(x.w)+'"><label class="mut">中文释义</label><input id="ve2" value="'+esc(x.zh||"")+'"><label class="mut">例句</label><textarea id="ve3" style="min-height:60px">'+esc(x.ctx||"")+'</textarea><div class="row" style="margin-top:8px"><button data-a="close">取消</button><button class="p" data-a="vsave" data-i="'+i+'">保存</button></div>';
+  $("#sheet").classList.add("show");
+}
 function words(s){return esc(s).replace(/[A-Za-zÄÖÜäöüß]+(?:-[A-Za-zÄÖÜäöüß]+)*/g,w=>'<span class="w" data-a="word" data-w="'+w+'">'+w+"</span>")}
 
 function render(){
@@ -273,15 +320,10 @@ function render(){
     $("#so").onchange=e=>{S.so=e.target.value;save();render()};
   }else if(view==="topic"){
     const t=all().find(x=>x.id===cur);
-    A.innerHTML='<div class="top"><button data-a="back">‹ 返回</button><h1>'+esc(t.n)+'</h1></div>'+
-    '<p class="sub">💡 点句子里的任意德语单词，即可自动查义并加入生词本。点“管理”可标记已掌握或删除句子。</p><div class="tools sm"><button class="p" id="pa" data-a="pall">连续播放</button>'+playCtl()+
-    [0.6,0.8,1].map(r=>'<button data-a="sp" data-r="'+r+'" class="'+(S.sp==r?"on":"")+'">'+r+"×</button>").join("")+
-    '<button data-a="sm" class="'+(showM?"on":"")+'">显示已掌握</button><button data-a="mg" class="'+(manage?"on":"")+'">管理</button>'+(t.l.some(p=>!p[1]&&!p[2])||trBusy===cur?'<button data-a="tr"'+(trBusy===cur?" disabled":"")+'>'+(trBusy===cur?"AI 翻译中…":"AI 翻译缺失句子")+"</button>":"")+'</div>'+
-    t.l.map((p,i)=>{if(p[2])return"";const d=S.m[cur+i];if(d&&!showM)return"";return '<div class="line'+(d?" done":"")+'" id="l'+i+'" data-i="'+i+'"><div class="txt"><div class="de">'+words(p[0])+'</div>'+(p[1]?'<div class="zh">'+esc(p[1])+"</div>":"")+'</div><div class="act"><button data-a="play" data-i="'+i+'" aria-label="播放">▶</button>'+(manage?'<button data-a="mast" data-i="'+i+'" aria-label="已掌握">'+(d?"↺":"✓")+"</button>"+(String(cur).startsWith("imp")?'<button data-a="dl" data-i="'+i+'" aria-label="删除这句">🗑</button>':""):"")+"</div></div>"}).join("")||'<p class="sub">这个主题已全部掌握 🎉</p>';
+    A.innerHTML='<div class="top"><button data-a="back">‹ 返回</button><h1>'+esc(t.n)+'</h1></div>'+barHTML(true,t)+'<p class="sub">'+(manage?"管理模式：点句子可编辑；↑↓ 调整顺序。":"点句子里的德语单词，可查义并加入生词本。")+'</p><div id="lst">'+topicList()+"</div>";
   }else if(view==="vocab"){
     const due=S.v.filter(x=>x.due<=Date.now()).length;
-    A.innerHTML='<div class="top"><h1>生词本</h1><button class="p" data-a="rev"'+(due?"":" disabled")+'>复习 '+due+"</button></div>"+(S.v.length?'<div class="tools sm"><button class="p" id="pa" data-a="pall">连续播放</button>'+playCtl()+[0.6,0.8,1].map(r=>'<button data-a="sp" data-r="'+r+'" class="'+(S.sp==r?"on":"")+'">'+r+"×</button>").join("")+'</div>':"")+
-    (S.v.length?S.v.map((x,i)=>'<div class="vi" id="l'+i+'" data-i="'+i+'"><button data-a="say" data-w="'+esc(x.w)+'">▶</button><div><b>'+esc(x.w)+"</b> <span class=\"mut\">"+esc(x.zh||"（未填释义）")+"</span>"+(x.src?'<div class="mut">来源：'+esc(x.src)+"</div>":"")+(x.info?'<div class="mut">'+esc(x.info)+"</div>":"")+(x.form?'<div class="mut">句中形式：'+esc(x.form)+"</div>":"")+(x.forms?'<div class="mut">变形：'+esc(x.forms)+"</div>":"")+(x.ctx?'<div class="mut">'+esc(x.ctx)+"</div>":"")+'</div><button data-a="del" data-i="'+i+'" aria-label="删除">✕</button></div>').join(""):'<p class="sub">还没有生词。在主题页点任意单词即可添加。</p>');
+    A.innerHTML='<div class="top"><h1>生词本</h1><button class="p" data-a="rev"'+(due?"":" disabled")+'>复习 '+due+"</button></div>"+(S.v.length?barHTML(false):"")+'<div id="lst">'+vocabList()+"</div>";
   }else if(view==="rev"){
     const q=S.v.filter(x=>x.due<=Date.now());
     if(!q.length){view="vocab";return render()}
@@ -414,27 +456,56 @@ async function genRun(){
   }catch(e){alert("生成失败："+(e.message||e.code||"请稍后重试"))}
   busy="";if(view==="ai")render();
 }
+document.addEventListener("input",e=>{if(e.target.id==="qs"){fq=e.target.value;paintList()}});
 document.addEventListener("change",e=>{if(e.target.id==="rp"){C.rp=+e.target.value;saveC()}});
 document.addEventListener("click",e=>{unlockAudio();
   const b=e.target.closest("[data-a]");if(!b)return;
   const a=b.dataset.a,d=b.dataset;
-  if(a==="nav"){stopAll();view=d.v;flip=false;$("#sheet").classList.remove("show");render()}
-  else if(a==="open"){cur=d.id;view="topic";manage=false;render();scrollTo(0,0)}
-  else if(a==="back"){stopAll();manage=false;view="home";render()}
-  else if(a==="pall"){if(playing){stopAll();hi()}else{playing=true;playList(qList(),0,0)}}
+  if(a==="nav"){stopAll();view=d.v;flip=false;fq="";pnl=false;manage=false;$("#sheet").classList.remove("show");render()}
+  else if(a==="open"){cur=d.id;view="topic";manage=false;fq="";pnl=false;render();scrollTo(0,0)}
+  else if(a==="back"){stopAll();manage=false;fq="";pnl=false;view="home";render()}
+  else if(a==="pall"){if(playing||bgBusy){stopAll();bgBusy=false;hi()}else{playing=true;playList(qList(),0,0)}}
   else if(a==="pb"){bgPlay()}
+  else if(a==="pn"){pnl=!pnl;const y=scrollY;render();scrollTo(0,y)}
+  else if(a==="ad"){if(!own())return;openEdit(-1)}
+  else if(a==="ed"){if(!own())return;openEdit(+d.i)}
+  else if(a==="lu"||a==="ld"){
+    const t=own();if(!t)return;const i=+d.i,st=a==="lu"?-1:1;let j=i+st;
+    while(j>=0&&j<t.l.length&&t.l[j][2])j+=st;
+    if(j<0||j>=t.l.length)return;
+    [t.l[i],t.l[j]]=[t.l[j],t.l[i]];
+    const mi=S.m[cur+i],mj=S.m[cur+j];delete S.m[cur+i];delete S.m[cur+j];if(mj)S.m[cur+i]=1;if(mi)S.m[cur+j]=1;
+    save();render();
+  }
+  else if(a==="edsave"){
+    const t=own();if(!t)return;const de=$("#ed1").value.trim(),zh=$("#ed2").value.trim(),i=+d.i;
+    if(!de){alert("德语不能为空");return}
+    if(i<0)t.l.push([de,zh]);else{t.l[i][0]=de;t.l[i][1]=zh}
+    save();$("#sheet").classList.remove("show");render();
+  }
+  else if(a==="eddel"){const t=own();if(!t)return;if(confirm("删除这一句？")){t.l[+d.i][2]=1;save();$("#sheet").classList.remove("show");render()}}
+  else if(a==="edtr"){
+    const de=$("#ed1").value.trim();if(!de)return;b.disabled=true;b.textContent="翻译中…";
+    (async()=>{try{let zh;if(hasAI()){try{zh=(await ask("把这句德语翻译成简体中文，只输出译文：\n"+de)).trim()}catch(e){zh=await mymem(de)}}else zh=await mymem(de);$("#ed2").value=zh}catch(e){alert("翻译失败："+e.message)}b.disabled=false;b.textContent="德→中翻译"})();
+  }
+  else if(a==="ved"){openVEdit(+d.i)}
+  else if(a==="vsave"){
+    const x=S.v[+d.i];if(!x)return;const nw=$("#ve1").value.trim();if(!nw){alert("单词不能为空");return}
+    if(nw.toLowerCase()!==x.w.toLowerCase()){S.vd[x.w.toLowerCase()]=Date.now();if(S.vd[nw.toLowerCase()])S.vd[nw.toLowerCase()]=-Date.now()}
+    x.w=nw;x.zh=$("#ve2").value.trim();x.ctx=$("#ve3").value.trim();save();$("#sheet").classList.remove("show");render();
+  }
   else if(a==="zt"){const v=!zhOn();if(view==="vocab")C.pzv=v;else C.pzt=v;saveC();b.classList.toggle("on",v)}
   else if(a==="ttest"){saveCfg();warnTTS=false;ga.dataset.u="";unlockAudio();speak("Guten Tag! Schön, dich zu sehen.",null,"de")}
   else if(a==="sp"){S.sp=+d.r;ga.playbackRate=S.sp;save();render()}
   else if(a==="sm"){showM=!showM;render()}
-  else if(a==="mg"){manage=!manage;render()}
+  else if(a==="mg"){manage=!manage;const y=scrollY;render();scrollTo(0,y)}
   else if(a==="play"){stopAll();const t=all().find(x=>x.id===cur);curLine=+d.i;hi();speak(t.l[d.i][0],()=>{curLine=-1;hi()})}
   else if(a==="mast"){const k=cur+d.i;if(S.m[k])delete S.m[k];else S.m[k]=1;save();render()}
   else if(a==="word"){const li=b.closest(".line");const t=all().find(x=>x.id===cur);openSheet(d.w,t.l[li.dataset.i][0])}
   else if(a==="close"){$("#sheet").classList.remove("show")}
   else if(a==="addw"){const zh=$("#mz").value.trim();const hw=lkLemma||d.w;[hw,d.w].forEach(k=>{k=k.toLowerCase();if(S.vd[k])S.vd[k]=-Date.now()});const ex=S.v.find(x=>x.w.toLowerCase()===hw.toLowerCase()||x.w.toLowerCase()===d.w.toLowerCase());const extra={src:lkSrc,info:lkInfo,forms:lkForms,form:hw.toLowerCase()!==d.w.toLowerCase()?d.w+(lkForm?"（"+lkForm+"）":""):""};if(ex){ex.zh=zh;if(lkSrc)ex.src=lkSrc;if(lkLemma){ex.w=hw;Object.assign(ex,extra)}}else S.v.unshift(Object.assign({w:hw,zh,ctx:d.c,due:Date.now(),iv:0},extra));save();$("#sheet").classList.remove("show");if(view==="vocab")render()}
   else if(a==="say"){speak(d.w)}
-  else if(a==="del"){const x=S.v.splice(+d.i,1)[0];S.vd[x.w.toLowerCase()]=Date.now();save();render()}
+  else if(a==="del"){if(!confirm("删除这个生词？"))return;const x=S.v.splice(+d.i,1)[0];S.vd[x.w.toLowerCase()]=Date.now();save();render()}
   else if(a==="rev"){view="rev";flip=false;render()}
   else if(a==="flip"){flip=true;render()}
   else if(a==="yes"){rev.iv=Math.max(1,rev.iv*2);rev.due=Date.now()+rev.iv*864e5;save();flip=false;render()}
@@ -460,7 +531,7 @@ document.addEventListener("click",e=>{unlockAudio();
   else if(a==="edit"){edit=!edit;render()}
   else if(a==="up"||a==="dn"){const ids=all().map(x=>x.id),i=ids.indexOf(d.id),j=a==="up"?i-1:i+1;if(j<0||j>=ids.length)return;[ids[i],ids[j]]=[ids[j],ids[i]];S.o=ids;S.so="custom";save();render()}
   else if(a==="dt"){const t=all().find(x=>x.id===d.id),im=String(t.id).startsWith("imp");if(confirm("删除主题“"+t.n+"”？"+(im?"":"（内置主题可在设置里恢复）"))){S.del[t.id]=Date.now();if(im)S.imp=S.imp.filter(x=>x.id!==t.id);save();render()}}
-  else if(a==="dl"){const t=S.imp.find(x=>x.id===cur);if(t&&confirm("删除这一句？")){t.l[d.i][2]=1;save();render()}}
+  else if(a==="dl"){if(!confirm("删除这一句？"))return;const t=own();if(!t)return;t.l[+d.i][2]=1;save();render()}
   else if(a==="restore"){T.forEach(t=>{if(S.del[t.id]>0)S.del[t.id]=-Date.now()});save();alert("已恢复内置主题")}
   else if(a==="gen"){const q=$("#gt").value.trim();if(!q){alert("请先输入想学的场景");return}gq=q;gl=$("#gl").value;gn=+$("#gn").value;genRun()}
   else if(a==="gsave"){const r=addToTopic($("#gnm").value.trim()||gen.n,gen.l,"✨");gen=null;cur=r.id;view="topic";render();scrollTo(0,0);if(r.ex)alert("已有同名主题，已合并（新增 "+r.add+" 句，重复的已跳过）")}
