@@ -1,8 +1,6 @@
-const V="dl-v4",A=["./","index.html","manifest.webmanifest","icon.svg","icon-180.png","icon-192.png","icon-512.png"];
-self.addEventListener("install",e=>{e.waitUntil(caches.open(V).then(c=>c.addAll(A)));self.skipWaiting()});
-self.addEventListener("activate",e=>{e.waitUntil(caches.keys().then(k=>Promise.all(k.filter(x=>x.startsWith("dl-v")&&x!==V).map(x=>caches.delete(x)))));self.clients.claim()});
-self.addEventListener("fetch",e=>{
-  const u=new URL(e.request.url);
-  if(e.request.method!=="GET"||u.origin!==location.origin)return;
-  e.respondWith(fetch(e.request).then(r=>{const c=r.clone();caches.open(V).then(x=>x.put(e.request,c));return r}).catch(()=>caches.match(e.request).then(m=>m||caches.match("index.html"))));
-});
+const K='dl-shell-v4',F=['./','./index.html','./manifest.webmanifest','./icon-192.png','./icon-512.png'];
+self.addEventListener('install',e=>e.waitUntil(caches.open(K).then(c=>c.addAll(F))));
+self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k.startsWith('dl-shell')&&k!==K).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
+self.addEventListener('message',e=>{if(e.data==='skip')self.skipWaiting()});
+self.addEventListener('fetch',e=>{const r=e.request;if(r.method!=='GET'||new URL(r.url).origin!==location.origin)return;
+e.respondWith(caches.match(r,{ignoreSearch:true}).then(m=>{const n=fetch(r).then(x=>{if(x.ok){const c=x.clone();caches.open(K).then(h=>h.put(r,c))}return x}).catch(()=>m||caches.match('./index.html'));return m||n}))});
