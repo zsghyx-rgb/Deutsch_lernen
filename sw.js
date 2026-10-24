@@ -1,4 +1,4 @@
-const K='dl-shell-v5',F=['./','./index.html','./manifest.webmanifest','./icon-192.png','./icon-512.png'];
+const K='dl-shell-v6',F=['./','./index.html','./manifest.webmanifest','./icon-192.png','./icon-512.png'];
 self.addEventListener('install',e=>e.waitUntil(caches.open(K).then(c=>c.addAll(F))));
 self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k.startsWith('dl-shell')&&k!==K).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
 self.addEventListener('message',e=>{if(e.data==='skip')self.skipWaiting()});

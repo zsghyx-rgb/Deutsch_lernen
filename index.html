@@ -6,29 +6,33 @@
 :root{--bg:#f6f4ee;--card:#fffdf8;--tx:#23282c;--mu:#6b7378;--ln:#e2ddd0;--pr:#1f5f8b;--ok:#2e7d4f;--hl:#fff3c4;--er:#b3392f}
 :root[data-t=dark]{--bg:#14191d;--card:#1c2329;--tx:#e8e6df;--mu:#98a1a7;--ln:#2d363d;--pr:#5aa6d6;--ok:#58b27a;--hl:#4a4217;--er:#e27a70}
 @media(prefers-color-scheme:dark){:root[data-t=auto]{--bg:#14191d;--card:#1c2329;--tx:#e8e6df;--mu:#98a1a7;--ln:#2d363d;--pr:#5aa6d6;--ok:#58b27a;--hl:#4a4217;--er:#e27a70}}
-*{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.6 Georgia,"Noto Serif SC",serif}
+*{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.45 Georgia,"Noto Serif SC",serif}
 button,input,select,textarea{font:inherit;color:inherit}
 h1,h2,h3,button,.b,nav{font-family:"Avenir Next","PingFang SC",system-ui,sans-serif}
-#app{max-width:640px;margin:0 auto;padding:calc(env(safe-area-inset-top) + 12px) 14px calc(80px + env(safe-area-inset-bottom))}
-h1{font-size:22px;margin:4px 0 12px;display:flex;justify-content:space-between;align-items:center;gap:8px}h2{font-size:17px;margin:14px 0 6px}h3{font-size:15px;margin:10px 0 4px}
-.card{background:var(--card);border:1px solid var(--ln);border-radius:14px;padding:14px;margin:10px 0}
+#app{max-width:640px;margin:0 auto;padding:calc(env(safe-area-inset-top) + 6px) 12px calc(76px + env(safe-area-inset-bottom))}
+h1{font-size:20px;margin:2px 0 8px;display:flex;justify-content:space-between;align-items:center;gap:8px}h2{font-size:17px;margin:10px 0 4px}h3{font-size:14px;margin:6px 0 2px}
+.card{background:var(--card);border:1px solid var(--ln);border-radius:14px;padding:10px;margin:8px 0}
 button{min-height:40px;padding:0 14px;border-radius:10px;border:1px solid var(--ln);background:var(--card);cursor:pointer}
 button.p{background:var(--pr);color:#fff;border-color:var(--pr)}button.d{color:var(--er)}button:disabled{opacity:.5;cursor:not-allowed}
 button.i{min-width:40px;padding:0;border:0;background:none;color:var(--pr);display:inline-flex;align-items:center;justify-content:center}button.i:active{opacity:.5}
-input,select,textarea{width:100%;padding:10px;border-radius:10px;border:1px solid var(--ln);background:var(--card);margin:4px 0 10px}
-textarea{min-height:110px;resize:vertical}label{display:block;font-size:14px;color:var(--mu);font-family:system-ui,sans-serif}
+input,select,textarea{width:100%;padding:8px 10px;border-radius:10px;border:1px solid var(--ln);background:var(--card);margin:3px 0 8px}
+textarea{min-height:90px;resize:vertical}label{display:block;font-size:14px;color:var(--mu);font-family:system-ui,sans-serif}
 label.c{display:flex;gap:8px;align-items:center;color:var(--tx)}label.c input{width:auto;margin:0}
 .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.row>.g{flex:1}
 .b{display:inline-block;font-size:12px;padding:1px 8px;border-radius:99px;background:var(--pr);color:#fff;margin-left:6px}
 .mu{color:var(--mu);font-size:14px}.hl{background:var(--hl)}
 .w{cursor:pointer;border-radius:3px}.w.k{text-decoration:underline;text-decoration-color:var(--pr)}
-.li{display:flex;gap:8px;align-items:center;padding:10px 0;border-bottom:1px solid var(--ln)}.li .g{flex:1;min-width:0}
-.sc{overflow-x:auto}table{border-collapse:collapse;width:100%;font-size:14px}td,th{border:1px solid var(--ln);padding:4px 8px;text-align:left;white-space:nowrap}
+.li{display:flex;gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid var(--ln)}.li .g{flex:1;min-width:0}
+.sc{overflow-x:auto}table{border-collapse:collapse;width:100%;font-size:14px}td,th{border:1px solid var(--ln);padding:2px 6px;font-size:13px;text-align:left;white-space:nowrap}
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.tp{text-align:center;cursor:pointer}.bar{height:5px;background:var(--ln);border-radius:9px;overflow:hidden}.bar i{display:block;height:100%;background:var(--ok)}
 nav{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:1px solid var(--ln);padding-bottom:env(safe-area-inset-bottom);z-index:5}
 nav div{max-width:640px;margin:auto;display:flex}nav button{flex:1;height:56px;border:0;border-radius:0;background:none;color:var(--mu);font-size:13px}nav button.on{color:var(--pr);font-weight:700}
 #ov{position:fixed;inset:0;background:#0008;z-index:8;display:none}#sh{position:fixed;left:0;right:0;bottom:0;max-height:85vh;overflow:auto;background:var(--bg);border-radius:16px 16px 0 0;z-index:9;display:none;padding:16px 16px calc(16px + env(safe-area-inset-bottom));max-width:640px;margin:auto}
 #ts{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(72px + env(safe-area-inset-bottom));z-index:20;display:flex;flex-direction:column;gap:6px}#ts div{background:#222;color:#fff;padding:8px 14px;border-radius:10px;font-size:14px;font-family:system-ui}
+.sec{border-left:3px solid var(--ok);padding-left:8px;margin:8px 0 2px;font-size:13px;color:var(--ok);font-family:system-ui,sans-serif}
+.en{padding:6px 0;border-bottom:1px solid var(--ln);cursor:pointer}.hw{font-size:18px}.sm{font-size:13px}.en .sm{margin-top:1px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:6px 0}.chip{min-height:32px;padding:0 12px;border-radius:99px;font-size:14px}
+.dt p{margin:2px 0}.dt .li{padding:4px 0}.dt .sc{margin:2px 0}
 </style></head><body>
 <div id="app"></div><nav><div id="nv"></div></nav><div id="ov"></div><div id="sh"></div><div id="ts"></div>
 <script>
@@ -48,7 +52,7 @@ let C=rd('dl_cfg',{});for(const k of ['ai','dict','tts','ui','sync'])C[k]=Object
 let D=Object.assign({version:1,updatedAt:0,mastered:{},vocab:[],importedTopics:[BUILTIN],history:[],deleted:{},order:[],sort:'time'},rd('dl',{}));
 let CACHE=rd('dl_cache',{});
 const saveD=()=>{D.updatedAt=Date.now();D.dirty=1;wr('dl',D);schedSync()},saveC=()=>wr('dl_cfg',C);
-const S={tq:'',tset:0,tab:0,sub:'',q:'',res:null,busy:false,vq:'',vlim:100,manage:false,tid:null,rev:null,gen:null,sel:null,playing:false,vsort:'time'};
+const S={sug:[],wd:null,resq:'',tq:'',tset:0,tab:0,sub:'',q:'',res:null,busy:false,vq:'',vlim:100,manage:false,tid:null,rev:null,gen:null,sel:null,playing:false,vsort:'time'};
 /* ===== AI ===== */
 function parseJ(t){t=String(t).replace(/```json|```/g,'');const a=t.search(/[\{\[]/),b=Math.max(t.lastIndexOf('}'),t.lastIndexOf(']'));if(a<0||b<a)throw new Error('AI 返回格式异常，请重试');try{return JSON.parse(t.slice(a,b+1))}catch(e){throw new Error('AI 返回格式异常，请重试')}}
 async function ai(user){const a=C.ai;if(!a.apiKey)throw new Error('noai');if(!navigator.onLine)throw new Error('当前离线，无法使用 AI');const sys='只输出 JSON，不要 Markdown，不要解释。';let r,j;const u=a.baseUrl.replace(/\/$/,'');
@@ -94,14 +98,38 @@ return h}
 const exHtml=e=>(e||[]).map(x=>'<div class="li"><div class="g">'+esc(x.de)+'<div class="mu">'+esc(x.zh)+'</div></div>'+spk(x.de)+'</div>').join('')||'<div class="mu">—</div>';
 function wordCard(d){return '<div class="card"><div class="row"><h2 class="g" style="margin:0">'+esc(d.lemma)+badge(d)+'</h2>'+spk(d.lemma)+'</div><p>'+dash(d.zh)+'</p>'+(d.note?'<p class="mu">'+esc(d.note)+'</p>':'')+tables(d)+'<h3>例句</h3>'+exHtml(d.examples)+'<button class="p" data-a="addres">加入生词本</button></div>'}
 const gw=s=>hasCJK(s)?esc(s):wrap(s);
-const sentCard=r=>{const zh=hasCJK(r.src),single=zh&&r.out.trim().split(/\s+/).length<=3;return '<div class="card"><div class="row"><div class="g">'+gw(r.src)+'</div>'+spk(r.src,zh?'zh':'de')+'</div><hr style="border:0;border-top:1px solid var(--ln)"><div class="row"><div class="g"><b>'+gw(r.out)+'</b></div>'+spk(r.out,hasCJK(r.out)?'zh':'de')+'</div>'+(single?'<button class="p" data-a="lookup" data-w="'+esc(r.out.trim())+'" '+(S.busy?'disabled':'')+'>查看词条 / 加入生词本</button>':'<p class="mu">点击德语单词可查词并加入生词本</p>')+'</div>'};
+const sentCard=r=>{const zh=hasCJK(r.src);return '<div class="card"><div class="row"><div class="g">'+gw(r.src)+'</div>'+spk(r.src,zh?'zh':'de')+'</div><hr style="border:0;border-top:1px solid var(--ln);margin:6px 0"><div class="row"><div class="g"><b>'+gw(r.out)+'</b></div>'+spk(r.out,hasCJK(r.out)?'zh':'de')+'</div></div>'};
+function detailBody(d,v){const f=d.forms||{},verb=d.pos==='动词'||!!(f.praesens&&f.praesens.ich),info=['词性 '+dash(d.pos),'冠词 '+dash(d.article),'复数 '+dash(d.plural),'第二格 '+dash(d.genitiv)];
+if(verb)info.push('助动词 '+dash(f.hilfsverb),'过去分词 '+dash(f.partizipII));if(d.adjective)info.push('比较级 '+dash(d.adjective.komparativ),'最高级 '+dash(d.adjective.superlativ));
+let h='<div class="dt"><div class="row"><h2 class="g" style="margin:0">'+esc(d.lemma)+badge(d)+'</h2>'+spk(d.lemma)+'</div><div><b>'+dash(d.zh)+'</b></div><div class="mu sm">'+info.join(' · ')+'</div>';
+if(v)h+='<div class="mu sm">添加 '+new Date(v.createdAt).toLocaleDateString()+' · 到期 '+new Date(v.due).toLocaleString()+' · 间隔 '+v.interval+' 天 · 熟练度 '+v.ease.toFixed(1)+'</div>';
+return h+'<h3>解释</h3><p>'+dash(d.explain)+'</p><div class="mu sm">搭配：'+dash((d.collocations||[]).join('、'))+'<br>易错点：'+dash(d.pitfalls)+'<br>同义：'+dash((d.synonyms||[]).join('、'))+'　反义：'+dash((d.antonyms||[]).join('、'))+'</div><h3>变形</h3>'+(tables(d)||'<div class="mu sm">—</div>')+'<h3>例句</h3>'+exHtml(d.examples)+'</div>'}
 /* ===== search / history ===== */
-async function doQuery(forceWord){const q=S.q.trim();if(!q||S.busy)return;S.busy=true;render();let raw;
-try{if(!forceWord&&(hasCJK(q)||/\s/.test(q)||q.length>40)){let out;const from=hasCJK(q)?'zh-CN':'de',to=hasCJK(q)?'de':'zh-CN';try{const r=await ai('把下面文本翻译成'+(to==='de'?'德语':'中文')+'，输出JSON：{"t":"译文"}。文本：'+q.slice(0,1000));out=str(r.t)}catch(e){if(e.message!=='noai'&&!/无法连接|离线/.test(e.message))throw e;out=await mm(q,from,to)}raw={type:'sentence',src:q,out:out}}
-else raw={type:'word',data:await lookupWord(q)};
-S.res=raw;D.history.unshift({id:uid('h_'),type:raw.type,query:q,answer:raw.type==='word'?raw.data.zh:raw.out,createdAt:Date.now(),raw:raw});D.history=D.history.slice(0,100);saveD()}catch(e){toast(e.message)}
+const TRL={};
+async function trLocal(t,from,to){if(!('Translator' in self))throw 0;const k=from+to;if(!TRL[k]){const o={sourceLanguage:from,targetLanguage:to};if(await Translator.availability(o)==='unavailable')throw 0;TRL[k]=await Translator.create(o)}return await TRL[k].translate(t)}
+async function transText(q){const zh=hasCJK(q),f=zh?'zh':'de',t=zh?'de':'zh';try{const r=await trLocal(q,f,t);if(r)return r}catch(e){}
+try{const r=await ai('把下面文本翻译成'+(zh?'德语':'中文')+'，输出JSON：{"t":"译文"}。文本：'+q.slice(0,1000));if(str(r.t))return str(r.t)}catch(e){if(e.message!=='noai'&&!/无法连接|离线/.test(e.message))throw e}
+return await mm(q,zh?'zh-CN':'de',zh?'de':'zh-CN')}
+const LPROMPT=q=>'你是德汉词典。查询：'+q+'。返回JSON数组，最多8项，按相关度排序：[{"w":"德语词条，名词带冠词如 das Frühstück","g":"复数或语法提示，如 复数 Frühstücke；动词可写 不规则；没有则空","p":"词性缩写 n./vt./vi./adj./adv./prep./conj.","zh":"简明中文释义"}]。输入为中文时返回对应的德语词条；包含拼写相近或同词根的常用词条；不确定不要编造。';
+async function lookupList(q){const k='L|'+q;if(CACHE[k])return CACHE[k];let items;
+try{const r=await ai(LPROMPT(q));items=(Array.isArray(r)?r:(r&&r.items)||[]).map(x=>({w:str(x&&x.w),g:str(x&&x.g),p:str(x&&x.p),zh:str(x&&x.zh)})).filter(x=>x.w).slice(0,8);if(!items.length)throw new Error('AI 返回格式异常，请重试');CACHE[k]=items;const ks=Object.keys(CACHE);if(ks.length>200)delete CACHE[ks[0]];wr('dl_cache',CACHE)}
+catch(e){if(e.message!=='noai'&&!/无法连接|离线/.test(e.message))throw e;const z=await transText(q);items=[hasCJK(q)?{w:z,g:'',p:'',zh:q}:{w:q,g:'',p:'',zh:z}]}
+return items}
+async function doQuery(){const q=S.q.trim();if(!q||S.busy)return;S.busy=true;S.sub='';render();let raw;
+try{const cjk=hasCJK(q);if((cjk&&q.length>8)||(!cjk&&(q.split(/\s+/).length>2||q.length>40)))raw={type:'sentence',src:q,out:await transText(q)};else raw={type:'list',q:q,items:await lookupList(q)};
+S.res=raw;S.resq=q;D.history.unshift({id:uid('h_'),type:raw.type,query:q,answer:raw.type==='list'?(raw.items[0]?raw.items[0].zh:''):raw.out,createdAt:Date.now(),raw:raw});D.history=D.history.slice(0,100);saveD()}catch(e){toast(e.message)}
 S.busy=false;render()}
-function openHist(id){const h=D.history.find(x=>x.id===id);if(!h)return;const r=h.raw;if(r&&((r.type==='word'&&r.data&&r.data.lemma)||(r.type==='sentence'&&r.out))){S.res=r;S.q=h.query;render()}else{S.q=h.query;doQuery()}}
+function openHist(id){const h=D.history.find(x=>x.id===id);if(!h)return;const r=h.raw;S.q=h.query;S.sub='';
+if(r&&r.type==='list'&&Array.isArray(r.items)&&r.items.length||r&&r.type==='sentence'&&r.out){S.res=r;S.resq=h.query.trim();render()}
+else if(r&&r.type==='word'&&r.data&&r.data.lemma){S.wd=r.data;S.sub='wd';render()}else doQuery()}
+let sugT=null,sugC=null;
+function paintSug(){const el=$('#sg');if(el)el.innerHTML=sugHtml()}
+const sugHtml=()=>S.sug.length?'<div class="chips"><span class="mu sm">拼写建议</span>'+S.sug.map(w=>'<button class="chip" data-a="sug" data-w="'+esc(w)+'">'+esc(w)+'</button>').join('')+'</div>':'';
+function fetchSug(q){clearTimeout(sugT);if(sugC)sugC.abort();if(!q||hasCJK(q)||q.length<2||!navigator.onLine){S.sug=[];paintSug();return}
+sugT=setTimeout(async()=>{sugC=new AbortController();const o={signal:sugC.signal},base='https://de.wiktionary.org/w/api.php?format=json&origin=*&';
+try{const [a,b]=await Promise.all([fetch(base+'action=query&list=search&srlimit=1&srinfo=suggestion&srprop=&srsearch='+encodeURIComponent(q),o).then(r=>r.json()),fetch(base+'action=opensearch&limit=6&namespace=0&search='+encodeURIComponent(q),o).then(r=>r.json())]);
+const sg=a&&a.query&&a.query.searchinfo&&a.query.searchinfo.suggestion,l=[...(sg?[sg]:[]),...((b&&b[1])||[])].filter(x=>typeof x==='string'&&x.toLowerCase()!==q.toLowerCase());
+if(S.q.trim()===q){S.sug=[...new Set(l)].slice(0,6);paintSug()}}catch(e){if(e.name!=='AbortError'){S.sug=[];paintSug()}}},350)}
 /* ===== topics ===== */
 const topics=()=>D.importedTopics.filter(t=>!D.deleted[t.id]);
 function mergeTopic(t){const e=D.importedTopics.find(x=>x.title===t.title&&!D.deleted[x.id]);if(e){e.lines.push(...t.lines);toast('同名主题已合并，新增 '+t.lines.length+' 句')}else{D.importedTopics.push(t);toast('已保存，共 '+t.lines.length+' 句')}saveD()}
@@ -109,11 +137,12 @@ function parseImport(txt){const L=[];for(const raw of txt.split(/\n/)){const l=r
 /* ===== views ===== */
 const TABS=['🔤 翻译','📒 生词本','📚 学习','⚙️ 设置'];
 const V={};
-V.t0=()=>{let h='<h1>翻译 / 查词</h1><textarea id="q" placeholder="输入德语或中文" maxlength="1000">'+esc(S.q)+'</textarea><button class="p" data-a="query" '+(S.busy?'disabled':'')+'>'+(S.busy?'查询中…':'查询 / 翻译')+'</button>';
-if(!navigator.onLine)h+='<p class="mu">当前离线：仅可使用已缓存与历史结果</p>';
-if(S.res)h+=S.res.type==='word'?wordCard(S.res.data):sentCard(S.res);
-h+='<h2 class="row"><span class="g">历史记录</span>'+(D.history.length?'<button class="d" data-a="clrhist">清空</button>':'')+'</h2>';
-h+=D.history.map(x=>'<div class="li" data-a="hist" data-id="'+esc(x.id)+'" style="cursor:pointer"><div class="g"><b>'+esc(x.query.slice(0,40))+'</b><div class="mu">'+esc((x.answer||'').slice(0,50))+'</div></div></div>').join('')||'<p class="mu">暂无记录</p>';return h};
+const histHtml=()=>'<div class="row"><span class="g mu sm">历史记录</span>'+(D.history.length?'<button class="d" data-a="clrhist">清空</button>':'')+'</div>'+(D.history.map(x=>'<div class="li" data-a="hist" data-id="'+esc(x.id)+'" style="cursor:pointer"><div class="g"><b>'+esc(x.query.slice(0,40))+'</b> <span class="mu sm">'+esc((x.answer||'').slice(0,40))+'</span></div></div>').join('')||'<p class="mu">暂无记录</p>');
+const entList=it=>'<div class="sec"><b>词典</b></div>'+it.map((x,i)=>'<div class="en" data-a="entry" data-i="'+i+'"><b class="hw">'+esc(x.w)+'</b>'+(x.g?' <span class="mu sm">'+esc(x.g)+'</span>':'')+'<div class="mu sm">'+(x.p?esc(x.p)+' ':'')+esc(x.zh)+'</div></div>').join('');
+function body0(){const q=S.q.trim();if(!q)return histHtml();let h='<div id="sg">'+sugHtml()+'</div>';
+if(S.res&&S.resq===q)h+=S.res.type==='list'?entList(S.res.items):sentCard(S.res);else h+='<p class="mu sm">点击“查询”或按回车</p>';return h}
+V.wd=()=>{const d=S.wd,b='<div class="row"><button data-a="wback">‹ 返回</button></div>';if(!d)return b+'<p class="mu">加载中…</p>';const sv=D.vocab.find(x=>x.lemma.toLowerCase()===d.lemma.toLowerCase());return b+detailBody(d,sv)+'<div class="row" style="margin-top:6px"><button class="p g" data-a="addres">'+(sv?'更新生词本':'加入生词本')+'</button></div>'};
+V.t0=()=>S.sub==='wd'?V.wd():'<div class="row" style="margin-bottom:4px"><input id="q" class="g" type="search" style="margin:0;min-width:0" enterkeyhint="search" autocomplete="off" autocapitalize="off" placeholder="输入德语或中文" maxlength="500" value="'+esc(S.q)+'"><button class="p" data-a="query" '+(S.busy?'disabled':'')+'>'+(S.busy?'查询中…':'查询')+'</button></div>'+(navigator.onLine?'':'<p class="mu sm">当前离线：仅可查看历史</p>')+'<div id="b0">'+body0()+'</div>';
 function sortedVocab(){let a=D.vocab.slice();const q=S.vq.toLowerCase();if(q)a=a.filter(v=>[v.word,v.zh,v.pos,v.contextForm,JSON.stringify(v.examples||[]),JSON.stringify(v.forms||{})].join(' ').toLowerCase().includes(q));
 const s=S.vsort;a.sort((x,y)=>s==='az'?x.word.localeCompare(y.word,'de'):s==='pos'?(x.pos||'').localeCompare(y.pos||''):s==='gender'?(x.article||'z').localeCompare(y.article||'z'):y.createdAt-x.createdAt);return a}
 V.t1=()=>{if(S.sub==='rev')return V.rev();if(S.sub==='vd')return V.vd();const due=D.vocab.filter(v=>v.due<=Date.now()).length,a=sortedVocab();
@@ -122,7 +151,7 @@ h=h.replace('value="'+S.vsort+'"','value="'+S.vsort+'" selected');
 h+=a.slice(0,S.vlim).map(v=>'<div class="li">'+spk(v.word)+'<div class="g" data-a="vd" data-id="'+esc(v.id)+'" style="cursor:pointer"><b>'+esc(v.word)+'</b>'+badge(v)+'<div class="mu">'+esc(v.zh)+'</div></div>'+(S.manage?'<button class="d" data-a="vdel" data-id="'+esc(v.id)+'">删除</button>':'')+'</div>').join('')||'<p class="mu">还没有生词</p>';
 if(a.length>S.vlim)h+='<button data-a="more">加载更多</button>';return h};
 V.vd=()=>{const v=D.vocab.find(x=>x.id===S.sel);if(!v)return'';const d=norm(v,v.word);d.lemma=v.word;d.pos=v.pos;
-return '<h1><button data-a="back">‹ 返回</button></h1><div class="card"><div class="row"><h2 class="g" style="margin:0">'+esc(v.word)+badge(v)+'</h2>'+spk(v.word)+'</div><p>'+dash(v.zh)+'</p></div><div class="card"><h3>基本信息</h3><p class="mu">词性：'+dash(v.pos)+' · 冠词：'+dash(v.article)+' · 复数：'+dash(v.plural)+' · 第二格：'+dash(v.genitiv)+'<br>添加：'+new Date(v.createdAt).toLocaleDateString()+' · 到期：'+new Date(v.due).toLocaleString()+' · 间隔：'+v.interval+'天 · 熟练度：'+v.ease.toFixed(1)+'</p></div><div class="card"><h3>详细解释</h3><p>'+dash(v.explain)+'</p><p class="mu">搭配：'+dash((v.collocations||[]).join('、'))+'<br>易错点：'+dash(v.pitfalls)+'<br>同义：'+dash((v.synonyms||[]).join('、'))+' 反义：'+dash((v.antonyms||[]).join('、'))+'</p></div><div class="card"><h3>变形表</h3>'+(tables(d)||'—')+'</div><div class="card"><h3>例句</h3>'+exHtml(v.examples)+'</div><div class="row"><button class="p" data-a="more3" '+(S.busy?'disabled':'')+'>'+(S.busy?'AI 生成中…':'AI 解释 / 再来 3 条例句')+'</button><button data-a="vedit">编辑</button><button class="d" data-a="vdel" data-id="'+esc(v.id)+'">删除</button></div>'};
+return '<div class="row"><button data-a="back">‹ 返回</button></div>'+detailBody(d,v)+'<div class="row" style="margin-top:8px"><button class="p" data-a="more3" '+(S.busy?'disabled':'')+'>'+(S.busy?'AI 生成中…':'AI 解释 / 再来 3 条例句')+'</button><button data-a="vedit">编辑</button><button class="d" data-a="vdel" data-id="'+esc(v.id)+'">删除</button></div>'};
 V.rev=()=>{const q=D.vocab.filter(v=>v.due<=Date.now());const v=q[0];if(!v)return'<h1><button data-a="back">‹ 返回</button></h1><p class="mu">复习完成 🎉</p>';
 return '<h1><button data-a="back">‹ 返回</button><span class="mu">到期 '+q.length+'</span></h1><div class="card" data-a="flip" style="text-align:center;min-height:160px"><h2>'+esc(v.word)+'</h2>'+(S.flip?'<p>'+esc(v.zh)+'</p><p class="mu">'+esc((v.examples[0]||{}).de||'')+'</p>':'<p class="mu">点击翻面</p>')+'</div><div class="row"><button class="d g" data-a="rate" data-r="0">忘了</button><button class="p g" data-a="rate" data-r="1">记得</button></div>'};
 V.t2=()=>{if(S.sub==='imp')return V.imp();if(S.sub==='gen')return V.gen();if(S.sub==='tp')return V.tp();
@@ -152,9 +181,13 @@ sheet('<h2 class="row"><span class="g">'+esc(w)+'</span>'+spk(w)+'</h2><p><a hre
 /* ===== events ===== */
 const A={
 tab(e){S.tab=+e.dataset.i;S.sub='';S.manage=false;render()},
-query(){doQuery()},lookup(e){S.q=e.dataset.w;doQuery(true)},hist(e){openHist(e.dataset.id)},
+query(){doQuery()},sug(e){S.q=e.dataset.w;S.sug=[];doQuery()},
+wback(){S.sub='';S.wd=null;render()},
+async entry(e){const it=S.res&&S.res.items[+e.dataset.i];if(!it||S.busy)return;S.sub='wd';S.wd=null;S.busy=true;render();let d;
+try{d=await lookupWord(it.w)}catch(x){toast(x.message==='noai'?'未配置 AI，仅显示基本释义':x.message);d=norm({lemma:it.w,pos:it.p,zh:it.zh},it.w)}
+if(!d.zh)d.zh=it.zh;S.wd=d;S.busy=false;render()},hist(e){openHist(e.dataset.id)},
 clrhist(){if(confirm('清空历史？')){D.history=[];saveD();render()}},
-addres(){if(S.res&&S.res.type==='word')addVocab(S.res.data,'');render()},
+addres(){if(S.wd){addVocab(S.wd,'');render()}},
 more(){S.vlim+=100;render()},mng(){S.manage=!S.manage;render()},
 vd(e){S.sel=e.dataset.id;S.sub='vd';render()},back(){S.sub=S.sub==='vd'&&S.tab===1?'':'';S.rev=null;S.flip=0;render()},
 vdel(e){if(!confirm('确认删除？'))return;const dv=D.vocab.find(v=>v.id===e.dataset.id);if(dv)D.deleted['w_'+dv.word.toLowerCase()]=1;D.vocab=D.vocab.filter(v=>v.id!==e.dataset.id);saveD();S.sub='';render()},
@@ -197,8 +230,8 @@ exp(){const b=new Blob([JSON.stringify(Object.assign({},D))],{type:'application/
 'imp-b'(){$('#bf').click()},
 wipe(){if(confirm('清除本机所有数据？')&&confirm('再次确认')){localStorage.removeItem('dl');localStorage.removeItem('dl_cache');location.reload()}}};
 document.addEventListener('click',e=>{if(e.target.id==='ov')return closeSheet();const t=e.target.closest('[data-a]');if(t&&A[t.dataset.a])A[t.dataset.a](t)});
-document.addEventListener('keydown',e=>{if(e.key==='Escape')closeSheet()});
-document.addEventListener('input',e=>{if(e.target.id==='tq'){S.tq=e.target.value;const p=e.target.selectionStart;render();const i=$('#tq');i.focus();i.setSelectionRange(p,p);return}if(e.target.id==='q')S.q=e.target.value;if(e.target.id==='vq'){S.vq=e.target.value;S.vlim=100;const p=e.target.selectionStart;render();const i=$('#vq');i.focus();i.setSelectionRange(p,p)}});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeSheet();if(e.key==='Enter'&&e.target.id==='q'){e.preventDefault();e.target.blur();doQuery()}});
+document.addEventListener('input',e=>{if(e.target.id==='q'){S.q=e.target.value;const b=$('#b0');if(b)b.innerHTML=body0();fetchSug(S.q.trim());return}if(e.target.id==='tq'){S.tq=e.target.value;const p=e.target.selectionStart;render();const i=$('#tq');i.focus();i.setSelectionRange(p,p);return}if(e.target.id==='q')S.q=e.target.value;if(e.target.id==='vq'){S.vq=e.target.value;S.vlim=100;const p=e.target.selectionStart;render();const i=$('#vq');i.focus();i.setSelectionRange(p,p)}});
 document.addEventListener('change',e=>{const id=e.target.id,u=C.ui;if(['tr','tsp','tz','tm','tb'].includes(id)){if(id==='tr')u.repeat=+e.target.value;if(id==='tsp')u.speechRate=+e.target.value;if(id==='tz')u.showZh=e.target.checked;if(id==='tm')u.showMastered=e.target.checked;if(id==='tb')u.bg=e.target.checked;saveC();render();return}if(e.target.id==='te'){C.tts.engine=e.target.value;saveC();render();return}if(e.target.id==='azd'||e.target.id==='azz')$('#'+e.target.id+'c').hidden=e.target.value!=='__c';if(e.target.id==='vs'){S.vsort=e.target.value;render()}
 if(e.target.id==='if'){const f=e.target.files[0];if(f){const r=new FileReader();r.onload=()=>{$('#ix').value=String(r.result);if(!$('#it').value)$('#it').value=f.name.replace(/\.\w+$/,'')};r.readAsText(f)}}
 if(e.target.id==='bf'){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const o=JSON.parse(r.result);if(!o||!Array.isArray(o.vocab||[]))throw 0;mergeData(o);saveD();toast('已合并导入');render()}catch(x){toast('备份文件无效')}};r.readAsText(f)}});
