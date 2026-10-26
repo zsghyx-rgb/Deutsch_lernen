@@ -1,12 +1,12 @@
 <!doctype html>
 <html lang="zh-CN"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>德语助手</title><meta name="theme-color" content="#1f5f8b"><link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icon-192.png"><link rel="apple-touch-icon" href="icon-192.png">
 <style>
 :root{--bg:#f6f4ee;--card:#fffdf8;--tx:#23282c;--mu:#6b7378;--ln:#e2ddd0;--pr:#1f5f8b;--ok:#2e7d4f;--hl:#fff3c4;--er:#b3392f}
 :root[data-t=dark]{--bg:#14191d;--card:#1c2329;--tx:#e8e6df;--mu:#98a1a7;--ln:#2d363d;--pr:#5aa6d6;--ok:#58b27a;--hl:#4a4217;--er:#e27a70}
 @media(prefers-color-scheme:dark){:root[data-t=auto]{--bg:#14191d;--card:#1c2329;--tx:#e8e6df;--mu:#98a1a7;--ln:#2d363d;--pr:#5aa6d6;--ok:#58b27a;--hl:#4a4217;--er:#e27a70}}
-*{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.45 Georgia,"Noto Serif SC",serif}
+*{box-sizing:border-box}html{touch-action:manipulation;-webkit-text-size-adjust:100%}input,select,textarea{font-size:16px}html,body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.45 Georgia,"Noto Serif SC",serif}
 button,input,select,textarea{font:inherit;color:inherit}
 h1,h2,h3,button,.b,nav{font-family:"Avenir Next","PingFang SC",system-ui,sans-serif}
 #app{max-width:640px;margin:0 auto;padding:calc(env(safe-area-inset-top) + 6px) 12px calc(76px + env(safe-area-inset-bottom))}
@@ -33,6 +33,7 @@ nav div{max-width:640px;margin:auto;display:flex}nav button{flex:1;height:56px;b
 .en{padding:6px 0;border-bottom:1px solid var(--ln);cursor:pointer}.hw{font-size:18px}.sm{font-size:13px}.en .sm{margin-top:1px}
 .chips{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:6px 0}.chip{min-height:32px;padding:0 12px;border-radius:99px;font-size:14px}
 .dt p{margin:2px 0}.dt .li{padding:4px 0}.dt .sc{margin:2px 0}
+.lw{flex-wrap:wrap}.mrow{flex-basis:100%}.mrow button{min-height:34px;padding:0 10px}
 </style></head><body>
 <div id="app"></div><nav><div id="nv"></div></nav><div id="ov"></div><div id="sh"></div><div id="ts"></div>
 <script>
@@ -52,7 +53,7 @@ let C=rd('dl_cfg',{});for(const k of ['ai','dict','tts','ui','sync'])C[k]=Object
 let D=Object.assign({version:1,updatedAt:0,mastered:{},vocab:[],importedTopics:[BUILTIN],history:[],deleted:{},order:[],sort:'time'},rd('dl',{}));
 let CACHE=rd('dl_cache',{});
 const saveD=()=>{D.updatedAt=Date.now();D.dirty=1;wr('dl',D);schedSync()},saveC=()=>wr('dl_cfg',C);
-const S={sug:[],wd:null,resq:'',tq:'',tset:0,tab:0,sub:'',q:'',res:null,busy:false,vq:'',vlim:100,manage:false,tid:null,rev:null,gen:null,sel:null,playing:false,vsort:'time'};
+const S={sug:[],wd:null,resq:'',tq:'',tset:0,tab:0,sub:'',q:'',res:null,busy:false,vq:'',vlim:100,manage:false,tid:null,rev:null,gen:null,sel:null,playing:false,vsort:C.ui.vsort||'time',vrev:!!C.ui.vrev,vset:0};
 /* ===== AI ===== */
 function parseJ(t){t=String(t).replace(/```json|```/g,'');const a=t.search(/[\{\[]/),b=Math.max(t.lastIndexOf('}'),t.lastIndexOf(']'));if(a<0||b<a)throw new Error('AI 返回格式异常，请重试');try{return JSON.parse(t.slice(a,b+1))}catch(e){throw new Error('AI 返回格式异常，请重试')}}
 async function ai(user){const a=C.ai;if(!a.apiKey)throw new Error('noai');if(!navigator.onLine)throw new Error('当前离线，无法使用 AI');const sys='只输出 JSON，不要 Markdown，不要解释。';let r,j;const u=a.baseUrl.replace(/\/$/,'');
@@ -117,7 +118,7 @@ catch(e){if(e.message!=='noai'&&!/无法连接|离线/.test(e.message))throw e;c
 return items}
 async function doQuery(){const q=S.q.trim();if(!q||S.busy)return;S.busy=true;S.sub='';render();let raw;
 try{const cjk=hasCJK(q);if((cjk&&q.length>8)||(!cjk&&(q.split(/\s+/).length>2||q.length>40)))raw={type:'sentence',src:q,out:await transText(q)};else raw={type:'list',q:q,items:await lookupList(q)};
-S.res=raw;S.resq=q;D.history.unshift({id:uid('h_'),type:raw.type,query:q,answer:raw.type==='list'?(raw.items[0]?raw.items[0].zh:''):raw.out,createdAt:Date.now(),raw:raw});D.history=D.history.slice(0,100);saveD()}catch(e){toast(e.message)}
+S.res=raw;S.resq=q;D.history.unshift({id:uid('h_'),type:raw.type,query:q,answer:raw.type==='list'?(raw.items[0]?(cjk?raw.items[0].w:raw.items[0].zh):''):raw.out,createdAt:Date.now(),raw:raw});D.history=D.history.slice(0,100);saveD()}catch(e){toast(e.message)}
 S.busy=false;render()}
 function openHist(id){const h=D.history.find(x=>x.id===id);if(!h)return;const r=h.raw;S.q=h.query;S.sub='';
 if(r&&r.type==='list'&&Array.isArray(r.items)&&r.items.length||r&&r.type==='sentence'&&r.out){S.res=r;S.resq=h.query.trim();render()}
@@ -137,18 +138,21 @@ function parseImport(txt){const L=[];for(const raw of txt.split(/\n/)){const l=r
 /* ===== views ===== */
 const TABS=['🔤 翻译','📒 生词本','📚 学习','⚙️ 设置'];
 const V={};
-const histHtml=()=>'<div class="row"><span class="g mu sm">历史记录</span>'+(D.history.length?'<button class="d" data-a="clrhist">清空</button>':'')+'</div>'+(D.history.map(x=>'<div class="li" data-a="hist" data-id="'+esc(x.id)+'" style="cursor:pointer"><div class="g"><b>'+esc(x.query.slice(0,40))+'</b> <span class="mu sm">'+esc((x.answer||'').slice(0,40))+'</span></div></div>').join('')||'<p class="mu">暂无记录</p>');
+const histAns=x=>{const r=x.raw;return r&&r.type==='list'&&r.items&&r.items[0]&&hasCJK(x.query)?r.items[0].w:(x.answer||'')};
+const histHtml=()=>'<div class="row"><span class="g mu sm">历史记录</span>'+(D.history.length?'<button class="d" data-a="clrhist">清空</button>':'')+'</div>'+(D.history.map(x=>{const f=x.raw&&x.raw.type==='list'&&x.raw.items&&x.raw.items[0],pb=f&&f.p?'<span class="b">'+esc(f.p)+'</span>':'';return '<div class="li">'+spk(x.query,hasCJK(x.query)?'zh':'de')+'<div class="g" data-a="hist" data-id="'+esc(x.id)+'" style="cursor:pointer"><b>'+esc(x.query.slice(0,40))+'</b>'+pb+'<div class="mu">'+esc(histAns(x).slice(0,60))+'</div></div></div>'}).join('')||'<p class="mu">暂无记录</p>');
 const entList=it=>'<div class="sec"><b>词典</b></div>'+it.map((x,i)=>'<div class="en" data-a="entry" data-i="'+i+'"><b class="hw">'+esc(x.w)+'</b>'+(x.g?' <span class="mu sm">'+esc(x.g)+'</span>':'')+'<div class="mu sm">'+(x.p?esc(x.p)+' ':'')+esc(x.zh)+'</div></div>').join('');
 function body0(){const q=S.q.trim();if(!q)return histHtml();let h='<div id="sg">'+sugHtml()+'</div>';
 if(S.res&&S.resq===q)h+=S.res.type==='list'?entList(S.res.items):sentCard(S.res);else h+='<p class="mu sm">点击“查询”或按回车</p>';return h}
 V.wd=()=>{const d=S.wd,b='<div class="row"><button data-a="wback">‹ 返回</button></div>';if(!d)return b+'<p class="mu">加载中…</p>';const sv=D.vocab.find(x=>x.lemma.toLowerCase()===d.lemma.toLowerCase());return b+detailBody(d,sv)+'<div class="row" style="margin-top:6px"><button class="p g" data-a="addres">'+(sv?'更新生词本':'加入生词本')+'</button></div>'};
 V.t0=()=>S.sub==='wd'?V.wd():'<div class="row" style="margin-bottom:4px"><input id="q" class="g" type="search" style="margin:0;min-width:0" enterkeyhint="search" autocomplete="off" autocapitalize="off" placeholder="输入德语或中文" maxlength="500" value="'+esc(S.q)+'"><button class="p" data-a="query" '+(S.busy?'disabled':'')+'>'+(S.busy?'查询中…':'查询')+'</button></div>'+(navigator.onLine?'':'<p class="mu sm">当前离线：仅可查看历史</p>')+'<div id="b0">'+body0()+'</div>';
 function sortedVocab(){let a=D.vocab.slice();const q=S.vq.toLowerCase();if(q)a=a.filter(v=>[v.word,v.zh,v.pos,v.contextForm,JSON.stringify(v.examples||[]),JSON.stringify(v.forms||{})].join(' ').toLowerCase().includes(q));
-const s=S.vsort;a.sort((x,y)=>s==='az'?x.word.localeCompare(y.word,'de'):s==='pos'?(x.pos||'').localeCompare(y.pos||''):s==='gender'?(x.article||'z').localeCompare(y.article||'z'):y.createdAt-x.createdAt);return a}
-V.t1=()=>{if(S.sub==='rev')return V.rev();if(S.sub==='vd')return V.vd();const due=D.vocab.filter(v=>v.due<=Date.now()).length,a=sortedVocab();
-let h='<h1>生词本<button class="p" data-a="rev" '+(due?'':'disabled')+'>复习 '+due+'</button></h1><input id="vq" placeholder="搜索" value="'+esc(S.vq)+'"><div class="row"><select id="vs" class="g"><option value="time">添加时间</option><option value="az">字母</option><option value="pos">词类</option><option value="gender">名词性别</option></select><button data-a="mng">'+(S.manage?'完成':'管理')+'</button></div>';
-h=h.replace('value="'+S.vsort+'"','value="'+S.vsort+'" selected');
-h+=a.slice(0,S.vlim).map(v=>'<div class="li">'+spk(v.word)+'<div class="g" data-a="vd" data-id="'+esc(v.id)+'" style="cursor:pointer"><b>'+esc(v.word)+'</b>'+badge(v)+'<div class="mu">'+esc(v.zh)+'</div></div>'+(S.manage?'<button class="d" data-a="vdel" data-id="'+esc(v.id)+'">删除</button>':'')+'</div>').join('')||'<p class="mu">还没有生词</p>';
+const s=S.vsort;a.sort((x,y)=>s==='az'?x.word.localeCompare(y.word,'de'):s==='pos'?(x.pos||'').localeCompare(y.pos||''):s==='gender'?(x.article||'z').localeCompare(y.article||'z'):y.createdAt-x.createdAt);if(S.vrev)a.reverse();return a}
+const vpanel=()=>'<div class="card"><label for="vs">排序</label><select id="vs">'+[['time','添加时间'],['az','字母顺序'],['pos','词类'],['gender','名词性别']].map(k=>'<option value="'+k[0]+'"'+(S.vsort===k[0]?' selected':'')+'>'+k[1]+'</option>').join('')+'</select>'+chk('vrv',S.vrev,'反向排序')+chk('vz',C.ui.vzh!==false,'含中文（显示并朗读）')+selH('vr',[1,2,3,5],C.ui.repeat,'重复次数')+'</div>';
+V.t1=()=>{if(S.sub==='rev')return V.rev();if(S.sub==='vd')return V.vd();const due=D.vocab.filter(v=>v.due<=Date.now()).length,a=sortedVocab(),zh=C.ui.vzh!==false;
+let h='<h1>生词本<button class="p" data-a="rev" '+(due?'':'disabled')+'>复习 '+due+'</button></h1><div class="row"><button class="p" data-a="vplay">'+(S.playing?'■ 停止':'▶ 连续播放')+'</button><button data-a="mng">'+(S.manage?'完成':'管理')+'</button><button data-a="vset" aria-label="设置面板">⚙ 设置</button></div>';
+if(S.vset)h+=vpanel();
+h+='<input id="vq" placeholder="搜索" value="'+esc(S.vq)+'" style="margin-top:6px">';
+h+=a.slice(0,S.vlim).map(v=>'<div class="li" id="vw_'+esc(v.id)+'">'+spk(v.word)+'<div class="g" data-a="vd" data-id="'+esc(v.id)+'" style="cursor:pointer"><b>'+esc(v.word)+'</b>'+badge(v)+(zh?'<div class="mu">'+esc(v.zh)+'</div>':'')+'</div>'+(S.manage?'<button class="d" data-a="vdel" data-id="'+esc(v.id)+'">删除</button>':'')+'</div>').join('')||'<p class="mu">还没有生词</p>';
 if(a.length>S.vlim)h+='<button data-a="more">加载更多</button>';return h};
 V.vd=()=>{const v=D.vocab.find(x=>x.id===S.sel);if(!v)return'';const d=norm(v,v.word);d.lemma=v.word;d.pos=v.pos;
 return '<div class="row"><button data-a="back">‹ 返回</button></div>'+detailBody(d,v)+'<div class="row" style="margin-top:8px"><button class="p" data-a="more3" '+(S.busy?'disabled':'')+'>'+(S.busy?'AI 生成中…':'AI 解释 / 再来 3 条例句')+'</button><button data-a="vedit">编辑</button><button class="d" data-a="vdel" data-id="'+esc(v.id)+'">删除</button></div>'};
@@ -162,9 +166,9 @@ const chk=(id,v,lab,dis)=>'<label class="c"><input type="checkbox" id="'+id+'"'+
 function visIdx(t){const q=S.tq.toLowerCase(),r=[];t.lines.forEach((l,i)=>{if(q&&!((l.de||'')+' '+(l.zh||'')).toLowerCase().includes(q))return;if(!C.ui.showMastered&&!S.manage&&D.mastered[t.id+'_'+i])return;r.push(i)});return r}
 V.tp=()=>{const t=D.importedTopics.find(x=>x.id===S.tid);if(!t)return'';const az=C.tts.engine==='azure',n=t.lines.length,lock=!!S.tq;
 let h='<h1><button data-a="back">‹ 返回</button><span class="g" style="flex:1">'+esc(t.emoji+' '+t.title)+'</span></h1><div class="row"><button class="p" data-a="play">'+(S.playing?'■ 停止':'▶ 连续播放')+'</button><button data-a="mng">'+(S.manage?'完成':'管理')+'</button><button data-a="tset" aria-label="设置面板">⚙ 设置</button>'+(S.manage?'<button class="d" data-a="tdel">删除主题</button>':'')+'</div>';
-if(S.tset)h+='<div class="card">'+selH('tr',[1,2,3,5],C.ui.repeat,'重复次数')+selH('tsp',[0.6,0.8,1],C.ui.speechRate,'德语速度')+chk('tz',C.ui.showZh,'含中文（显示并朗读）')+chk('tm',C.ui.showMastered,'显示已掌握')+chk('tb',C.ui.bg&&az,'后台播放（仅 Azure 可用）',!az)+(az?'':'<p class="mu">系统语音息屏后会停止，请在设置中启用 Azure。</p>')+'<button data-a="aitr" '+(S.busy?'disabled':'')+'>'+(S.busy?'翻译中…':'AI 翻译缺失')+'</button></div>';
+if(S.tset)h+='<div class="card">'+selH('tr',[1,2,3,5],C.ui.repeat,'重复次数')+chk('tz',C.ui.showZh,'含中文（显示并朗读）')+chk('tm',C.ui.showMastered,'显示已掌握')+chk('tb',C.ui.bg&&az,'后台播放（仅 Azure 可用）',!az)+(az?'':'<p class="mu">系统语音息屏后会停止，请在设置中启用 Azure。</p>')+'<button data-a="aitr" '+(S.busy?'disabled':'')+'>'+(S.busy?'翻译中…':'AI 翻译缺失')+'</button></div>';
 h+='<input id="tq" placeholder="搜索句子" value="'+esc(S.tq)+'">';
-return h+(visIdx(t).map(i=>{const l=t.lines[i],m=D.mastered[t.id+'_'+i];return '<div class="li" id="ln'+i+'"><div class="g">'+wrap(l.de)+(C.ui.showZh&&l.zh?'<div class="mu">'+esc(l.zh)+'</div>':'')+'</div>'+spk(l.de)+(S.manage?'<div class="row" style="width:100%"><button data-a="ledit" data-i="'+i+'" aria-label="编辑">✎</button><button data-a="move" data-i="'+i+'" data-d="-1" aria-label="上移" '+(lock||i===0?'disabled':'')+'>↑</button><button data-a="move" data-i="'+i+'" data-d="1" aria-label="下移" '+(lock||i===n-1?'disabled':'')+'>↓</button><button data-a="mast" data-i="'+i+'">'+(m?'✓ 已掌握':'标记掌握')+'</button><button class="d" data-a="ldel" data-i="'+i+'" aria-label="删除">🗑</button></div>':'')+'</div>'}).join('')||'<p class="mu">没有符合的句子</p>')};
+return h+(visIdx(t).map(i=>{const l=t.lines[i],m=D.mastered[t.id+'_'+i];return '<div class="li lw" id="ln'+i+'"><div class="g">'+wrap(l.de)+(C.ui.showZh&&l.zh?'<div class="mu">'+esc(l.zh)+'</div>':'')+'</div>'+spk(l.de)+(S.manage?'<div class="row mrow"><button data-a="ledit" data-i="'+i+'" aria-label="编辑">✎</button><button data-a="move" data-i="'+i+'" data-d="-1" aria-label="上移" '+(lock||i===0?'disabled':'')+'>↑</button><button data-a="move" data-i="'+i+'" data-d="1" aria-label="下移" '+(lock||i===n-1?'disabled':'')+'>↓</button><button data-a="mast" data-i="'+i+'">'+(m?'✓ 已掌握':'标记掌握')+'</button><button class="d" data-a="ldel" data-i="'+i+'" aria-label="删除">🗑</button></div>':'')+'</div>'}).join('')||'<p class="mu">没有符合的句子</p>')};
 V.imp=()=>'<h1><button data-a="back">‹ 返回</button>导入文本</h1><label for="it">标题</label><input id="it"><label for="ix">文本（每行一句，或 德语 | 中文，最多 200 句）</label><textarea id="ix"></textarea><label for="if">上传 .txt/.md</label><input id="if" type="file" accept=".txt,.md"><label class="c"><input type="checkbox" id="itr" checked>自动翻译成中文</label><button class="p" data-a="save-imp" '+(S.busy?'disabled':'')+'>'+(S.busy?'翻译中…':'保存为主题')+'</button>';
 V.gen=()=>{let h='<h1><button data-a="back">‹ 返回</button>AI 生成</h1><label for="gs">场景</label><input id="gs" placeholder="在火车站买票"><button class="p" data-a="gen" '+(S.busy?'disabled':'')+'>'+(S.busy?'生成中…':'生成对话 (10句)')+'</button>';
 if(S.gen)h+='<div class="card"><h3>'+esc(S.gen.emoji+' '+S.gen.title)+'</h3>'+S.gen.lines.map(l=>'<div class="li"><div class="g">'+esc(l.de)+'<div class="mu">'+esc(l.zh)+'</div></div></div>').join('')+'<button class="p" data-a="gsave">保存为主题</button></div>';return h};
@@ -180,7 +184,7 @@ function wordSheet(w,ctx){S.cur={w,ctx,d:null};const v=D.vocab.find(x=>x.lemma.t
 sheet('<h2 class="row"><span class="g">'+esc(w)+'</span>'+spk(w)+'</h2><p><a href="https://de.wiktionary.org/wiki/'+encodeURIComponent(w)+'" target="_blank" rel="noopener">词典 ↗</a>'+(C.dict.customUrl?' · <a href="'+esc(C.dict.customUrl.replace('{w}',encodeURIComponent(w)))+'" target="_blank" rel="noopener">自定义 ↗</a>':'')+'</p><button class="p" id="sl" data-a="slook">AI 结合上下文查义</button><label for="sz">中文释义</label><input id="sz" value="'+esc(v?v.zh:'')+'"><button class="p" data-a="sadd">加入 / 更新生词本</button>')}
 /* ===== events ===== */
 const A={
-tab(e){S.tab=+e.dataset.i;S.sub='';S.manage=false;render()},
+tab(e){if(S.playing){cancelPlay=true;stopAudio();S.playing=false}S.tab=+e.dataset.i;S.sub='';S.manage=false;render()},
 query(){doQuery()},sug(e){S.q=e.dataset.w;S.sug=[];doQuery()},
 wback(){S.sub='';S.wd=null;render()},
 async entry(e){const it=S.res&&S.res.items[+e.dataset.i];if(!it||S.busy)return;S.sub='wd';S.wd=null;S.busy=true;render();let d;
@@ -201,7 +205,9 @@ mast(e){const k=S.tid+'_'+e.dataset.i;D.mastered[k]?delete D.mastered[k]:D.maste
 ldel(e){if(!confirm('确认删除？'))return;const t=D.importedTopics.find(x=>x.id===S.tid),i=+e.dataset.i,n=t.lines.length;for(let k=i;k<n;k++){const v=D.mastered[t.id+'_'+(k+1)];if(v)D.mastered[t.id+'_'+k]=1;else delete D.mastered[t.id+'_'+k]}t.lines.splice(i,1);saveD();render()},
 tdel(){if(!confirm('确认删除主题？'))return;D.deleted[S.tid]=1;saveD();S.sub='';render()},
 say(e){say(e.dataset.t,e.dataset.l)},
-tset(){S.tset=!S.tset;render()},
+tset(){S.tset=!S.tset;render()},vset(){S.vset=!S.vset;render()},
+async vplay(){if(S.playing){cancelPlay=true;stopAudio();S.playing=false;render();return}const list=sortedVocab().slice(0,S.vlim);if(!list.length)return toast('没有可播放的单词');S.playing=true;cancelPlay=false;if(C.tts.engine!=='azure')toast('系统语音息屏后会停止；Azure 可后台播放');render();
+for(const v of list){if(cancelPlay)break;const el=$('#vw_'+v.id);if(el){el.classList.add('hl');el.scrollIntoView({block:'center',behavior:'smooth'})}for(let r=0;r<C.ui.repeat&&!cancelPlay;r++)await speak(v.word,'de');if(C.ui.vzh!==false&&v.zh&&!cancelPlay)await speak(v.zh,'zh');if(el)el.classList.remove('hl')}S.playing=false;if(S.tab===1&&!S.sub)render()},
 move(e){const t=D.importedTopics.find(x=>x.id===S.tid),i=+e.dataset.i,j=i+ +e.dataset.d;if(j<0||j>=t.lines.length)return;[t.lines[i],t.lines[j]]=[t.lines[j],t.lines[i]];const a=t.id+'_'+i,b=t.id+'_'+j,x=D.mastered[a],y=D.mastered[b];x?D.mastered[b]=1:delete D.mastered[b];y?D.mastered[a]=1:delete D.mastered[a];saveD();render()},
 ledit(e){const t=D.importedTopics.find(x=>x.id===S.tid),l=t.lines[+e.dataset.i];S.eli=+e.dataset.i;sheet('<h2>编辑句子</h2><label for="ed">德语</label><textarea id="ed">'+esc(l.de)+'</textarea><label for="ez2">中文</label><textarea id="ez2">'+esc(l.zh||'')+'</textarea><button class="p" data-a="lsave">保存</button>')},
 lsave(){const t=D.importedTopics.find(x=>x.id===S.tid),l=t.lines[S.eli],de=$('#ed').value.trim();if(!de)return toast('德语不能为空');l.de=de;l.zh=$('#ez2').value.trim();saveD();closeSheet();render()},
@@ -229,10 +235,11 @@ seed(){delete D.deleted[BUILTIN.id];if(!D.importedTopics.find(t=>t.id===BUILTIN.
 exp(){const b=new Blob([JSON.stringify(Object.assign({},D))],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='deutsch-backup.json';a.click()},
 'imp-b'(){$('#bf').click()},
 wipe(){if(confirm('清除本机所有数据？')&&confirm('再次确认')){localStorage.removeItem('dl');localStorage.removeItem('dl_cache');location.reload()}}};
+['gesturestart','gesturechange','gestureend'].forEach(n=>document.addEventListener(n,e=>e.preventDefault()));document.addEventListener('touchmove',e=>{if(e.touches.length>1)e.preventDefault()},{passive:false});
 document.addEventListener('click',e=>{if(e.target.id==='ov')return closeSheet();const t=e.target.closest('[data-a]');if(t&&A[t.dataset.a])A[t.dataset.a](t)});
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeSheet();if(e.key==='Enter'&&e.target.id==='q'){e.preventDefault();e.target.blur();doQuery()}});
 document.addEventListener('input',e=>{if(e.target.id==='q'){S.q=e.target.value;const b=$('#b0');if(b)b.innerHTML=body0();fetchSug(S.q.trim());return}if(e.target.id==='tq'){S.tq=e.target.value;const p=e.target.selectionStart;render();const i=$('#tq');i.focus();i.setSelectionRange(p,p);return}if(e.target.id==='q')S.q=e.target.value;if(e.target.id==='vq'){S.vq=e.target.value;S.vlim=100;const p=e.target.selectionStart;render();const i=$('#vq');i.focus();i.setSelectionRange(p,p)}});
-document.addEventListener('change',e=>{const id=e.target.id,u=C.ui;if(['tr','tsp','tz','tm','tb'].includes(id)){if(id==='tr')u.repeat=+e.target.value;if(id==='tsp')u.speechRate=+e.target.value;if(id==='tz')u.showZh=e.target.checked;if(id==='tm')u.showMastered=e.target.checked;if(id==='tb')u.bg=e.target.checked;saveC();render();return}if(e.target.id==='te'){C.tts.engine=e.target.value;saveC();render();return}if(e.target.id==='azd'||e.target.id==='azz')$('#'+e.target.id+'c').hidden=e.target.value!=='__c';if(e.target.id==='vs'){S.vsort=e.target.value;render()}
+document.addEventListener('change',e=>{const id=e.target.id,u=C.ui;if(['tr','tsp','tz','tm','tb','vr','vz','vrv'].includes(id)){if(id==='tr'||id==='vr')u.repeat=+e.target.value;if(id==='vz')u.vzh=e.target.checked;if(id==='vrv'){S.vrev=e.target.checked;u.vrev=S.vrev}if(id==='tsp')u.speechRate=+e.target.value;if(id==='tz')u.showZh=e.target.checked;if(id==='tm')u.showMastered=e.target.checked;if(id==='tb')u.bg=e.target.checked;saveC();render();return}if(e.target.id==='te'){C.tts.engine=e.target.value;saveC();render();return}if(e.target.id==='azd'||e.target.id==='azz')$('#'+e.target.id+'c').hidden=e.target.value!=='__c';if(e.target.id==='vs'){S.vsort=e.target.value;C.ui.vsort=S.vsort;saveC();render()}
 if(e.target.id==='if'){const f=e.target.files[0];if(f){const r=new FileReader();r.onload=()=>{$('#ix').value=String(r.result);if(!$('#it').value)$('#it').value=f.name.replace(/\.\w+$/,'')};r.readAsText(f)}}
 if(e.target.id==='bf'){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const o=JSON.parse(r.result);if(!o||!Array.isArray(o.vocab||[]))throw 0;mergeData(o);saveD();toast('已合并导入');render()}catch(x){toast('备份文件无效')}};r.readAsText(f)}});
 addEventListener('online',render);addEventListener('offline',()=>{toast('已离线');render()});
