@@ -180,8 +180,13 @@ function render(){const root=document.documentElement;root.dataset.t=C.theme;$('
 if(S.tab===3){$('#cp').value=C.ai.provider;$('#cr').value=String(C.ui.speechRate);$('#ct').value=C.theme;$('#te').value=C.tts.engine;$('#sy').value=String(C.sync.interval);if($('#cs'))cacheInfo().then(n=>{if($('#cs'))$('#cs').textContent='已缓存语音 '+n+' 条'})}}
 function sheet(h){$('#sh').innerHTML=h;$('#sh').style.display=$('#ov').style.display='block'}
 function closeSheet(){$('#sh').style.display=$('#ov').style.display='none'}
+const DL=[['德语助手','https://www.godic.net/dicts/de/'],['Wiktionary','https://de.wiktionary.org/wiki/'],['Leo 中德','https://dict.leo.org/chinesisch-deutsch/']];
+async function quickGloss(w){const k='G|'+w.toLowerCase();if(CACHE[k])return CACHE[k];let r='';try{r=await trLocal(w,'de','zh')}catch(e){}
+if(!r){r=await mm(w,'de','zh-CN');if(!r||/MYMEMORY|QUERY LENGTH|INVALID/i.test(r)||r.toLowerCase()===w.toLowerCase())throw new Error('无翻译')}
+CACHE[k]=r;const ks=Object.keys(CACHE);if(ks.length>200)delete CACHE[ks[0]];wr('dl_cache',CACHE);return r}
 function wordSheet(w,ctx){S.cur={w,ctx,d:null};const v=D.vocab.find(x=>x.lemma.toLowerCase()===w.toLowerCase());
-sheet('<h2 class="row"><span class="g">'+esc(w)+'</span>'+spk(w)+'</h2><p><a href="https://de.wiktionary.org/wiki/'+encodeURIComponent(w)+'" target="_blank" rel="noopener">词典 ↗</a>'+(C.dict.customUrl?' · <a href="'+esc(C.dict.customUrl.replace('{w}',encodeURIComponent(w)))+'" target="_blank" rel="noopener">自定义 ↗</a>':'')+'</p><button class="p" id="sl" data-a="slook">AI 结合上下文查义</button><label for="sz">中文释义</label><input id="sz" value="'+esc(v?v.zh:'')+'"><button class="p" data-a="sadd">加入 / 更新生词本</button>')}
+sheet('<h2 class="row"><span class="g">'+esc(w)+'</span>'+spk(w)+'</h2><div class="mu sm" id="sgl">翻译中…</div><p class="sm">'+DL.map(x=>'<a href="'+x[1]+encodeURIComponent(w)+'" target="_blank" rel="noopener">'+x[0]+' ↗</a>').join(' · ')+(C.dict.customUrl?' · <a href="'+esc(C.dict.customUrl.replace('{w}',encodeURIComponent(w)))+'" target="_blank" rel="noopener">自定义 ↗</a>':'')+'</p><button class="p" id="sl" data-a="slook">AI 结合上下文查义</button><label for="sz">中文释义</label><input id="sz" value="'+esc(v?v.zh:'')+'"><button class="p" data-a="sadd">加入 / 更新生词本</button>');
+quickGloss(w).then(z=>{if(!S.cur||S.cur.w!==w)return;const g=$('#sgl');if(g)g.textContent='翻译：'+z;const i=$('#sz');if(i&&!i.value)i.value=z}).catch(e=>{const g=$('#sgl');if(g&&S.cur&&S.cur.w===w)g.textContent=navigator.onLine?'暂无翻译':'离线，暂无翻译'})}
 /* ===== events ===== */
 const A={
 tab(e){if(S.playing){cancelPlay=true;stopAudio();S.playing=false}S.tab=+e.dataset.i;S.sub='';S.manage=false;render()},
