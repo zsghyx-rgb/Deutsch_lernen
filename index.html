@@ -32,7 +32,7 @@ nav div{max-width:640px;margin:auto;display:flex}nav button{flex:1;height:56px;b
 .sec{border-left:3px solid var(--ok);padding-left:8px;margin:8px 0 2px;font-size:13px;color:var(--ok);font-family:system-ui,sans-serif}
 .en{padding:6px 0;border-bottom:1px solid var(--ln);cursor:pointer}.hw{font-size:18px}.sm{font-size:13px}.en .sm{margin-top:1px}
 .chips{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:6px 0}.chip{min-height:32px;padding:0 12px;border-radius:99px;font-size:14px}
-.dt p{margin:2px 0}.dt .li{padding:4px 0}.dt .sc{margin:2px 0}
+.dt p{margin:4px 0}.dt .li{padding:6px 0}.dt .sc{margin:6px 0}.dt h3{margin:16px 0 6px;padding-top:12px;border-top:1px solid var(--ln);color:var(--mu)}
 .lw{flex-wrap:wrap}.mrow{flex-basis:100%}.mrow button{min-height:34px;padding:0 10px}
 .opt{display:block;width:100%;text-align:left;margin:4px 0}.opt:disabled{opacity:1}.opt.ok{border-color:var(--ok);color:var(--ok);font-weight:700}.opt.bad{border-color:var(--er);color:var(--er)}
 .rt{text-align:right;margin-top:8px}.rt button{min-width:110px}
@@ -45,6 +45,7 @@ nav div{max-width:640px;margin:auto;display:flex}nav button{flex:1;height:56px;b
 'use strict';
 /* ===== utils ===== */
 const $=s=>document.querySelector(s);
+const typing=()=>{const a=document.activeElement;return!!a&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)};
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const uid=p=>p+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
 const rd=(k,d)=>{try{return JSON.parse(localStorage.getItem(k))||d}catch(e){return d}};
@@ -195,6 +196,9 @@ const newList=b=>D.vocab.filter(v=>v.book===b.id&&isNew(v)).sort((x,y)=>x.create
 const curCard=()=>S.ses&&D.vocab.find(x=>x.id===S.ses.queue[S.ses.i]);
 function sesStart(b,more){const p=plan();if(more){if(!D.vocab.some(v=>v.book===b.id&&isNew(v)))return toast('没有待学的新词了');p.extra[b.id]=(p.extra[b.id]||0)+5;saveD()}
 const q=[...dueRev(b.id).map(v=>v.id),...newList(b).map(v=>v.id)];if(!q.length)return toast('今天没有待学内容');S.ses={bid:b.id,queue:q,i:0};S.rv=null;S.rset=0;S.sub='lrn';render()}
+const speechNorm=s=>String(s).toLowerCase().replace(/[.,!?;:"'„“”]/g,'').replace(ART,'').replace(/\s+/g,' ').trim();
+function lev(a,b){const m=[...Array(b.length+1).keys()];for(let i=1;i<=a.length;i++){let p=m[0];m[0]=i;for(let j=1;j<=b.length;j++){const t=m[j];m[j]=Math.min(m[j]+1,m[j-1]+1,p+(a[i-1]===b[j-1]?0:1));p=t}}return m[b.length]}
+const speechMatch=(h,w)=>!!h&&!!w&&(h===w||lev(h,w)/Math.max(h.length,w.length)<=0.2);
 function rateCard(v,good){const n=Date.now();if(isNew(v)){const p=plan();p.done[v.book]=(p.done[v.book]||0)+1}v.seen=1;
 if(good){v.reps=(v.reps||0)+1;v.stage=Math.min(7,(v.stage||0)+1);v.interval=LAD[v.stage];v.due=n+v.interval*864e5;if(v.stage>=6&&v.reps>=5)v.mst=1}else{v.stage=Math.max(0,(v.stage||0)-2);v.interval=0;v.due=n+6e5}
 if(S.ses){if(!good)S.ses.queue.push(v.id);S.ses.i++}saveD();S.flip=0;S.rv=null;render()}
@@ -237,14 +241,15 @@ D.history.slice(0,40).forEach(x=>{const r=x.raw;if(r&&r.type==='list'&&r.items)r
 function revState(v){if(S.rv&&S.rv.id===v.id)return S.rv;const modes=(C.ui.rmodes&&C.ui.rmodes.length?C.ui.rmodes:['flip']).slice();let mode=shuf(modes)[0],opts=[],ans='';
 if(mode==='de2zh'||mode==='zh2de'){const key=mode==='de2zh'?'zh':'w';ans=(key==='zh'?v.zh:v.word).slice(0,40);const d=distract(v,key);if(!ans||d.length<2)mode='flip';else opts=shuf([ans,...d])}
 if(mode==='write'&&!v.zh)mode='flip';const st=S.rv={id:v.id,mode,opts,ans,picked:-1,done:false,ok:null,typed:'',ex:(C.ui.showEx&&(mode==='flip'||mode==='de2zh')&&(v.examples||[]).length)?shuf(v.examples)[0].de:''};if(mode==='flip'||(mode==='de2zh'&&C.ui.autoDe))setTimeout(()=>say(v.word,'de'),250);return st}
+const exLine=t=>t?'<div class="row" style="justify-content:center"><span class="mu">'+esc(t)+'</span>'+spk(t)+'</div>':'';
 function revBody(v,top){const rv=revState(v);
-if(rv.mode==='flip')return top+'<div class="card" data-a="flip" style="text-align:center;min-height:84px"><div class="row" style="justify-content:center"><h2 style="margin:0">'+esc(v.word)+'</h2>'+spk(v.word)+'</div>'+(rv.ex&&!S.flip?'<p class="mu">'+esc(rv.ex)+'</p>':'')+(S.flip?'<p>'+esc(v.zh)+'</p><p class="mu">'+esc(rv.ex||(v.examples[0]||{}).de||'')+'</p>':'<p class="mu">点击翻面</p>')+'</div><div class="row"><button class="d g" data-a="rate" data-r="0">忘了</button><button class="p g" data-a="rate" data-r="1">记得</button></div>';
-const ask=rv.mode==='de2zh'?'<div class="row" style="justify-content:center"><h2 style="margin:0">'+esc(v.word)+'</h2>'+spk(v.word)+'</div>'+(rv.ex?'<p class="mu">'+esc(rv.ex)+'</p>':'')+'<p class="mu sm">选择正确的中文释义</p>':'<h2 style="margin:0">'+esc(v.zh)+'</h2><p class="mu sm">'+(rv.mode==='zh2de'?'选择对应的德语':'写出德语（可不带冠词）')+'</p>';
+if(rv.mode==='flip')return top+'<div class="card" data-a="flip" style="text-align:center;min-height:84px"><div class="row" style="justify-content:center"><h2 style="margin:0">'+esc(v.word)+'</h2>'+spk(v.word)+'</div>'+(rv.ex&&!S.flip?exLine(rv.ex):'')+(S.flip?'<p>'+esc(v.zh)+'</p>'+exLine(rv.ex||(v.examples[0]||{}).de||''):'<p class="mu">点击翻面</p>')+'</div><div class="row"><button class="d g" data-a="rate" data-r="0">忘了</button><button class="p g" data-a="rate" data-r="1">记得</button></div>';
+const ask=rv.mode==='de2zh'?'<div class="row" style="justify-content:center"><h2 style="margin:0">'+esc(v.word)+'</h2>'+spk(v.word)+'</div>'+exLine(rv.ex)+'<p class="mu sm">选择正确的中文释义</p>':'<h2 style="margin:0">'+esc(v.zh)+'</h2><p class="mu sm">'+(rv.mode==='zh2de'?'选择对应的德语':'写出德语（可不带冠词）')+'</p>';
 let h=top+'<div class="card" style="text-align:center">'+ask+'</div>';
-if(rv.mode==='write'){if(!rv.done)h+='<input id="rw" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="德语"><div class="row"><button class="g" data-a="rgive">不会</button><button class="p g" data-a="rsub">提交</button></div>';
+if(rv.mode==='write'){if(!rv.done)h+='<input id="rw" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="德语" value="'+esc(rv.typed||'')+'"><div class="row"><button class="g" data-a="rgive">不会</button><button class="g" data-a="rmic">🎤 读出德语</button><button class="p g" data-a="rsub">提交</button></div>';
 else h+='<div class="card"><b style="color:var('+(rv.ok?'--ok':'--er')+')">'+(rv.ok?'✓ 正确':'✗ 不对')+'</b>'+(rv.ok?'':' 你写的：'+esc(rv.typed||'—'))+'<div class="row"><b class="g">'+esc(v.word)+'</b>'+spk(v.word)+'</div></div><div class="rt"><button class="p" data-a="rnext">继续</button></div>'}
-else{h+=rv.opts.map((o,i)=>'<button class="opt'+(rv.done?(o===rv.ans?' ok':i===rv.picked?' bad':''):'')+'" data-a="pick" data-i="'+i+'" '+(rv.done?'disabled':'')+'>'+esc(o)+'</button>').join('');
-if(rv.done)h+=(rv.mode==='zh2de'?'<div class="row">'+spk(v.word)+'<span class="g mu">'+esc(v.word)+'</span></div>':'')+'<div class="rt"><button class="p" data-a="rnext">继续</button></div>'}
+else{h+=rv.opts.map((o,i)=>'<button class="opt'+(rv.done?(o===rv.ans?' ok':i===rv.picked?' bad':''):'')+'" data-a="'+(rv.done&&rv.mode==='zh2de'?'opsay':'pick')+'" data-i="'+i+'" '+(rv.done&&rv.mode!=='zh2de'?'disabled':'')+'>'+esc(o)+'</button>').join('');
+if(rv.done)h+=(rv.mode==='zh2de'?'<div class="mu xs">点击德语选项可听发音</div>':'')+'<div class="rt"><button class="p" data-a="rnext">继续</button></div>'}
 return h};
 V.t2=()=>{if(S.sub==='imp')return V.imp();if(S.sub==='gen')return V.gen();if(S.sub==='tp')return V.tp();
 return '<h1>学习主题</h1><div class="row"><button class="p g" data-a="go" data-s="gen">✨ AI 生成</button><button class="p g" data-a="go" data-s="imp">📥 导入文本</button></div><div class="grid" style="margin-top:12px">'+topics().map(t=>{const m=t.lines.filter((_,i)=>D.mastered[t.id+'_'+i]).length;return '<div class="card tp" data-a="tp" data-id="'+esc(t.id)+'"><div style="font-size:28px">'+esc(t.emoji)+'</div><b>'+esc(t.title)+'</b><div class="mu">'+m+' / '+t.lines.length+'</div><div class="bar"><i style="width:'+(t.lines.length?m/t.lines.length*100:0)+'%"></i></div></div>'}).join('')+'</div>'};
@@ -314,8 +319,15 @@ const ex=new Set(D.vocab.map(v=>bare(v.lemma))),n0=L.length;L=L.filter(x=>!ex.ha
 if($('#wz').checked&&need.length){S.busy=true;S.prog='补全中 0/'+need.length;render();$('#wt').value=keep;try{await enrich(need)}catch(e){toast(e.message)}S.busy=false}
 const t=Date.now();L.forEach((x,i)=>{const d=norm({lemma:x.w,zh:x.zh},x.w);delete D.deleted['w_'+x.w.toLowerCase()];D.vocab.push({id:uid('v_'),createdAt:t+i,due:t,interval:0,ease:2.5,reps:0,stage:0,seen:0,mst:0,book:b.id,word:x.w,lemma:x.w,article:(x.w.match(/^(der|die|das)\s/i)||[''])[0].trim().toLowerCase(),plural:'',genitiv:'',pos:ART.test(x.w)?'名词':'',zh:x.zh,explain:'',forms:d.forms,adjective:null,examples:[],collocations:[],pitfalls:'',synonyms:[],antonyms:[],context:'',contextForm:'',source:'导入'})});
 C.ui.lastBook=b.id;saveC();saveD();toast('已导入 '+L.length+' 个'+(dup?'，跳过重复 '+dup+' 个':''));S.sub='bk';render()},
-pick(e){const rv=S.rv;if(!rv||rv.done)return;rv.picked=+e.dataset.i;rv.ok=rv.opts[rv.picked]===rv.ans;rv.done=true;const v=D.vocab.find(x=>x.id===rv.id);render();if(v&&rv.mode==='zh2de')say(v.word,'de')},
+pick(e){const rv=S.rv;if(!rv||rv.done)return;rv.picked=+e.dataset.i;rv.ok=rv.opts[rv.picked]===rv.ans;rv.done=true;const v=D.vocab.find(x=>x.id===rv.id);render();if(v&&rv.mode==='zh2de'){stopAudio();speak(rv.opts[rv.picked],'de').then(()=>{if(!rv.ok)speak(v.word,'de')})}},
 rsub(){const rv=S.rv,v=rv&&D.vocab.find(x=>x.id===rv.id),i=$('#rw');if(!v||rv.done||!i)return;rv.typed=i.value;const nm=s=>s.toLowerCase().replace(/^(der|die|das)\s+/,'').replace(/\s+/g,' ').trim();rv.ok=!!rv.typed.trim()&&nm(rv.typed)===nm(v.word);rv.done=true;render();say(v.word,'de')},
+rmic(){const rv=S.rv,v=rv&&D.vocab.find(x=>x.id===rv.id),SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!v||rv.done)return;
+if(!SR)return toast('此环境不支持语音识别（iPhone 主屏幕 App 里通常不可用，可在 Safari 中打开试试）');
+if(S.mic)return;stopAudio();const r=new SR(),bt=$('[data-a="rmic"]'),want=speechNorm(v.word);r.lang='de-DE';r.maxAlternatives=5;r.interimResults=false;S.mic=1;if(bt)bt.textContent='正在听…';
+r.onresult=ev=>{const alts=[...ev.results[0]].map(a=>a.transcript);if(alts.some(t=>speechMatch(speechNorm(t),want))){rv.ok=true;rv.done=true;rv.typed=alts[0];render()}else toast('听到：'+alts[0]+'，再试一次')};
+r.onerror=ev=>toast(ev.error==='not-allowed'?'没有麦克风权限':'语音识别失败：'+ev.error);
+r.onend=()=>{S.mic=0;const b=$('[data-a="rmic"]');if(b)b.textContent='🎤 读出德语'};try{r.start()}catch(e){S.mic=0;toast('无法启动语音识别')}},
+opsay(e){const rv=S.rv;if(rv)say(rv.opts[+e.dataset.i],'de')},
 rgive(){const rv=S.rv,v=rv&&D.vocab.find(x=>x.id===rv.id);if(!v||rv.done)return;rv.ok=false;rv.done=true;render();say(v.word,'de')},
 rnext(){const rv=S.rv,v=rv&&D.vocab.find(x=>x.id===rv.id);if(v&&rv.done)rateCard(v,rv.ok)},
 async more3(){const v=D.vocab.find(x=>x.id===S.sel);if(!v||S.busy)return;if(!C.ai.apiKey)return toast('请先在设置中配置 AI');S.busy=true;render();
@@ -370,13 +382,13 @@ wipe(){if(confirm('清除本机所有数据？')&&confirm('再次确认')){local
 document.addEventListener('click',e=>{if(e.target.id==='ov')return closeSheet();const t=e.target.closest('[data-a]');if(t&&A[t.dataset.a])A[t.dataset.a](t)});
 document.addEventListener('compositionend',e=>{const id=e.target.id;if(id==='q'){S.q=e.target.value;const b=$('#b0');if(b)b.innerHTML=body0();fetchSug(S.q.trim())}else if(id==='vq'){S.vq=e.target.value;S.vlim=100;vupd()}else if(id==='tq'){S.tq=e.target.value;tupd()}});
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeSheet();if(e.key==='Enter'&&e.target.id==='rw'){e.preventDefault();A.rsub();return}if(e.key==='Enter'&&e.target.id==='q'){e.preventDefault();e.target.blur();doQuery()}});
-document.addEventListener('input',e=>{if(e.target.id==='q'){S.q=e.target.value;if(e.isComposing)return;const b=$('#b0');if(b)b.innerHTML=body0();fetchSug(S.q.trim());return}if(e.target.id==='tq'){S.tq=e.target.value;if(!e.isComposing)tupd();return}if(e.target.id==='q')S.q=e.target.value;if(e.target.id==='vq'){S.vq=e.target.value;S.vlim=100;if(!e.isComposing)vupd()}});
+document.addEventListener('input',e=>{if(e.target.id==='rw'){if(S.rv)S.rv.typed=e.target.value;return}if(e.target.id==='q'){S.q=e.target.value;if(e.isComposing)return;const b=$('#b0');if(b)b.innerHTML=body0();fetchSug(S.q.trim());return}if(e.target.id==='tq'){S.tq=e.target.value;if(!e.isComposing)tupd();return}if(e.target.id==='q')S.q=e.target.value;if(e.target.id==='vq'){S.vq=e.target.value;S.vlim=100;if(!e.isComposing)vupd()}});
 document.addEventListener('change',e=>{const id=e.target.id,u=C.ui;if(id==='cp'||id==='cb'){aiStash();aiLoad(id==='cp');return}if(id==='bd'){const b=D.books.find(x=>x.id===S.bid);b.daily=+e.target.value;saveD();render();return}
 if(id==='tbk'){const t=D.importedTopics.find(x=>x.id===S.tid);t.book=e.target.value;t.ut=Date.now();saveD();return}
 if(id==='wf'){const f=e.target.files[0];if(f){const r=new FileReader();r.onload=()=>{$('#wt').value=String(r.result)};r.readAsText(f)}return}if(id.indexOf('rm_')===0){const k=id.slice(3),s=new Set(u.rmodes||['flip']);if(e.target.checked)s.add(k);else s.delete(k);if(!s.size){s.add('flip');toast('至少保留一种方式')}u.rmodes=[...s];S.rv=null;saveC();render();return}if(['tr','tsp','tz','tm','tb','vr','vz','vrv','ra','rx','vbg'].includes(id)){if(id==='ra'){u.autoDe=e.target.checked;saveC();return}if(id==='rx'){u.showEx=e.target.checked;S.rv=null;saveC();render();return}if(id==='tr'||id==='vr')u.repeat=+e.target.value;if(id==='vz')u.vzh=e.target.checked;if(id==='vrv'){S.vrev=e.target.checked;u.vrev=S.vrev}if(id==='tsp')u.speechRate=+e.target.value;if(id==='tz')u.showZh=e.target.checked;if(id==='tm')u.showMastered=e.target.checked;if(id==='tb'||id==='vbg')u.bg=e.target.checked;saveC();render();return}if(e.target.id==='te'){C.tts.engine=e.target.value;saveC();render();return}if(e.target.id==='azd'||e.target.id==='azz')$('#'+e.target.id+'c').hidden=e.target.value!=='__c';if(e.target.id==='vs'){S.vsort=e.target.value;C.ui.vsort=S.vsort;saveC();render()}
 if(e.target.id==='if'){const f=e.target.files[0];if(f){const r=new FileReader();r.onload=()=>{$('#ix').value=String(r.result);if(!$('#it').value)$('#it').value=f.name.replace(/\.\w+$/,'')};r.readAsText(f)}}
 if(e.target.id==='bf'){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const o=JSON.parse(r.result);if(!o||!Array.isArray(o.vocab||[]))throw 0;mergeData(o);saveD();toast('已合并导入');render()}catch(x){toast('备份文件无效')}};r.readAsText(f)}});
-addEventListener('online',render);addEventListener('offline',()=>{toast('已离线');render()});
+addEventListener('online',()=>{if(!typing())render()});addEventListener('offline',()=>{toast('已离线');if(!typing())render()});
 addEventListener('beforeinstallprompt',e=>{e.preventDefault();S.inst=e;if(S.tab===3)render()});
 /* ===== sync (Google Apps Script) ===== */
 let syncing=false,syncT=null,sst='';
@@ -396,7 +408,7 @@ if(!j.ok)throw new Error(j.error==='口令错误'||j.error==='token'?'同步口�
 function setSt(t){sst=t;if($('#sst'))$('#sst').textContent=t}
 async function syncNow(manual){if(!C.sync.appsScriptUrl){if(manual)toast('请先填写 Apps Script 网址');return}if(syncing)return;if(!navigator.onLine){setSt('离线，联网后自动同步');if(manual)toast('离线，无法同步');return}
 syncing=true;setSt('同步中…');try{const rem=await post('get');if(rem)mergeData(rem);D.updatedAt=Date.now();await post('set',payload());D.dirty=0;wr('dl',D);setSt('已同步 '+new Date().toLocaleTimeString());if(manual)toast('同步完成');
-if(!$('#sh').style.display.includes('block')&&S.tab<3&&!['imp','gen'].includes(S.sub)&&!S.busy)render()}catch(e){setSt('同步失败：'+e.message+'（本地数据不受影响）');if(manual)toast(e.message)}syncing=false}
+if(!$('#sh').style.display.includes('block')&&S.tab<3&&!['imp','gen','lrn'].includes(S.sub)&&!S.busy&&!typing())render()}catch(e){setSt('同步失败：'+e.message+'（本地数据不受影响）');if(manual)toast(e.message)}syncing=false}
 function schedSync(){if(!C.sync.appsScriptUrl||!C.sync.interval)return;clearTimeout(syncT);syncT=setTimeout(()=>syncNow(),Math.max(3,C.sync.interval)*1000)}
 const syncCard=()=>'<div class="card"><h3>同步（Google Apps Script）</h3><label for="su">Apps Script 网址</label><input id="su" placeholder="https://script.google.com/macros/s/…/exec" value="'+esc(C.sync.appsScriptUrl)+'"><label for="st">同步口令</label><input id="st" type="password" value="'+esc(C.sync.token)+'"><label for="sy">自动同步间隔（修改后延迟多久上传）</label><select id="sy"><option value="3">几秒</option><option value="30">30 秒</option><option value="60">1 分钟</option><option value="300">5 分钟</option><option value="0">仅手动</option></select><div class="row"><button class="p" data-a="savesync">保存并同步</button><button data-a="syncnow">立即同步</button></div><p class="mu" id="sst">'+esc(sst||(C.sync.appsScriptUrl?'尚未同步':'未配置'))+'</p></div>';
 /* ===== PWA ===== */
