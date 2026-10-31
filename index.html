@@ -196,9 +196,6 @@ const newList=b=>D.vocab.filter(v=>v.book===b.id&&isNew(v)).sort((x,y)=>x.create
 const curCard=()=>S.ses&&D.vocab.find(x=>x.id===S.ses.queue[S.ses.i]);
 function sesStart(b,more){const p=plan();if(more){if(!D.vocab.some(v=>v.book===b.id&&isNew(v)))return toast('没有待学的新词了');p.extra[b.id]=(p.extra[b.id]||0)+5;saveD()}
 const q=[...dueRev(b.id).map(v=>v.id),...newList(b).map(v=>v.id)];if(!q.length)return toast('今天没有待学内容');S.ses={bid:b.id,queue:q,i:0};S.rv=null;S.rset=0;S.sub='lrn';render()}
-const speechNorm=s=>String(s).toLowerCase().replace(/[.,!?;:"'„“”]/g,'').replace(ART,'').replace(/\s+/g,' ').trim();
-function lev(a,b){const m=[...Array(b.length+1).keys()];for(let i=1;i<=a.length;i++){let p=m[0];m[0]=i;for(let j=1;j<=b.length;j++){const t=m[j];m[j]=Math.min(m[j]+1,m[j-1]+1,p+(a[i-1]===b[j-1]?0:1));p=t}}return m[b.length]}
-const speechMatch=(h,w)=>!!h&&!!w&&(h===w||lev(h,w)/Math.max(h.length,w.length)<=0.2);
 function rateCard(v,good){const n=Date.now();if(isNew(v)){const p=plan();p.done[v.book]=(p.done[v.book]||0)+1}v.seen=1;
 if(good){v.reps=(v.reps||0)+1;v.stage=Math.min(7,(v.stage||0)+1);v.interval=LAD[v.stage];v.due=n+v.interval*864e5;if(v.stage>=6&&v.reps>=5)v.mst=1}else{v.stage=Math.max(0,(v.stage||0)-2);v.interval=0;v.due=n+6e5}
 if(S.ses){if(!good)S.ses.queue.push(v.id);S.ses.i++}saveD();S.flip=0;S.rv=null;render()}
@@ -246,7 +243,7 @@ function revBody(v,top){const rv=revState(v);
 if(rv.mode==='flip')return top+'<div class="card" data-a="flip" style="text-align:center;min-height:84px"><div class="row" style="justify-content:center"><h2 style="margin:0">'+esc(v.word)+'</h2>'+spk(v.word)+'</div>'+(rv.ex&&!S.flip?exLine(rv.ex):'')+(S.flip?'<p>'+esc(v.zh)+'</p>'+exLine(rv.ex||(v.examples[0]||{}).de||''):'<p class="mu">点击翻面</p>')+'</div><div class="row"><button class="d g" data-a="rate" data-r="0">忘了</button><button class="p g" data-a="rate" data-r="1">记得</button></div>';
 const ask=rv.mode==='de2zh'?'<div class="row" style="justify-content:center"><h2 style="margin:0">'+esc(v.word)+'</h2>'+spk(v.word)+'</div>'+exLine(rv.ex)+'<p class="mu sm">选择正确的中文释义</p>':'<h2 style="margin:0">'+esc(v.zh)+'</h2><p class="mu sm">'+(rv.mode==='zh2de'?'选择对应的德语':'写出德语（可不带冠词）')+'</p>';
 let h=top+'<div class="card" style="text-align:center">'+ask+'</div>';
-if(rv.mode==='write'){if(!rv.done)h+='<input id="rw" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="德语" value="'+esc(rv.typed||'')+'"><div class="row"><button class="g" data-a="rgive">不会</button><button class="g" data-a="rmic">🎤 读出德语</button><button class="p g" data-a="rsub">提交</button></div>';
+if(rv.mode==='write'){if(!rv.done)h+='<input id="rw" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="德语" value="'+esc(rv.typed||'')+'"><div class="row"><button class="g" data-a="rgive">不会</button><button class="p g" data-a="rsub">提交</button></div>';
 else h+='<div class="card"><b style="color:var('+(rv.ok?'--ok':'--er')+')">'+(rv.ok?'✓ 正确':'✗ 不对')+'</b>'+(rv.ok?'':' 你写的：'+esc(rv.typed||'—'))+'<div class="row"><b class="g">'+esc(v.word)+'</b>'+spk(v.word)+'</div></div><div class="rt"><button class="p" data-a="rnext">继续</button></div>'}
 else{h+=rv.opts.map((o,i)=>'<button class="opt'+(rv.done?(o===rv.ans?' ok':i===rv.picked?' bad':''):'')+'" data-a="'+(rv.done&&rv.mode==='zh2de'?'opsay':'pick')+'" data-i="'+i+'" '+(rv.done&&rv.mode!=='zh2de'?'disabled':'')+'>'+esc(o)+'</button>').join('');
 if(rv.done)h+=(rv.mode==='zh2de'?'<div class="mu xs">点击德语选项可听发音</div>':'')+'<div class="rt"><button class="p" data-a="rnext">继续</button></div>'}
@@ -321,12 +318,6 @@ const t=Date.now();L.forEach((x,i)=>{const d=norm({lemma:x.w,zh:x.zh},x.w);delet
 C.ui.lastBook=b.id;saveC();saveD();toast('已导入 '+L.length+' 个'+(dup?'，跳过重复 '+dup+' 个':''));S.sub='bk';render()},
 pick(e){const rv=S.rv;if(!rv||rv.done)return;rv.picked=+e.dataset.i;rv.ok=rv.opts[rv.picked]===rv.ans;rv.done=true;const v=D.vocab.find(x=>x.id===rv.id);render();if(v&&rv.mode==='zh2de'){stopAudio();speak(rv.opts[rv.picked],'de').then(()=>{if(!rv.ok)speak(v.word,'de')})}},
 rsub(){const rv=S.rv,v=rv&&D.vocab.find(x=>x.id===rv.id),i=$('#rw');if(!v||rv.done||!i)return;rv.typed=i.value;const nm=s=>s.toLowerCase().replace(/^(der|die|das)\s+/,'').replace(/\s+/g,' ').trim();rv.ok=!!rv.typed.trim()&&nm(rv.typed)===nm(v.word);rv.done=true;render();say(v.word,'de')},
-rmic(){const rv=S.rv,v=rv&&D.vocab.find(x=>x.id===rv.id),SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!v||rv.done)return;
-if(!SR)return toast('此环境不支持语音识别（iPhone 主屏幕 App 里通常不可用，可在 Safari 中打开试试）');
-if(S.mic)return;stopAudio();const r=new SR(),bt=$('[data-a="rmic"]'),want=speechNorm(v.word);r.lang='de-DE';r.maxAlternatives=5;r.interimResults=false;S.mic=1;if(bt)bt.textContent='正在听…';
-r.onresult=ev=>{const alts=[...ev.results[0]].map(a=>a.transcript);if(alts.some(t=>speechMatch(speechNorm(t),want))){rv.ok=true;rv.done=true;rv.typed=alts[0];render()}else toast('听到：'+alts[0]+'，再试一次')};
-r.onerror=ev=>toast(ev.error==='not-allowed'?'没有麦克风权限':'语音识别失败：'+ev.error);
-r.onend=()=>{S.mic=0;const b=$('[data-a="rmic"]');if(b)b.textContent='🎤 读出德语'};try{r.start()}catch(e){S.mic=0;toast('无法启动语音识别')}},
 opsay(e){const rv=S.rv;if(rv)say(rv.opts[+e.dataset.i],'de')},
 rgive(){const rv=S.rv,v=rv&&D.vocab.find(x=>x.id===rv.id);if(!v||rv.done)return;rv.ok=false;rv.done=true;render();say(v.word,'de')},
 rnext(){const rv=S.rv,v=rv&&D.vocab.find(x=>x.id===rv.id);if(v&&rv.done)rateCard(v,rv.ok)},
