@@ -61,9 +61,11 @@ if(C.ai.apiKey){C.ai.keys=C.ai.keys||{};const k0=akey(C.ai.provider,C.ai.baseUrl
 let D=Object.assign({version:1,updatedAt:0,mastered:{},vocab:[],importedTopics:[BUILTIN],history:[],deleted:{},order:[],sort:'time'},rd('dl',{}));
 let CACHE=rd('dl_cache',{});
 const cput=(k,v)=>{CACHE[k]=v;const ks=Object.keys(CACHE);if(ks.length>200)delete CACHE[ks[0]];wr('dl_cache',CACHE)};
-function migrate(){if(!Array.isArray(D.books)||!D.books.length)D.books=[{id:'bk_default',name:'我的生词',daily:10}];D.vocab.forEach(v=>{if(!v.book||!D.books.find(b=>b.id===v.book))v.book=D.books[0].id});if(!D.plan)D.plan={date:'',done:{},extra:{}}}
-migrate();
-const saveD=()=>{D.updatedAt=Date.now();D.dirty=1;wr('dl',D);schedSync()},saveC=()=>wr('dl_cfg',C);
+function migrate(){if(!Array.isArray(D.books)||!D.books.length)D.books=[{id:'bk_default',name:'我的生词',daily:10}];
+D.books.forEach(b=>{if(!b.ut)b.ut=1});D.vocab.forEach(v=>{if(!v.book||!D.books.find(b=>b.id===v.book))v.book=D.books[0].id;if(!v.ut)v.ut=v.createdAt||1});
+if(!D.plan)D.plan={date:'',done:{},extra:{}};
+for(const k of Object.keys(D.deleted)){if(D.deleted[k]===1||D.deleted[k]===true)D.deleted[k]=Date.now();if(k.startsWith('w_')){const nk='w_'+bare(k.slice(2));if(nk!==k){D.deleted[nk]=Math.max(+D.deleted[nk]||0,+D.deleted[k]||0);delete D.deleted[k]}}}}
+const saveD=()=>{touchAll();D.updatedAt=Date.now();D.dirty=1;wr('dl',D);schedSync()},saveC=()=>wr('dl_cfg',C);
 const S={so:{},rv:null,rset:0,sug:[],wd:null,resq:'',tq:'',tset:0,tab:0,sub:'',q:'',res:null,busy:false,vq:'',vlim:100,manage:false,tid:null,rev:null,gen:null,sel:null,playing:false,vsort:C.ui.vsort||'time',vrev:!!C.ui.vrev,vset:0};
 /* ===== AI ===== */
 function parseJ(t){t=String(t).replace(/```json|```/g,'');const a=t.search(/[\{\[]/),b=Math.max(t.lastIndexOf('}'),t.lastIndexOf(']'));if(a<0||b<a)throw new Error('AI 返回格式异常，请重试');try{return JSON.parse(t.slice(a,b+1))}catch(e){throw new Error('AI 返回格式异常，请重试')}}
@@ -107,7 +109,7 @@ const say=(t,l)=>{stopAudio();speak(t,l)};
 async function cacheInfo(){try{const c=await caches.open('dl-tts'),ks=await c.keys();let b=0;for(const k of ks){const r=await c.match(k);if(r)b+=(await r.blob()).size}return{n:ks.length,b}}catch(e){return{n:0,b:0}}}
 const spk=(t,l)=>'<button class="i" data-a="say" data-t="'+esc(t)+'" data-l="'+(l||'de')+'" aria-label="发音"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z" fill="currentColor"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/></svg></button>';
 /* ===== vocab ===== */
-function addVocab(d,ctx,form,bid){bid=bid||defBook(null);const k=d.lemma.toLowerCase();let v=D.vocab.find(x=>x.lemma.toLowerCase()===k);const isNew=!v;if(isNew){delete D.deleted['w_'+k];v={id:uid('v_'),createdAt:Date.now(),due:Date.now(),interval:0,ease:2.5,reps:0,stage:0,seen:0,mst:0,book:bid};D.vocab.push(v)}else if(v.book!==bid){const ob=D.books.find(b=>b.id===v.book);if(confirm('「'+d.lemma+'」已在《'+(ob?ob.name:'')+'》中，移到所选本子吗？'))v.book=bid}
+function addVocab(d,ctx,form,bid){bid=bid||defBook(null);const k=bare(d.lemma);let v=D.vocab.find(x=>bare(x.lemma)===k);const isNew=!v;if(isNew){delete D.deleted['w_'+k];v={id:uid('v_'),createdAt:Date.now(),due:Date.now(),interval:0,ease:2.5,reps:0,stage:0,seen:0,mst:0,book:bid};D.vocab.push(v)}else if(v.book!==bid){const ob=D.books.find(b=>b.id===v.book);if(confirm('「'+d.lemma+'」已在《'+(ob?ob.name:'')+'》中，移到所选本子吗？'))v.book=bid}
 Object.assign(v,{word:d.lemma,lemma:d.lemma,article:d.article,plural:d.plural,genitiv:d.genitiv,pos:d.pos,zh:d.zh||v.zh||'',explain:d.explain,forms:d.forms,adjective:d.adjective,examples:d.examples,collocations:d.collocations,pitfalls:d.pitfalls,synonyms:d.synonyms,antonyms:d.antonyms,context:ctx||v.context||'',contextForm:form||v.contextForm||''});C.ui.lastBook=v.book;saveC();saveD();toast(isNew?'已加入生词本':'已更新')}
 const em=x=>x==null||x===''||(Array.isArray(x)&&!x.length);
 function fillVocab(v,d){for(const k of ['pos','article','plural','genitiv','explain','pitfalls','zh'])if(em(v[k])&&d[k])v[k]=d[k];
@@ -289,7 +291,7 @@ clrhist(){if(confirm('清空历史？')){D.history=[];saveD();render()}},
 addres(){if(S.wd){const bid=bookFrom('wbk');if(!bid)return;addVocab(S.wd,'','',bid);render()}},
 more(){S.vlim+=100;render()},mng(){S.manage=!S.manage;render()},
 vd(e){S.sel=e.dataset.id;S.sub='vd';render()},back(){if(S.tab===1&&['vd','lrn','vimp'].includes(S.sub)&&S.bid)S.sub='bk';else S.sub='';S.rv=null;S.flip=0;render()},
-vdel(e){if(!confirm('确认删除？'))return;const dv=D.vocab.find(v=>v.id===e.dataset.id);if(dv)D.deleted['w_'+dv.word.toLowerCase()]=1;D.vocab=D.vocab.filter(v=>v.id!==e.dataset.id);saveD();S.sub=S.tab===1&&S.bid?'bk':'';render()},
+vdel(e){if(!confirm('确认删除？'))return;const dv=D.vocab.find(v=>v.id===e.dataset.id);if(dv)D.deleted['w_'+bare(dv.word)]=Date.now();D.vocab=D.vocab.filter(v=>v.id!==e.dataset.id);saveD();S.sub=S.tab===1&&S.bid?'bk':'';render()},
 flip(){S.flip=1;render()},
 rate(e){const v=curCard();if(v)rateCard(v,e.dataset.r==='1')},
 rset(){S.rset=!S.rset;render()},
@@ -310,11 +312,11 @@ lmst(){const s=S.ses,v=curCard();if(!v)return;if(isNew(v)){const p=plan();p.done
 vmst(){const v=D.vocab.find(x=>x.id===S.sel);if(!v)return;v.mst=v.mst?0:1;v.seen=1;if(!v.mst)v.due=Date.now();saveD();toast(v.mst?'已标记为掌握':'已取消掌握');render()},
 bimp(){S.sub='vimp';render()},
 bren(){const b=D.books.find(x=>x.id===S.bid),n=(prompt('新名称',b.name)||'').trim();if(n){b.name=n.slice(0,20);saveD();render()}},
-bdel(){const b=D.books.find(x=>x.id===S.bid);if(D.books.length<2)return toast('至少保留一个本子');const n=D.vocab.filter(v=>v.book===b.id);if(!confirm('删除《'+b.name+'》及其中 '+n.length+' 个单词？'))return;n.forEach(v=>D.deleted['w_'+v.word.toLowerCase()]=1);D.vocab=D.vocab.filter(v=>v.book!==b.id);D.books=D.books.filter(x=>x.id!==b.id);D.deleted[b.id]=1;saveD();S.sub='';S.bid=null;render()},
+bdel(){const b=D.books.find(x=>x.id===S.bid);if(D.books.length<2)return toast('至少保留一个本子');const n=D.vocab.filter(v=>v.book===b.id);if(!confirm('删除《'+b.name+'》及其中 '+n.length+' 个单词？'))return;n.forEach(v=>D.deleted['w_'+bare(v.word)]=Date.now());D.vocab=D.vocab.filter(v=>v.book!==b.id);D.books=D.books.filter(x=>x.id!==b.id);D.deleted[b.id]=Date.now();saveD();S.sub='';S.bid=null;render()},
 async wsave(){const b=D.books.find(x=>x.id===S.bid);let L=parseWords($('#wt').value);if(!L.length)return toast('请输入单词');if(S.busy)return;
 const ex=new Set(D.vocab.map(v=>bare(v.lemma))),n0=L.length;L=L.filter(x=>!ex.has(bare(x.w)));if(!L.length)return toast('这些词都已在生词本中');const dup=n0-L.length,keep=$('#wt').value,need=L.filter(x=>!x.zh||(C.ai.apiKey&&!ART.test(x.w)));
 if($('#wz').checked&&need.length){S.busy=true;S.prog='补全中 0/'+need.length;render();$('#wt').value=keep;try{await enrich(need)}catch(e){toast(e.message)}S.busy=false}
-const t=Date.now();L.forEach((x,i)=>{const d=norm({lemma:x.w,zh:x.zh},x.w);delete D.deleted['w_'+x.w.toLowerCase()];D.vocab.push({id:uid('v_'),createdAt:t+i,due:t,interval:0,ease:2.5,reps:0,stage:0,seen:0,mst:0,book:b.id,word:x.w,lemma:x.w,article:(x.w.match(/^(der|die|das)\s/i)||[''])[0].trim().toLowerCase(),plural:'',genitiv:'',pos:ART.test(x.w)?'名词':'',zh:x.zh,explain:'',forms:d.forms,adjective:null,examples:[],collocations:[],pitfalls:'',synonyms:[],antonyms:[],context:'',contextForm:'',source:'导入'})});
+const t=Date.now();L.forEach((x,i)=>{const d=norm({lemma:x.w,zh:x.zh},x.w);delete D.deleted['w_'+bare(x.w)];D.vocab.push({id:uid('v_'),createdAt:t+i,due:t,interval:0,ease:2.5,reps:0,stage:0,seen:0,mst:0,book:b.id,word:x.w,lemma:x.w,article:(x.w.match(/^(der|die|das)\s/i)||[''])[0].trim().toLowerCase(),plural:'',genitiv:'',pos:ART.test(x.w)?'名词':'',zh:x.zh,explain:'',forms:d.forms,adjective:null,examples:[],collocations:[],pitfalls:'',synonyms:[],antonyms:[],context:'',contextForm:'',source:'导入'})});
 C.ui.lastBook=b.id;saveC();saveD();toast('已导入 '+L.length+' 个'+(dup?'，跳过重复 '+dup+' 个':''));S.sub='bk';render()},
 pick(e){const rv=S.rv;if(!rv||rv.done)return;rv.picked=+e.dataset.i;rv.ok=rv.opts[rv.picked]===rv.ans;rv.done=true;const v=D.vocab.find(x=>x.id===rv.id);render();if(v&&rv.mode==='zh2de'){stopAudio();speak(rv.opts[rv.picked],'de').then(()=>{if(!rv.ok)speak(v.word,'de')})}},
 rsub(){const rv=S.rv,v=rv&&D.vocab.find(x=>x.id===rv.id),i=$('#rw');if(!v||rv.done||!i)return;rv.typed=i.value;const nm=s=>s.toLowerCase().replace(/^(der|die|das)\s+/,'').replace(/\s+/g,' ').trim();rv.ok=!!rv.typed.trim()&&nm(rv.typed)===nm(v.word);rv.done=true;render();say(v.word,'de')},
@@ -332,7 +334,7 @@ esave(){const v=D.vocab.find(x=>x.id===S.sel);v.zh=$('#ez').value;v.explain=$('#
 go(e){S.sub=e.dataset.s;render()},tp(e){S.tq='';S.tset=0;S.tid=e.dataset.id;S.sub='tp';S.manage=false;render()},
 mast(e){const k=S.tid+'_'+e.dataset.i;D.mastered[k]?delete D.mastered[k]:D.mastered[k]=1;saveD();render()},
 ldel(e){if(!confirm('确认删除？'))return;const t=D.importedTopics.find(x=>x.id===S.tid),i=+e.dataset.i,n=t.lines.length;for(let k=i;k<n;k++){const v=D.mastered[t.id+'_'+(k+1)];if(v)D.mastered[t.id+'_'+k]=1;else delete D.mastered[t.id+'_'+k]}t.lines.splice(i,1);t.ut=Date.now();saveD();render()},
-tdel(){if(!confirm('确认删除主题？'))return;D.deleted[S.tid]=1;saveD();S.sub='';render()},
+tdel(){if(!confirm('确认删除主题？'))return;D.deleted[S.tid]=Date.now();saveD();S.sub='';render()},
 say(e){say(e.dataset.t,e.dataset.l)},
 tset(){S.tset=!S.tset;render()},vset(){S.vset=!S.vset;render()},
 async vplay(){if(S.playing){stopPlay();render();return}const list=sortedVocab().slice(0,S.vlim);if(!list.length)return toast('没有可播放的单词');const az=C.tts.engine==='azure'&&!!C.tts.azureKey;S.playing=true;cancelPlay=false;
@@ -384,15 +386,27 @@ addEventListener('beforeinstallprompt',e=>{e.preventDefault();S.inst=e;if(S.tab=
 /* ===== sync (Google Apps Script) ===== */
 let syncing=false,syncT=null,sst='';
 const payload=()=>({books:D.books,mastered:D.mastered,vocab:D.vocab,importedTopics:D.importedTopics,history:D.history,deleted:D.deleted,order:D.order,sort:D.sort,updatedAt:D.updatedAt});
-function mergeData(o){if(!o||typeof o!=='object')return;Object.assign(D.deleted,o.deleted||{});for(const b of o.books||[])if(b&&b.id&&!D.deleted[b.id]&&!D.books.find(x=>x.id===b.id))D.books.push(b);
-for(const v of o.vocab||[]){if(!v||!v.word)continue;const k=v.word.toLowerCase();if(D.deleted['w_'+k])continue;const x=D.vocab.find(y=>y.word.toLowerCase()===k);if(!x)D.vocab.push(v);else if((v.due||0)>x.due)Object.assign(x,v)}
-D.vocab=D.vocab.filter(v=>!D.deleted['w_'+v.word.toLowerCase()]);
+const SN={};
+function scan(apply){const n=Date.now(),chg=(k,s,o)=>{const old=SN[k];if(old!==s){if(apply&&(old!==undefined||!o.ut))o.ut=n;SN[k]=s}};
+for(const v of D.vocab){const r=Object.assign({},v);delete r.ut;chg('v'+v.id,JSON.stringify(r),v)}
+for(const b of D.books){const r=Object.assign({},b);delete r.ut;chg('b'+b.id,JSON.stringify(r),b)}
+for(const t of D.importedTopics)chg('t'+t.id,JSON.stringify([t.title,t.emoji,t.book,t.lines,Object.keys(D.mastered).filter(k=>k.slice(0,k.lastIndexOf('_'))===t.id).sort().join(',')]),t)}
+const touchAll=()=>scan(true),snapAll=()=>scan(false);
+const dtime=k=>+D.deleted[k]||0;
+function mergeData(o){if(!o||typeof o!=='object')return;
+for(const k in o.deleted||{}){const t=(o.deleted[k]===1||o.deleted[k]===true)?Date.now():(+o.deleted[k]||0);if(t>dtime(k))D.deleted[k]=t}
+for(const b of o.books||[]){if(!b||!b.id)continue;const x=D.books.find(y=>y.id===b.id);if(!x)D.books.push(b);else if((b.ut||0)>(x.ut||0))Object.assign(x,b)}
+D.books=D.books.filter(b=>!(dtime(b.id)>(b.ut||0)));
+const idx=new Map(D.vocab.map((v,i)=>[bare(v.word),i]));
+for(const r of o.vocab||[]){if(!r||!r.word)continue;const k=bare(r.word);if(dtime('w_'+k)>(r.ut||0))continue;const i=idx.get(k);
+if(i===undefined){D.vocab.push(r);idx.set(k,D.vocab.length-1)}else if((r.ut||0)>(D.vocab[i].ut||0)){const id=D.vocab[i].id;D.vocab[i]=Object.assign({},r,{id})}}
+D.vocab=D.vocab.filter(v=>!(dtime('w_'+bare(v.word))>(v.ut||0)));
 const st={};for(const t of o.importedTopics||[]){if(!t||!t.id||!Array.isArray(t.lines))continue;const x=D.importedTopics.find(y=>y.id===t.id);
-if(!x){D.importedTopics.push(t);st[t.id]='remote'}else if((t.ut||0)>(x.ut||0)){x.lines=t.lines;x.ut=t.ut;x.title=t.title||x.title;st[t.id]='remote'}else st[t.id]=(t.ut||0)<(x.ut||0)?'local':'same'}
+if(!x){D.importedTopics.push(t);st[t.id]='remote'}else if((t.ut||0)>(x.ut||0)){Object.assign(x,{lines:t.lines,title:t.title||x.title,emoji:t.emoji||x.emoji,book:t.book,ut:t.ut});st[t.id]='remote'}}
 for(const id in st)if(st[id]==='remote')for(const k of Object.keys(D.mastered))if(k.slice(0,k.lastIndexOf('_'))===id)delete D.mastered[k];
-for(const k in o.mastered||{}){const id=k.slice(0,k.lastIndexOf('_'));if(st[id]!=='local')D.mastered[k]=1}
+for(const k in o.mastered||{}){if(st[k.slice(0,k.lastIndexOf('_'))]==='remote')D.mastered[k]=1}
 for(const h of o.history||[])if(h&&h.id&&!D.history.find(y=>y.id===h.id))D.history.push(h);D.history.sort((a,b)=>b.createdAt-a.createdAt);D.history=D.history.slice(0,100);
-D.order=[...new Set([...(D.order||[]),...(o.order||[])])];migrate()}
+D.order=[...new Set([...(D.order||[]),...(o.order||[])])];migrate();snapAll()}
 async function post(action,data){let r,j;try{r=await fetch(C.sync.appsScriptUrl,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({token:C.sync.token,action,data})})}catch(e){throw new Error('无法连接同步服务')}
 if(!r.ok)throw new Error('同步服务错误 '+r.status);try{j=await r.json()}catch(e){throw new Error('返回格式异常，请确认网址以 /exec 结尾且访问权限为“任何人”')}
 if(!j.ok)throw new Error(j.error==='口令错误'||j.error==='token'?'同步口令不正确':'同步失败：'+(j.error||'未知错误'));return j.data}
@@ -405,5 +419,5 @@ const syncCard=()=>'<div class="card"><h3>同步（Google Apps Script）</h3><la
 /* ===== PWA ===== */
 if('serviceWorker' in navigator&&/^https?:/.test(location.protocol)){navigator.serviceWorker.register('sw.js').then(reg=>{const ask=w=>toast('有新版本可用，点击刷新',()=>{w.postMessage('skip')});if(reg.waiting&&navigator.serviceWorker.controller)ask(reg.waiting);reg.addEventListener('updatefound',()=>{const w=reg.installing;w&&w.addEventListener('statechange',()=>{if(w.state==='installed'&&navigator.serviceWorker.controller)ask(w)})})}).catch(()=>toast('离线功能注册失败，需通过 https 打开'));let rl=false;navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!rl&&localStorage.getItem('dl_upd')!=='x'){rl=true;location.reload()}})}
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&S.playing&&!(C.ui.bg&&C.tts.engine==='azure')){cancelPlay=true;stopAudio()}});addEventListener('online',()=>syncNow());document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')syncNow()});
-render();syncNow();
+migrate();snapAll();render();syncNow();
 </script></body></html>
