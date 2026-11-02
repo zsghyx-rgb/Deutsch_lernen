@@ -243,7 +243,7 @@ b.forEach((x,j)=>{const o=r&&r[j];if(o&&typeof o==='object'){const w=normW(str(o
 if(!r)for(const x of b){if(!x.zh)try{x.zh=await quickGloss(x.w)}catch(e){}}
 S.prog='补全中 '+Math.min(i+20,list.length)+'/'+list.length;const bt=$('[data-a="wsave"]');if(bt)bt.textContent=S.prog}}
 V.vd=()=>{const v=D.vocab.find(x=>x.id===S.sel);if(!v)return'';const d=norm(v,v.word);d.lemma=v.word;d.pos=v.pos;
-return '<div class="row"><button data-a="back">‹ 返回</button></div>'+detailBody(d,v)+'<div class="row" style="margin-top:8px"><button class="p" data-a="more3" '+(S.busy?'disabled':'')+'>'+(S.busy?'AI 生成中…':'AI 解释 / 再来 3 条例句')+'</button><button data-a="vedit">编辑</button><button data-a="vmst">'+(v.mst?'取消掌握':'标记已掌握')+'</button><button class="d" data-a="vdel" data-id="'+esc(v.id)+'">删除</button></div>'};
+return '<div class="row"><button data-a="back">‹ 返回</button></div>'+detailBody(d,v)+'<div class="row" style="margin-top:8px"><button class="p" data-a="more3" '+(S.busy?'disabled':'')+'>'+(S.busy?'AI 生成中…':'AI 解释+例句')+'</button><button data-a="vedit">编辑</button><button data-a="vmst">'+(v.mst?'取消掌握':'标记已掌握')+'</button><button class="d" data-a="vdel" data-id="'+esc(v.id)+'">删除</button></div>'};
 const RM=[['flip','翻卡（自评记得/忘了）'],['de2zh','看德语选中文'],['zh2de','看中文选德语'],['write','看中文写德语']];
 const rpanel=()=>'<div class="card"><div class="mu sm">复习方式（可多选，随机出题）</div>'+RM.map(m=>chk('rm_'+m[0],(C.ui.rmodes||['flip']).includes(m[0]),m[1])).join('')+chk('ra',!!C.ui.autoDe,'看德语选中文时自动朗读德语')+chk('rx',!!C.ui.showEx,'显示例句（仅翻卡和看德语选中文，不含翻译）')+'</div>';
 const shuf=a=>a.map(x=>[Math.random(),x]).sort((p,q)=>p[0]-q[0]).map(x=>x[1]);
