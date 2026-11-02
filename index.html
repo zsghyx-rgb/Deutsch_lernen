@@ -39,8 +39,9 @@ nav div{max-width:640px;margin:auto;display:flex}nav button{flex:1;height:56px;b
 .lc .card{padding:8px 10px;margin:6px 0}.lc h2{font-size:20px}.lc p{margin:2px 0}.lc .opt{min-height:44px;margin:5px 0;padding:0 12px}.lc input{margin:4px 0}.lc h1{margin:0 0 4px}
 .mu.xs{font-size:11px;line-height:1.3}.fold>h3{display:flex;justify-content:space-between;align-items:center;cursor:pointer;margin:0 0 6px}.fold>h3::after{content:'⌃';color:var(--mu)}.fold.cl>h3{margin:0}.fold.cl>h3::after{content:'⌄'}.fold.cl>:not(h3){display:none}
 .lc{display:flex;flex-direction:column;justify-content:center;min-height:calc(100dvh - 250px - env(safe-area-inset-top) - env(safe-area-inset-bottom))}.lc .row button,.lc .rt button{min-height:48px}
+#clr{position:fixed;right:14px;bottom:calc(72px + env(safe-area-inset-bottom));z-index:7;width:44px;height:44px;min-height:44px;border-radius:50%;padding:0;font-size:18px;line-height:1;box-shadow:0 2px 8px #0003;background:var(--card);color:var(--mu)}#clr[hidden]{display:none}body.kb #clr{bottom:calc(var(--kb,0px) + 12px)}
 </style></head><body>
-<div id="app"></div><nav><div id="nv"></div></nav><div id="ov"></div><div id="sh"></div><div id="ts"></div>
+<div id="app"></div><nav><div id="nv"></div></nav><div id="ov"></div><div id="sh"></div><div id="ts"></div><button id="clr" data-a="qclear" aria-label="清除输入" hidden>✕</button>
 <script>
 'use strict';
 /* ===== utils ===== */
@@ -64,6 +65,8 @@ const cput=(k,v)=>{CACHE[k]=v;const ks=Object.keys(CACHE);if(ks.length>200)delet
 function migrate(){if(!Array.isArray(D.books)||!D.books.length)D.books=[{id:'bk_default',name:'我的生词',daily:10}];
 D.books.forEach(b=>{if(!b.ut)b.ut=1});D.vocab.forEach(v=>{if(!v.book||!D.books.find(b=>b.id===v.book))v.book=D.books[0].id;if(!v.ut)v.ut=v.createdAt||1;if(!v.pt)v.pt=v.ut});
 if(!D.plan)D.plan={date:'',done:{},extra:{}};
+D.vocab.forEach(fat);D.importedTopics.forEach(t=>t.lines.forEach(l=>{if(l.zh==null)l.zh=''}));
+D.history.forEach(h=>{const r=h.raw;if(!r)return;if(r.type==='list'&&Array.isArray(r.items)&&r.items.length){if(!CACHE['L|'+h.query])cput('L|'+h.query,r.items);h.p=h.p||r.items[0].p||''}else if(r.type==='sentence'&&r.out){if(!CACHE['S|'+h.query])cput('S|'+h.query,r.out)}else if(r.type==='word'&&r.data&&r.data.lemma){if(!CACHE[h.query+'|'])cput(h.query+'|',r.data)}h.answer=String(h.answer||'').slice(0,60);delete h.raw});
 for(const k of Object.keys(D.deleted)){if(D.deleted[k]===1||D.deleted[k]===true)D.deleted[k]=Date.now();if(k.startsWith('w_')){const nk='w_'+bare(k.slice(2));if(nk!==k){D.deleted[nk]=Math.max(+D.deleted[nk]||0,+D.deleted[k]||0);delete D.deleted[k]}}}}
 const saveD=()=>{touchAll();D.updatedAt=Date.now();D.dirty=1;wr('dl',D);schedSync()},saveC=()=>wr('dl_cfg',C);
 const S={vstart:'1',tstart:'1',so:{},rv:null,rset:0,sug:[],wd:null,resq:'',tq:'',tset:0,tab:0,sub:'',q:'',res:null,busy:false,vq:'',vlim:100,manage:false,tid:null,rev:null,gen:null,sel:null,playing:false,vsort:C.ui.vsort||'time',vrev:!!C.ui.vrev,vset:0};
@@ -158,18 +161,19 @@ try{const r=await ai(LPROMPT(q));items=(Array.isArray(r)?r:(r&&r.items)||[]).map
 catch(e){if(e.message!=='noai'&&!/无法连接|离线/.test(e.message))throw e;const z=await transText(q);items=[hasCJK(q)?{w:z,g:'',p:'',zh:q}:{w:q,g:'',p:'',zh:z}]}
 return items}
 async function doQuery(){const q=S.q.trim();if(!q||S.busy)return;S.busy=true;S.sub='';render();let raw;
-try{const cjk=hasCJK(q);if((cjk&&q.length>8)||(!cjk&&(q.split(/\s+/).length>2||q.length>40)))raw={type:'sentence',src:q,out:await transText(q)};else raw={type:'list',q:q,items:await lookupList(q)};
-S.res=raw;S.resq=q;D.history.unshift({id:uid('h_'),type:raw.type,query:q,answer:raw.type==='list'?(raw.items[0]?(cjk?raw.items[0].w:raw.items[0].zh):''):raw.out,createdAt:Date.now(),raw:raw});D.history=D.history.slice(0,100);saveD()}catch(e){toast(e.message)}
+try{const cjk=hasCJK(q);if((cjk&&q.length>8)||(!cjk&&(q.split(/\s+/).length>2||q.length>40))){raw={type:'sentence',src:q,out:CACHE['S|'+q]||await transText(q)};cput('S|'+q,raw.out)}else raw={type:'list',q:q,items:await lookupList(q)};
+S.res=raw;S.resq=q;D.history=D.history.filter(x=>x.query!==q);D.history.unshift({id:uid('h_'),type:raw.type,query:q,answer:String(raw.type==='list'?(raw.items[0]?(cjk?raw.items[0].w:raw.items[0].zh):''):raw.out).slice(0,60),p:raw.type==='list'&&raw.items[0]?raw.items[0].p:'',createdAt:Date.now()});D.history=D.history.slice(0,100);saveD()}catch(e){toast(e.message)}
 S.busy=false;render()}
 const vdata=v=>{const d=norm(v,v.word);d.lemma=v.word;d.pos=v.pos;return d};
 async function showEntry(it){if(S.busy)return;S.sub='wd';S.wd=null;const sv=D.vocab.find(x=>x.lemma.toLowerCase()===it.w.toLowerCase());
 if(sv){S.wd=vdata(sv);render();return}S.busy=true;render();let d;
 try{d=await lookupWord(it.w)}catch(x){toast(x.message==='noai'?'未配置 AI，仅显示基本释义':x.message);d=norm({lemma:it.w,pos:it.p,zh:it.zh},it.w)}
 if(!d.zh)d.zh=it.zh;S.wd=d;S.busy=false;render()}
-function openHist(id){const h=D.history.find(x=>x.id===id);if(!h)return;const r=h.raw;S.sub='';
-if(r&&r.type==='list'&&Array.isArray(r.items)&&r.items.length){const n=s=>s.toLowerCase().replace(/^(der|die|das)\s+/,'').trim(),q=n(h.query),it=r.items.find(i=>n(i.w)===q)||r.items[0];S.q='';showEntry(it)}
-else if(r&&r.type==='sentence'&&r.out){S.q=h.query;S.res=r;S.resq=h.query.trim();render()}
-else if(r&&r.type==='word'&&r.data&&r.data.lemma){S.q='';S.wd=r.data;S.sub='wd';render()}else{S.q=h.query;doQuery()}}
+function openHist(id){const h=D.history.find(x=>x.id===id);if(!h)return;S.sub='';const nz=s=>s.toLowerCase().replace(/^(der|die|das)\s+/,'').trim();
+if(h.type==='list'){const items=CACHE['L|'+h.query];if(Array.isArray(items)&&items.length){const it=items.find(i=>nz(i.w)===nz(h.query))||items[0];S.q='';showEntry(it);return}}
+else if(h.type==='word'){S.q='';showEntry({w:h.query,p:'',zh:h.answer});return}
+else if(h.type==='sentence'&&CACHE['S|'+h.query]){S.q=h.query;S.res={type:'sentence',src:h.query,out:CACHE['S|'+h.query]};S.resq=h.query.trim();render();return}
+S.q=h.query;doQuery()}
 let sugT=null,sugC=null;
 function paintSug(){const el=$('#sg');if(el)el.innerHTML=sugHtml()}
 const sugHtml=()=>S.sug.length?'<div class="chips"><span class="mu sm">拼写建议</span>'+S.sug.map(w=>'<button class="chip" data-a="sug" data-w="'+esc(w)+'">'+esc(w)+'</button>').join('')+'</div>':'';
@@ -187,8 +191,8 @@ else l.split(/(?<=[.!?。！？])\s+/).forEach(s=>s.trim()&&L.push({de:s.trim(),
 /* ===== views ===== */
 const TABS=['🔤 翻译','📒 生词本','📚 学习','⚙️ 设置'];
 const V={};
-const histAns=x=>{const r=x.raw;return r&&r.type==='list'&&r.items&&r.items[0]&&hasCJK(x.query)?r.items[0].w:(x.answer||'')};
-const histHtml=()=>'<div class="row"><span class="g mu sm">历史记录</span>'+(D.history.length?'<button class="d" data-a="clrhist">清空</button>':'')+'</div>'+(D.history.map(x=>{const f=x.raw&&x.raw.type==='list'&&x.raw.items&&x.raw.items[0],pb=f&&f.p?'<span class="b">'+esc(f.p)+'</span>':'';return '<div class="li">'+spk(x.query,hasCJK(x.query)?'zh':'de')+'<div class="g" data-a="hist" data-id="'+esc(x.id)+'" style="cursor:pointer"><b>'+esc(x.query.slice(0,40))+'</b>'+pb+'<div class="mu">'+esc(histAns(x).slice(0,60))+'</div></div></div>'}).join('')||'<p class="mu">暂无记录</p>');
+const histAns=x=>x.answer||'';
+const histHtml=()=>'<div class="row"><span class="g mu sm">历史记录</span>'+(D.history.length?'<button class="d" data-a="clrhist">清空历史</button>':'')+'</div>'+(D.history.map(x=>{const pb=x.p?'<span class="b">'+esc(x.p)+'</span>':'';return '<div class="li">'+spk(x.query,hasCJK(x.query)?'zh':'de')+'<div class="g" data-a="hist" data-id="'+esc(x.id)+'" style="cursor:pointer"><b>'+esc(x.query.slice(0,40))+'</b>'+pb+'<div class="mu">'+esc(histAns(x).slice(0,60))+'</div></div></div>'}).join('')||'<p class="mu">暂无记录</p>');
 const entList=it=>'<div class="sec"><b>词典</b></div>'+it.map((x,i)=>'<div class="en" data-a="entry" data-i="'+i+'"><b class="hw">'+esc(x.w)+'</b>'+(x.g?' <span class="mu sm">'+esc(x.g)+'</span>':'')+'<div class="mu sm">'+(x.p?esc(x.p)+' ':'')+esc(x.zh)+'</div></div>').join('');
 function body0(){const q=S.q.trim();if(!q)return histHtml();let h='<div id="sg">'+sugHtml()+'</div>';
 if(S.res&&S.resq===q)h+=S.res.type==='list'?entList(S.res.items):sentCard(S.res);else h+='<p class="mu sm">点击“查询”或按回车</p>';return h}
@@ -278,7 +282,10 @@ V.t3=()=>{const a=C.ai;return '<h1>设置</h1><div class="card"><h3>AI 服务</h
 /* ===== render ===== */
 function vf(id,list,val,lab){const c=val&&!list.includes(val);return '<label for="'+id+'">'+lab+'</label><select id="'+id+'">'+list.map(v=>'<option'+(v===val?' selected':'')+'>'+v+'</option>').join('')+'<option value="__c"'+(c?' selected':'')+'>自定义…</option></select><input id="'+id+'c" placeholder="voice 名称" value="'+esc(c?val:'')+'"'+(c?'':' hidden')+'>'}
 const voiceCard=()=>{const T=C.tts,az=T.engine==='azure';return '<div class="card"><h3>语音（TTS）</h3><label for="te">引擎</label><select id="te"><option value="system">系统语音</option><option value="azure">Azure</option></select>'+(az?vf('azd',AZDE,T.deVoice,'德语声音')+vf('azz',AZZH,T.zhVoice,'中文声音')+'<label for="azk">Azure Key</label><input id="azk" type="password" value="'+esc(T.azureKey||'')+'"><label for="azr">区域（可留空，自动检测）</label><input id="azr" value="'+esc(T.azureRegion||'')+'">':'<p class="mu">系统语音：德语 de-DE、中文 zh-CN；息屏后会停止。</p>')+'<div class="row"><button class="p" data-a="azsave">保存并试听</button>'+(az?'<button data-a="azclr">清除缓存</button>':'')+'</div>'+(az?'<p class="mu" id="cs">缓存：…</p>':'')+'</div>'};
-function render(){const root=document.documentElement;root.dataset.t=C.theme;$('#nv').innerHTML=TABS.map((t,i)=>'<button class="'+(S.tab===i?'on':'')+'" data-a="tab" data-i="'+i+'">'+t+'</button>').join('');$('#app').innerHTML=V['t'+S.tab]();
+function syncClr(){const b=$('#clr');if(b)b.hidden=!(S.tab===0&&S.sub!=='wd'&&S.q.trim()&&$('#q'))}
+(function(){const vv=window.visualViewport;if(!vv)return;const f=()=>{const kb=Math.max(0,window.innerHeight-vv.height-vv.offsetTop);document.documentElement.style.setProperty('--kb',kb+'px');document.body.classList.toggle('kb',kb>80)};vv.addEventListener('resize',f);vv.addEventListener('scroll',f);f()})();
+function render(){render0();syncClr()}
+function render0(){const root=document.documentElement;root.dataset.t=C.theme;$('#nv').innerHTML=TABS.map((t,i)=>'<button class="'+(S.tab===i?'on':'')+'" data-a="tab" data-i="'+i+'">'+t+'</button>').join('');$('#app').innerHTML=V['t'+S.tab]();
 if(S.tab===3){S.aiCur=akey(C.ai.provider,C.ai.baseUrl);$('#cp').value=C.ai.provider;$('#cr').value=String(C.ui.speechRate);$('#ct').value=C.theme;$('#te').value=C.tts.engine;$('#sy').value=String(C.sync.interval);document.querySelectorAll('#app>.card').forEach(c=>{const t=c.firstElementChild;if(!t||t.tagName!=='H3')return;const k=t.textContent;c.classList.add('fold');t.dataset.a='fold';if(!(k in S.so?S.so[k]:k==='AI 服务'))c.classList.add('cl')});if($('#cs'))cacheInfo().then(i=>{if($('#cs'))$('#cs').textContent='已缓存语音 '+i.n+' 条 · '+(i.b/1048576).toFixed(1)+' MB'})}}
 function sheet(h){$('#sh').innerHTML=h;$('#sh').style.display=$('#ov').style.display='block'}
 function closeSheet(){$('#sh').style.display=$('#ov').style.display='none';if(S.spRes){const f=S.spRes;S.spRes=null;f(null)}}
@@ -295,7 +302,9 @@ tab(e){if(S.playing){stopPlay()}S.tab=+e.dataset.i;S.sub='';S.manage=false;rende
 query(){doQuery()},sug(e){S.q=e.dataset.w;S.sug=[];doQuery()},
 wback(){S.sub='';S.wd=null;render()},
 entry(e){const it=S.res&&S.res.items[+e.dataset.i];if(it)showEntry(it)},hist(e){openHist(e.dataset.id)},
-clrhist(){if(confirm('清空历史？')){D.history=[];saveD();render()}},
+clrhist(){if(!D.history.length)return;sheet('<h2>清空查询历史？</h2><p class="mu">将删除全部 '+D.history.length+' 条查询历史。生词本和学习主题不受影响，此操作无法撤销。</p><div class="row"><button class="g" data-a="clrno">取消</button><button class="d g" data-a="clryes">确认清除</button></div>')},
+clrno(){closeSheet()},
+clryes(){D.history=[];saveD();closeSheet();render();toast('已清空查询历史')},
 addres(){if(S.wd){const bid=bookFrom('wbk');if(!bid)return;addVocab(S.wd,'','',bid);render()}},
 more(){S.vlim+=100;render()},mng(){S.manage=!S.manage;render()},
 vd(e){S.sel=e.dataset.id;S.sub='vd';render()},back(){if(S.tab===1&&['vd','lrn','vimp'].includes(S.sub)&&S.bid)S.sub='bk';else S.sub='';S.rv=null;S.flip=0;render()},
@@ -303,6 +312,7 @@ vdel(e){if(!confirm('确认删除？'))return;const dv=D.vocab.find(v=>v.id===e.
 flip(){S.flip=1;render()},
 rate(e){const v=curCard();if(v)rateCard(v,e.dataset.r==='1')},
 rset(){S.rset=!S.rset;render()},
+qclear(){S.q='';S.sug=[];const i=$('#q');if(i){i.value='';const b=$('#b0');if(b)b.innerHTML=body0();i.focus()}syncClr()},
 spok(){const f=S.spRes;S.spRes=null;const a=[...document.querySelectorAll('.spc')].map(c=>c.checked);closeSheet();if(f)f(a)},
 spcancel(){const f=S.spRes;S.spRes=null;closeSheet();if(f)f(null)},
 spai(){const f=S.spRes;S.spRes=null;closeSheet();if(f)f('ai')},
@@ -368,7 +378,7 @@ saveD();closeSheet();S.busy=false;render();toast(msg)}finally{S.busy=false}},
 go(e){S.sub=e.dataset.s;render()},tp(e){S.tstart='1';S.tq='';S.tset=0;S.tid=e.dataset.id;S.sub='tp';S.manage=false;render()},
 mast(e){const k=S.tid+'_'+e.dataset.i;D.mastered[k]?delete D.mastered[k]:D.mastered[k]=1;saveD();render()},
 ldel(e){if(!confirm('确认删除？'))return;const t=D.importedTopics.find(x=>x.id===S.tid),i=+e.dataset.i,n=t.lines.length;for(let k=i;k<n;k++){const v=D.mastered[t.id+'_'+(k+1)];if(v)D.mastered[t.id+'_'+k]=1;else delete D.mastered[t.id+'_'+k]}t.lines.splice(i,1);t.ut=Date.now();saveD();render()},
-tdel(){if(!confirm('确认删除主题？'))return;D.deleted[S.tid]=Date.now();saveD();S.sub='';render()},
+tdel(){if(!confirm('确认删除主题？'))return;D.deleted[S.tid]=Date.now();compact();saveD();S.sub='';render()},
 say(e){say(e.dataset.t,e.dataset.l)},
 tset(){S.tset=!S.tset;render()},vset(){S.vset=!S.vset;render()},
 async vplay(){if(S.playing){stopPlay();render();return}const list=sortedVocab().slice(0,S.vlim);if(!list.length)return toast('没有可播放的单词');const n0=Number(S.vstart);if(!Number.isInteger(n0)||n0<1||n0>list.length)return toast('数字无效，请修改');const az=C.tts.engine==='azure'&&!!C.tts.azureKey;S.playing=true;cancelPlay=false;
@@ -417,9 +427,9 @@ exp(){const b=new Blob([JSON.stringify(Object.assign({},D))],{type:'application/
 wipe(){if(confirm('清除本机所有数据？')&&confirm('再次确认')){localStorage.removeItem('dl');localStorage.removeItem('dl_cache');location.reload()}}};
 ['gesturestart','gesturechange','gestureend'].forEach(n=>document.addEventListener(n,e=>e.preventDefault()));document.addEventListener('touchmove',e=>{if(e.touches.length>1)e.preventDefault()},{passive:false});
 document.addEventListener('click',e=>{if(e.target.id==='ov')return closeSheet();const t=e.target.closest('[data-a]');if(t&&A[t.dataset.a])A[t.dataset.a](t)});
-document.addEventListener('compositionend',e=>{const id=e.target.id;if(id==='q'){S.q=e.target.value;const b=$('#b0');if(b)b.innerHTML=body0();fetchSug(S.q.trim())}else if(id==='vq'){S.vq=e.target.value;S.vlim=100;vupd()}else if(id==='tq'){S.tq=e.target.value;tupd()}});
+document.addEventListener('compositionend',e=>{const id=e.target.id;if(id==='q'){S.q=e.target.value;syncClr();const b=$('#b0');if(b)b.innerHTML=body0();fetchSug(S.q.trim())}else if(id==='vq'){S.vq=e.target.value;S.vlim=100;vupd()}else if(id==='tq'){S.tq=e.target.value;tupd()}});
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeSheet();if(e.key==='Enter'&&e.target.id==='rw'){e.preventDefault();A.rsub();return}if(e.key==='Enter'&&e.target.id==='q'){e.preventDefault();e.target.blur();doQuery()}});
-document.addEventListener('input',e=>{if(e.target.id==='vps'){S.vstart=e.target.value;return}if(e.target.id==='tps'){S.tstart=e.target.value;return}if(e.target.id==='rw'){if(S.rv)S.rv.typed=e.target.value;return}if(e.target.id==='q'){S.q=e.target.value;if(e.isComposing)return;const b=$('#b0');if(b)b.innerHTML=body0();fetchSug(S.q.trim());return}if(e.target.id==='tq'){S.tq=e.target.value;if(!e.isComposing)tupd();return}if(e.target.id==='q')S.q=e.target.value;if(e.target.id==='vq'){S.vq=e.target.value;S.vlim=100;if(!e.isComposing)vupd()}});
+document.addEventListener('input',e=>{if(e.target.id==='vps'){S.vstart=e.target.value;return}if(e.target.id==='tps'){S.tstart=e.target.value;return}if(e.target.id==='rw'){if(S.rv)S.rv.typed=e.target.value;return}if(e.target.id==='q'){S.q=e.target.value;syncClr();if(e.isComposing)return;const b=$('#b0');if(b)b.innerHTML=body0();fetchSug(S.q.trim());return}if(e.target.id==='tq'){S.tq=e.target.value;if(!e.isComposing)tupd();return}if(e.target.id==='q')S.q=e.target.value;if(e.target.id==='vq'){S.vq=e.target.value;S.vlim=100;if(!e.isComposing)vupd()}});
 document.addEventListener('change',e=>{const id=e.target.id,u=C.ui;if(id==='ssp'){const b=$('#sbox');if(b)b.hidden=!e.target.checked;return}if(id==='cp'||id==='cb'){aiStash();aiLoad(id==='cp');return}if(id==='bd'){const b=D.books.find(x=>x.id===S.bid);b.daily=+e.target.value;saveD();render();return}
 if(id==='tbk'){const t=D.importedTopics.find(x=>x.id===S.tid);t.book=e.target.value;t.ut=Date.now();saveD();return}
 if(id==='wf'){const f=e.target.files[0];if(f){const r=new FileReader();r.onload=()=>{$('#wt').value=String(r.result)};r.readAsText(f)}return}if(id.indexOf('rm_')===0){const k=id.slice(3),s=new Set(u.rmodes||['flip']);if(e.target.checked)s.add(k);else s.delete(k);if(!s.size){s.add('flip');toast('至少保留一种方式')}u.rmodes=[...s];S.rv=null;saveC();render();return}if(['tr','tsp','tz','tm','tb','vr','vz','vrv','ra','rx','vbg'].includes(id)){if(id==='ra'){u.autoDe=e.target.checked;saveC();return}if(id==='rx'){u.showEx=e.target.checked;S.rv=null;saveC();render();return}if(id==='tr'||id==='vr')u.repeat=+e.target.value;if(id==='vz')u.vzh=e.target.checked;if(id==='vrv'){S.vrev=e.target.checked;u.vrev=S.vrev}if(id==='tsp')u.speechRate=+e.target.value;if(id==='tz')u.showZh=e.target.checked;if(id==='tm')u.showMastered=e.target.checked;if(id==='tb'||id==='vbg')u.bg=e.target.checked;saveC();render();return}if(e.target.id==='te'){C.tts.engine=e.target.value;saveC();render();return}if(e.target.id==='azd'||e.target.id==='azz')$('#'+e.target.id+'c').hidden=e.target.value!=='__c';if(e.target.id==='vs'){S.vsort=e.target.value;C.ui.vsort=S.vsort;saveC();render()}
@@ -429,7 +439,7 @@ addEventListener('online',()=>{if(!typing())render()});addEventListener('offline
 addEventListener('beforeinstallprompt',e=>{e.preventDefault();S.inst=e;if(S.tab===3)render()});
 /* ===== sync (Google Apps Script) ===== */
 let syncing=false,syncT=null,sst='';
-const payload=()=>({plan:D.plan,books:D.books,mastered:D.mastered,vocab:D.vocab,importedTopics:D.importedTopics,history:D.history,deleted:D.deleted,order:D.order,sort:D.sort,updatedAt:D.updatedAt});
+const payload=()=>({plan:D.plan,books:D.books,mastered:D.mastered,vocab:D.vocab.map(slim),importedTopics:D.importedTopics.filter(t=>!D.deleted[t.id]).map(t=>Object.assign({},t,{lines:t.lines.map(l=>{const r={de:l.de};if(l.zh)r.zh=l.zh;return r})})),history:D.history,deleted:D.deleted,order:D.order,sort:D.sort,updatedAt:D.updatedAt});
 const SN={};
 const PF=['stage','reps','interval','due','mst','seen','ease'],prog=v=>(v.mst?1e6:0)+(v.reps||0)*100+(v.stage||0);
 function scan(apply){const n=Date.now(),chg=(k,s,o,f)=>{const old=SN[k];if(old!==s){if(apply&&(old!==undefined||!o[f||'ut']))o[f||'ut']=n;SN[k]=s}};
@@ -439,6 +449,18 @@ for(const t of D.importedTopics)chg('t'+t.id,JSON.stringify([t.title,t.emoji,t.b
 function mergeItem(x,r){const useC=(r.ut||0)>(x.ut||0),useP=(r.pt||0)>(x.pt||0)||((r.pt||0)===(x.pt||0)&&prog(r)>prog(x)),o=Object.assign({},useC?r:x),ps=useP?r:x;PF.forEach(k=>{o[k]=ps[k]});o.id=x.id;o.ut=useC?r.ut:x.ut;o.pt=useP?r.pt:x.pt;return o}
 const touchAll=()=>scan(true),snapAll=()=>scan(false);
 const dtime=k=>+D.deleted[k]||0;
+function compact(){let ch=false;const old=Date.now()-90*864e5;
+const gone=D.importedTopics.filter(t=>D.deleted[t.id]);if(gone.length){D.importedTopics=D.importedTopics.filter(t=>!D.deleted[t.id]);for(const t of gone)for(const k of Object.keys(D.mastered))if(k.slice(0,k.lastIndexOf('_'))===t.id)delete D.mastered[k];ch=true}
+for(const k of Object.keys(D.deleted)){const t=+D.deleted[k];if(t&&t<old){delete D.deleted[k];ch=true}}
+return ch}
+const emptyV=x=>x==null||x===''||(Array.isArray(x)&&!x.length)||(typeof x==='object'&&!Array.isArray(x)&&!Object.keys(x).length);
+function slim(o){const r={};for(const k in o){let v=o[k];
+if(k==='forms'&&v&&typeof v==='object'){const f={};for(const fk in v){let fv=v[fk];if(fv&&typeof fv==='object'){const q={};for(const pk in fv)if(fv[pk])q[pk]=fv[pk];fv=q}if(!emptyV(fv))f[fk]=fv}v=f}
+if(k==='adjective'&&v&&typeof v==='object'&&!v.positive&&!v.komparativ&&!v.superlativ)v=null;
+if(!emptyV(v))r[k]=v}return r}
+const FAT0=['article','plural','genitiv','pos','explain','pitfalls','context','contextForm','source','zh'];
+function fat(v){for(const k of FAT0)if(v[k]==null)v[k]='';for(const k of ['examples','collocations','synonyms','antonyms'])if(!Array.isArray(v[k]))v[k]=[];
+if(!v.forms||typeof v.forms!=='object')v.forms={};if(!v.forms.praesens)v.forms.praesens={};if(!v.forms.praeteritum)v.forms.praeteritum={};if(v.adjective===undefined)v.adjective=null}
 function mergeData(o){if(!o||typeof o!=='object')return;
 for(const k in o.deleted||{}){const t=(o.deleted[k]===1||o.deleted[k]===true)?Date.now():(+o.deleted[k]||0);if(t>dtime(k))D.deleted[k]=t}
 for(const b of o.books||[]){if(!b||!b.id)continue;const x=D.books.find(y=>y.id===b.id);if(!x)D.books.push(b);else if((b.ut||0)>(x.ut||0))Object.assign(x,b)}
@@ -448,13 +470,13 @@ for(const r of o.vocab||[]){if(!r||!r.word)continue;const k=bare(r.word);if(dtim
 if(i===undefined){D.vocab.push(r);idx.set(k,D.vocab.length-1)}else D.vocab[i]=mergeItem(D.vocab[i],r)}
 D.vocab=D.vocab.filter(v=>!(dtime('w_'+bare(v.word))>(v.ut||0)));
 const st={};for(const t of o.importedTopics||[]){if(!t||!t.id||!Array.isArray(t.lines))continue;const x=D.importedTopics.find(y=>y.id===t.id);
-if(!x){D.importedTopics.push(t);st[t.id]='remote'}else if((t.ut||0)>(x.ut||0)){Object.assign(x,{lines:t.lines,title:t.title||x.title,emoji:t.emoji||x.emoji,book:t.book,ut:t.ut});st[t.id]='remote'}}
+if(!x){if(dtime(t.id)>(t.ut||0))continue;D.importedTopics.push(t);st[t.id]='remote'}else if((t.ut||0)>(x.ut||0)){Object.assign(x,{lines:t.lines,title:t.title||x.title,emoji:t.emoji||x.emoji,book:t.book,ut:t.ut});st[t.id]='remote'}}
 for(const id in st)if(st[id]==='remote')for(const k of Object.keys(D.mastered))if(k.slice(0,k.lastIndexOf('_'))===id)delete D.mastered[k];
 for(const k in o.mastered||{}){if(st[k.slice(0,k.lastIndexOf('_'))]==='remote')D.mastered[k]=1}
 for(const h of o.history||[])if(h&&h.id&&!D.history.find(y=>y.id===h.id))D.history.push(h);D.history.sort((a,b)=>b.createdAt-a.createdAt);D.history=D.history.slice(0,100);
 D.order=[...new Set([...(D.order||[]),...(o.order||[])])];
 const lp=plan();if(o.plan&&o.plan.date===lp.date)for(const f of ['done','extra'])for(const b in o.plan[f]||{})lp[f][b]=Math.max(lp[f][b]||0,+o.plan[f][b]||0);
-migrate();snapAll()}
+compact();migrate();snapAll()}
 async function post(action,data,extra){let r,j;try{r=await fetch(C.sync.appsScriptUrl,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(Object.assign({token:C.sync.token,action,data},C.sync.split?{user:C.sync.user||'me'}:{},extra||{}))})}catch(e){throw new Error('无法连接同步服务')}
 if(!r.ok)throw new Error('同步服务错误 '+r.status);try{j=await r.json()}catch(e){throw new Error('返回格式异常，请确认网址以 /exec 结尾且访问权限为“任何人”')}
 if(!j.ok)throw new Error(j.error==='口令错误'||j.error==='token'?'同步口令不正确':'同步失败：'+(j.error||'未知错误'));return j.data}
@@ -467,5 +489,5 @@ const syncCard=()=>'<div class="card"><h3>同步（Google Apps Script）</h3><la
 /* ===== PWA ===== */
 if('serviceWorker' in navigator&&/^https?:/.test(location.protocol)){navigator.serviceWorker.register('sw.js').then(reg=>{const ask=w=>toast('有新版本可用，点击刷新',()=>{w.postMessage('skip')});if(reg.waiting&&navigator.serviceWorker.controller)ask(reg.waiting);reg.addEventListener('updatefound',()=>{const w=reg.installing;w&&w.addEventListener('statechange',()=>{if(w.state==='installed'&&navigator.serviceWorker.controller)ask(w)})})}).catch(()=>toast('离线功能注册失败，需通过 https 打开'));let rl=false;navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!rl&&localStorage.getItem('dl_upd')!=='x'){rl=true;location.reload()}})}
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&S.playing&&!(C.ui.bg&&C.tts.engine==='azure')){cancelPlay=true;stopAudio()}});addEventListener('online',()=>syncNow());document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')syncNow()});
-migrate();snapAll();render();syncNow();
+migrate();if(compact())wr('dl',D);snapAll();render();syncNow();
 </script></body></html>
