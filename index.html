@@ -69,7 +69,7 @@ D.vocab.forEach(fat);D.importedTopics.forEach(t=>t.lines.forEach(l=>{if(l.zh==nu
 D.history.forEach(h=>{const r=h.raw;if(!r)return;if(r.type==='list'&&Array.isArray(r.items)&&r.items.length){if(!CACHE['L|'+h.query])cput('L|'+h.query,r.items);h.p=h.p||r.items[0].p||''}else if(r.type==='sentence'&&r.out){if(!CACHE['S|'+h.query])cput('S|'+h.query,r.out)}else if(r.type==='word'&&r.data&&r.data.lemma){if(!CACHE[h.query+'|'])cput(h.query+'|',r.data)}h.answer=String(h.answer||'').slice(0,60);delete h.raw});
 for(const k of Object.keys(D.deleted)){if(D.deleted[k]===1||D.deleted[k]===true)D.deleted[k]=Date.now();if(k.startsWith('w_')){const nk='w_'+bare(k.slice(2));if(nk!==k){D.deleted[nk]=Math.max(+D.deleted[nk]||0,+D.deleted[k]||0);delete D.deleted[k]}}}}
 const saveD=()=>{touchAll();D.updatedAt=Date.now();D.dirty=1;wr('dl',D);schedSync()},saveC=()=>wr('dl_cfg',C);
-const S={vstart:'1',tstart:'1',so:{},rv:null,rset:0,sug:[],wd:null,resq:'',tq:'',tset:0,tab:0,sub:'',q:'',res:null,busy:false,vq:'',vlim:100,manage:false,tid:null,rev:null,gen:null,sel:null,playing:false,vsort:C.ui.vsort||'time',vrev:!!C.ui.vrev,vset:0};
+const S={ts:{},pend:{},vstart:'1',tstart:'1',so:{},rv:null,rset:0,sug:[],wd:null,resq:'',tq:'',tset:0,tab:0,sub:'',q:'',res:null,busy:false,vq:'',vlim:100,manage:false,tid:null,rev:null,gen:null,sel:null,playing:false,vsort:C.ui.vsort||'time',vrev:!!C.ui.vrev,vset:0};
 /* ===== AI ===== */
 function parseJ(t){t=String(t).replace(/```json|```/g,'');const a=t.search(/[\{\[]/),b=Math.max(t.lastIndexOf('}'),t.lastIndexOf(']'));if(a<0||b<a)throw new Error('AI 返回格式异常，请重试');try{return JSON.parse(t.slice(a,b+1))}catch(e){throw new Error('AI 返回格式异常，请重试')}}
 async function ai(user){const a=C.ai;if(!a.apiKey)throw new Error('noai');if(!navigator.onLine)throw new Error('当前离线，无法使用 AI');const sys='只输出 JSON，不要 Markdown，不要解释。';let r,j;const u=a.baseUrl.replace(/\/$/,''),gu=/googleapis\.com/.test(u)?u:'https://generativelanguage.googleapis.com/v1beta';
@@ -80,7 +80,7 @@ async function mm(t,from,to){if(!navigator.onLine)throw new Error('当前离线�
 const hasCJK=s=>/[\u4e00-\u9fff]/.test(s);
 const str=v=>typeof v==='string'?v:'',arr=v=>Array.isArray(v)?v.filter(x=>typeof x==='string'):[];
 const pr=x=>{x=x||{};return{ich:str(x.ich),du:str(x.du),er:str(x.er),wir:str(x.wir),ihr:str(x.ihr),sie:str(x.sie)}};
-function norm(o,w){o=o&&typeof o==='object'?o:{};const f=o.forms||{},aj=o.adjective;return{lemma:str(o.lemma)||w,pos:str(o.pos),article:str(o.article),plural:str(o.plural),genitiv:str(o.genitiv),zh:str(o.zh),explain:str(o.explain),forms:{praesens:pr(f.praesens),praeteritum:pr(f.praeteritum),perfekt:str(f.perfekt),imperativ:str(f.imperativ),partizipII:str(f.partizipII),hilfsverb:str(f.hilfsverb),konjunktivII:str(f.konjunktivII)},adjective:aj&&typeof aj==='object'?{positive:str(aj.positive),komparativ:str(aj.komparativ),superlativ:str(aj.superlativ)}:null,examples:(Array.isArray(o.examples)?o.examples:[]).filter(e=>e&&e.de).map(e=>({de:str(e.de),zh:str(e.zh)})),collocations:arr(o.collocations),pitfalls:str(o.pitfalls),synonyms:arr(o.synonyms),antonyms:arr(o.antonyms),note:str(o.note)}}
+function norm(o,w){o=o&&typeof o==='object'?o:{};const f=o.forms||{},aj=o.adjective;return{lemma:str(o.lemma)||w,pos:str(o.pos),article:str(o.article),plural:str(o.plural),genitiv:str(o.genitiv),zh:str(o.zh),explain:str(o.explain),forms:{praesens:pr(f.praesens),praeteritum:pr(f.praeteritum),perfekt:str(f.perfekt),imperativ:str(f.imperativ),partizipII:str(f.partizipII),hilfsverb:str(f.hilfsverb),konjunktivII:str(f.konjunktivII)},adjective:aj&&typeof aj==='object'?{positive:str(aj.positive),komparativ:str(aj.komparativ),superlativ:str(aj.superlativ)}:null,examples:(Array.isArray(o.examples)?o.examples:[]).filter(e=>e&&e.de).map(e=>({de:str(e.de),zh:str(e.zh)})).slice(0,6),collocations:arr(o.collocations),pitfalls:str(o.pitfalls),synonyms:arr(o.synonyms),antonyms:arr(o.antonyms),note:str(o.note)}}
 const WPROMPT=(w,c)=>'你是德语词典。查询德语单词：'+w+(c?'（上下文：'+c+'）':'')+'。输出JSON：{"lemma":"原形，名词带冠词","pos":"名词/动词/形容词/副词","article":"der|die|das或空","plural":"","genitiv":"","zh":"简明中文释义；列出最常用的1-3个义项，最常用的在前，用“；”分隔（如 morgen：明天；早上）","explain":"2-4句中文解释，说明含义和用法","forms":{"praesens":{"ich":"","du":"","er":"","wir":"","ihr":"","sie":""},"praeteritum":{"ich":"","du":"","er":"","wir":"","ihr":"","sie":""},"perfekt":"","imperativ":"","partizipII":"","hilfsverb":"","konjunktivII":""},"adjective":{"positive":"","komparativ":"","superlativ":""},"examples":[{"de":"B1例句","zh":"翻译"}],"synonyms":[],"antonyms":[],"note":""}。名词必填article/plural/genitiv，动词必填六人称，形容词填三形式，至少3条例句，不确定的留空，不要编造。';
 async function lookupWord(w,ctx){const k=w+'|'+(ctx||'');if(CACHE[k])return CACHE[k];let d;try{d=norm(await ai(WPROMPT(w,ctx)),w)}catch(e){if(e.message!=='noai'&&!/无法连接|离线/.test(e.message))throw e;const z=await mm(w,'de','zh-CN');d=norm({lemma:w,zh:z},w);return d}
 cput(k,d);return d}
@@ -121,6 +121,17 @@ v.forms=v.forms||{};const f=d.forms;for(const k of ['perfekt','imperativ','parti
 for(const t of ['praesens','praeteritum']){v.forms[t]=v.forms[t]||{};for(const q in f[t])if(!v.forms[t][q]&&f[t][q])v.forms[t][q]=f[t][q]}
 if(!(v.adjective&&(v.adjective.positive||v.adjective.komparativ))&&d.adjective&&(d.adjective.positive||d.adjective.komparativ))v.adjective=d.adjective;
 if(em(v.examples)&&d.examples.length)v.examples=d.examples}
+function renameWord(v,nw,zh){const old=v.word;if(bare(old)!==bare(nw))D.deleted['w_'+bare(old)]=Date.now();delete D.deleted['w_'+bare(nw)];const art=(nw.match(ART)||[''])[0].trim().toLowerCase();
+Object.assign(v,{word:nw,lemma:nw,article:art,plural:'',genitiv:'',pos:art?'名词':'',zh:zh,explain:'',forms:norm({lemma:nw},nw).forms,adjective:null,examples:[],collocations:[],pitfalls:'',synonyms:[],antonyms:[],stage:0,reps:0,interval:0,seen:0,mst:0,ease:2.5,due:Date.now()})}
+async function bgRename(id,nw,skip,zhUser){const get=()=>D.vocab.find(x=>x.id===id),ui=()=>{if(!typing())render()};S.pend[id]=1;ui();
+try{let cur=nw;
+if(!skip){const r=await aiLemma([cur]),o=r&&r[0];
+if(o&&!o.ok&&bare(o.w)!==bare(cur)){const x=get();if(!x||x.word!==cur)return;const c=await askSuggest(cur,o.w,o.reason);
+if(c==='ai'){const y=get();if(!y||y.word!==cur)return;if(D.vocab.some(z=>z.id!==id&&bare(z.word)===bare(o.w)))toast('「'+o.w+'」已在生词本中，保留你输入的写法');else{renameWord(y,o.w,y.zh);cur=o.w;saveD();ui()}}}}
+const x=get();if(!x||x.word!==cur)return;const d=await lookupWord(cur,'');const y=get();if(!y||y.word!==cur)return;
+if(em(d.explain)){toast('AI 未返回详细解释');return}
+applyExplain(y,d);if(/^(der|die|das)$/i.test(d.article))y.article=d.article.toLowerCase();if(zhUser!=null)y.zh=zhUser;saveD();toast('已在后台补全释义和变形')}
+catch(e){toast('后台查询失败：'+e.message)}finally{delete S.pend[id];ui()}}
 function aiStash(){if(!S.aiCur||!$('#ck'))return;C.ai.keys=C.ai.keys||{};const key=$('#ck').value.trim(),model=$('#cm').value.trim();if(key||model)C.ai.keys[S.aiCur]={key,model}}
 function aiLoad(clear){const k=akey($('#cp').value,$('#cb').value),s=(C.ai.keys||{})[k];S.aiCur=k;if(s){$('#ck').value=s.key||'';if(s.model)$('#cm').value=s.model}else if(clear)$('#ck').value=''}
 const LEMMA_PROMPT=ws=>'你是德语词典与拼写检查器。逐个处理下列德语单词或短语：(1) ok：原文拼写是否正确；(2) w：原形——名词用带定冠词(der/die/das)的单数主格形式且名词首字母大写（如 das Haus），动词用不定式，形容词用原级，其他词原样；拼写有误时 w 为纠正后的原形；(3) reason：拼写有误时用中文简要说明原因，否则留空；(4) zh：最常用中文释义（1-3个义项，用；分隔）。输出等长JSON数组 [{"w":"","ok":true,"reason":"","zh":""}]，不要编造。单词：'+JSON.stringify(ws);
@@ -147,7 +158,7 @@ const gw=s=>hasCJK(s)?esc(s):wrap(s);
 const sentCard=r=>{const zh=hasCJK(r.src);return '<div class="card"><div class="row"><div class="g">'+gw(r.src)+'</div>'+spk(r.src,zh?'zh':'de')+'</div><hr style="border:0;border-top:1px solid var(--ln);margin:6px 0"><div class="row"><div class="g"><b>'+gw(r.out)+'</b></div>'+spk(r.out,hasCJK(r.out)?'zh':'de')+'</div></div>'};
 function detailBody(d,v){
 let h='<div class="dt"><div class="row"><h2 class="g" style="margin:0">'+esc(d.lemma)+badge(d)+'</h2>'+spk(d.lemma)+'</div><div><b>'+dash(d.zh)+'</b></div>';
-if(v)h+='<div class="mu xs">添加 '+new Date(v.createdAt).toLocaleDateString()+' · 到期 '+new Date(v.due).toLocaleString()+' · 间隔 '+v.interval+' 天 · 阶段 '+(v.stage||0)+'/7 · 答对 '+(v.reps||0)+' 次'+(v.mst?' · 已掌握':'')+'</div>';
+if(v&&S.pend[v.id])h+='<div class="mu xs">AI 校验 / 查询中…</div>';if(v)h+='<div class="mu xs">添加 '+new Date(v.createdAt).toLocaleDateString()+' · 到期 '+new Date(v.due).toLocaleString()+' · 间隔 '+v.interval+' 天 · 阶段 '+(v.stage||0)+'/7 · 答对 '+(v.reps||0)+' 次'+(v.mst?' · 已掌握':'')+'</div>';
 return h+'<h3>解释</h3><p>'+dash(d.explain)+'</p><div class="mu sm">同义：'+dash((d.synonyms||[]).join('、'))+'　反义：'+dash((d.antonyms||[]).join('、'))+'</div><h3>变形</h3>'+(tables(d)||'<div class="mu sm">—</div>')+'<h3>例句</h3>'+exHtml(d.examples)+'</div>'}
 /* ===== search / history ===== */
 const TRL={};
@@ -197,7 +208,7 @@ const entList=it=>'<div class="sec"><b>词典</b></div>'+it.map((x,i)=>'<div cla
 function body0(){const q=S.q.trim();if(!q)return histHtml();let h='<div id="sg">'+sugHtml()+'</div>';
 if(S.res&&S.resq===q)h+=S.res.type==='list'?entList(S.res.items):sentCard(S.res);else h+='<p class="mu sm">点击“查询”或按回车</p>';return h}
 V.wd=()=>{const b='<div class="row"><button data-a="wback">‹ 返回</button></div>';if(!S.wd)return b+'<p class="mu">加载中…</p>';const sv=D.vocab.find(x=>x.lemma.toLowerCase()===S.wd.lemma.toLowerCase());if(sv)S.sel=sv.id;
-return b+detailBody(sv?vdata(sv):S.wd,sv)+'<div class="row" style="margin-top:6px">'+(sv?'<button class="p" data-a="more3" '+(S.busy?'disabled':'')+'>'+(S.busy?'AI 生成中…':'AI 解释 / 再来 3 条例句')+'</button><button data-a="vedit">编辑</button><button data-a="vmst">'+(sv.mst?'取消掌握':'标记已掌握')+'</button><button class="d" data-a="vdel" data-id="'+esc(sv.id)+'">删除</button>':'<select id="wbk" class="g" style="margin:0">'+bkOpts(defBook(null))+'</select><button class="p" data-a="addres">加入生词本</button>')+'</div>'};
+return b+detailBody(sv?vdata(sv):S.wd,sv)+'<div class="row" style="margin-top:6px">'+(sv?'<button class="p" data-a="more3" '+(S.busy?'disabled':'')+'>'+(S.busy?'AI 生成中…':'AI解释+例句')+'</button><button data-a="vedit">编辑</button><button data-a="vmst">'+(sv.mst?'取消掌握':'标记已掌握')+'</button><button class="d" data-a="vdel" data-id="'+esc(sv.id)+'">删除</button>':'<select id="wbk" class="g" style="margin:0">'+bkOpts(defBook(null))+'</select><button class="p" data-a="addres">加入生词本</button>')+'</div>'};
 V.t0=()=>S.sub==='wd'?V.wd():'<div class="row" style="margin-bottom:4px"><input id="q" class="g" type="search" style="margin:0;min-width:0" enterkeyhint="search" autocomplete="off" autocapitalize="off" placeholder="输入德语或中文" maxlength="500" value="'+esc(S.q)+'"><button class="p" data-a="query" '+(S.busy?'disabled':'')+'>'+(S.busy?'查询中…':'查询')+'</button></div>'+(navigator.onLine?'':'<p class="mu sm">当前离线：仅可查看历史</p>')+'<div id="b0">'+body0()+'</div>';
 const ART=/^(der|die|das)\s+/i,bare=s=>String(s).toLowerCase().replace(ART,'').trim(),cap=s=>s?s[0].toUpperCase()+s.slice(1):s;
 const normW=s=>{s=String(s).trim();const m=s.match(/^(der|die|das)\s+(.+)$/i);return m?m[1].toLowerCase()+' '+cap(m[2].trim()):s};
@@ -242,8 +253,8 @@ if(C.ai.apiKey)try{r=await ai('下列是德语单词。对每个词：若是名�
 b.forEach((x,j)=>{const o=r&&r[j];if(o&&typeof o==='object'){const w=normW(str(o.w));if(w&&bare(w)===bare(x.w))x.w=w;if(!x.zh)x.zh=str(o.zh)}});
 if(!r)for(const x of b){if(!x.zh)try{x.zh=await quickGloss(x.w)}catch(e){}}
 S.prog='补全中 '+Math.min(i+20,list.length)+'/'+list.length;const bt=$('[data-a="wsave"]');if(bt)bt.textContent=S.prog}}
-V.vd=()=>{const v=D.vocab.find(x=>x.id===S.sel);if(!v)return'';const d=norm(v,v.word);d.lemma=v.word;d.pos=v.pos;
-return '<div class="row"><button data-a="back">‹ 返回</button></div>'+detailBody(d,v)+'<div class="row" style="margin-top:8px"><button class="p" data-a="more3" '+(S.busy?'disabled':'')+'>'+(S.busy?'AI 生成中…':'AI 解释+例句')+'</button><button data-a="vedit">编辑</button><button data-a="vmst">'+(v.mst?'取消掌握':'标记已掌握')+'</button><button class="d" data-a="vdel" data-id="'+esc(v.id)+'">删除</button></div>'};
+V.vd=()=>{const v=D.vocab.find(x=>x.id===S.sel);if(!v){S.sub=S.bid?'bk':'';return V.t1()}const d=norm(v,v.word);d.lemma=v.word;d.pos=v.pos;
+return '<div class="row"><button data-a="back">‹ 返回</button></div>'+detailBody(d,v)+'<div class="row" style="margin-top:8px"><button class="p" data-a="more3" '+(S.busy?'disabled':'')+'>'+(S.busy?'AI 生成中…':'AI解释+例句')+'</button><button data-a="vedit">编辑</button><button data-a="vmst">'+(v.mst?'取消掌握':'标记已掌握')+'</button><button class="d" data-a="vdel" data-id="'+esc(v.id)+'">删除</button></div>'};
 const RM=[['flip','翻卡（自评记得/忘了）'],['de2zh','看德语选中文'],['zh2de','看中文选德语'],['write','看中文写德语']];
 const rpanel=()=>'<div class="card"><div class="mu sm">复习方式（可多选，随机出题）</div>'+RM.map(m=>chk('rm_'+m[0],(C.ui.rmodes||['flip']).includes(m[0]),m[1])).join('')+chk('ra',!!C.ui.autoDe,'看德语选中文时自动朗读德语')+chk('rx',!!C.ui.showEx,'显示例句（仅翻卡和看德语选中文，不含翻译）')+'</div>';
 const shuf=a=>a.map(x=>[Math.random(),x]).sort((p,q)=>p[0]-q[0]).map(x=>x[1]);
@@ -270,7 +281,7 @@ const chk=(id,v,lab,dis)=>'<label class="c"><input type="checkbox" id="'+id+'"'+
 function visIdx(t){const q=S.tq.toLowerCase(),r=[];t.lines.forEach((l,i)=>{if(q&&!((l.de||'')+' '+(l.zh||'')).toLowerCase().includes(q))return;if(!C.ui.showMastered&&!S.manage&&D.mastered[t.id+'_'+i])return;r.push(i)});return r}
 function tlist(t){const n=t.lines.length,lock=!!S.tq;return visIdx(t).map(i=>{const l=t.lines[i],m=D.mastered[t.id+'_'+i];return '<div class="li lw" id="ln'+i+'"><div class="g">'+wrap(l.de)+(C.ui.showZh&&l.zh?'<div class="mu">'+esc(l.zh)+'</div>':'')+'</div>'+spk(l.de)+(S.manage?'<div class="row mrow"><button data-a="ledit" data-i="'+i+'" aria-label="编辑">✎</button><button data-a="move" data-i="'+i+'" data-d="-1" aria-label="上移" '+(lock||i===0?'disabled':'')+'>↑</button><button data-a="move" data-i="'+i+'" data-d="1" aria-label="下移" '+(lock||i===n-1?'disabled':'')+'>↓</button><button data-a="mast" data-i="'+i+'">'+(m?'✓ 已掌握':'标记掌握')+'</button><button class="d" data-a="ldel" data-i="'+i+'" aria-label="删除">🗑</button></div>':'')+'</div>'}).join('')||'<p class="mu">没有符合的句子</p>'}
 const tupd=()=>{const t=D.importedTopics.find(x=>x.id===S.tid),el=$('#tl');if(t&&el)el.innerHTML=tlist(t)};
-V.tp=()=>{const t=D.importedTopics.find(x=>x.id===S.tid);if(!t)return'';const az=C.tts.engine==='azure',n=t.lines.length,lock=!!S.tq;
+V.tp=()=>{const t=D.importedTopics.find(x=>x.id===S.tid);if(!t){S.sub='';return V.t2()}const az=C.tts.engine==='azure',n=t.lines.length,lock=!!S.tq;
 let h='<h1><button data-a="back">‹ 返回</button><span class="g" style="flex:1">'+esc(t.emoji+' '+t.title)+'</span></h1><div class="row"><button class="p" data-a="play">'+(S.playing?'■ 停止':'▶ 连续播放')+'</button><button data-a="mng">'+(S.manage?'完成':'管理')+'</button><button data-a="tset" aria-label="设置面板">⚙ 设置</button>'+(S.manage?'<button class="d" data-a="tdel">删除主题</button>':'')+'</div>';
 if(S.tset)h+='<div class="card">'+tbkSel(t)+selH('tr',[1,2,3,5],C.ui.repeat,'重复次数')+chk('tz',C.ui.showZh,'含中文（显示并朗读）')+chk('tm',C.ui.showMastered,'显示已掌握')+chk('tb',C.ui.bg&&az,'后台播放（仅 Azure 可用）',!az)+(az?'':'<p class="mu">系统语音息屏后会停止，请在设置中启用 Azure。</p>')+'<label for="tps">播放起始位置（第几个开始）</label><input id="tps" type="number" min="1" inputmode="numeric" value="'+esc(S.tstart)+'"><button data-a="aitr" '+(S.busy?'disabled':'')+'>'+(S.busy?'翻译中…':'AI 翻译缺失')+'</button> <button data-a="pct">缓存主题语音（Azure）</button></div>';
 h+='<input id="tq" placeholder="搜索句子" value="'+esc(S.tq)+'">';
@@ -298,7 +309,7 @@ sheet('<h2 class="row"><span class="g">'+esc(w)+'</span>'+spk(w)+'</h2><div clas
 quickGloss(w).then(z=>{if(!S.cur||S.cur.w!==w)return;const g=$('#sgl');if(g)g.textContent='翻译：'+z;const i=$('#sz');if(i&&!i.value)i.value=z}).catch(e=>{const g=$('#sgl');if(g&&S.cur&&S.cur.w===w)g.textContent=navigator.onLine?'暂无翻译':'离线，暂无翻译'})}
 /* ===== events ===== */
 const A={
-tab(e){if(S.playing){stopPlay()}S.tab=+e.dataset.i;S.sub='';S.manage=false;render()},
+tab(e){if(S.playing)stopPlay();const n=+e.dataset.i;if(n===S.tab)S.sub='';else{S.ts[S.tab]={sub:S.sub,sel:S.sel};const r=S.ts[n]||{};S.tab=n;S.sub=r.sub||'';if(r.sel!==undefined)S.sel=r.sel}S.manage=false;render()},
 query(){doQuery()},sug(e){S.q=e.dataset.w;S.sug=[];doQuery()},
 wback(){S.sub='';S.wd=null;render()},
 entry(e){const it=S.res&&S.res.items[+e.dataset.i];if(it)showEntry(it)},hist(e){openHist(e.dataset.id)},
@@ -359,22 +370,17 @@ async more3(){const v=D.vocab.find(x=>x.id===S.sel);if(!v||S.busy)return;if(!C.a
 try{const had=!em(v.explain),hadEx=(v.examples||[]).length,d=await lookupWord(v.word,'');fillVocab(v,d);if(!had&&d.zh&&d.zh!==v.zh){v.zh=d.zh;toast('已校正中文释义')}
 const art=/^(der|die|das)$/i.test(d.article)?d.article.toLowerCase():((d.lemma.match(/^(der|die|das)\s/i)||[''])[0].trim().toLowerCase());
 if(art&&!ART.test(v.word)&&bare(d.lemma)===bare(v.word)){v.word=v.lemma=art+' '+cap(d.lemma.replace(ART,'').trim());v.article=art}
-if(hadEx>0||(v.examples||[]).length<3){const r=await ai('为德语单词 '+v.word+' 再写3条B1例句，不要与这些重复：'+JSON.stringify((v.examples||[]).map(x=>x.de))+'。输出JSON数组[{"de":"","zh":""}]');v.examples=v.examples||[];v.examples.push(...(Array.isArray(r)?r:[]).filter(x=>x&&x.de).map(x=>({de:str(x.de),zh:str(x.zh)})).slice(0,3))}
-saveD();toast('已更新')}catch(e){saveD();toast(e.message)}S.busy=false;render()},
+let capped=false;if(hadEx>0||(v.examples||[]).length<3){v.examples=v.examples||[];const room=6-v.examples.length,want=Math.min(3,room);
+if(want<=0)capped=true;else{const r=await ai('为德语单词 '+v.word+' 再写'+want+'条B1例句，不要与这些重复：'+JSON.stringify(v.examples.map(x=>x.de))+'。输出JSON数组[{"de":"","zh":""}]');v.examples.push(...(Array.isArray(r)?r:[]).filter(x=>x&&x.de).map(x=>({de:str(x.de),zh:str(x.zh)})).slice(0,want))}}
+saveD();toast('已更新'+(capped?'（例句已达上限 6 句）':''))}catch(e){saveD();toast(e.message)}S.busy=false;render()},
 vedit(){const v=D.vocab.find(x=>x.id===S.sel);sheet('<h2>编辑</h2><label for="ew">德语单词</label><input id="ew" autocapitalize="off" autocomplete="off" value="'+esc(v.word)+'"><label for="ez">中文释义</label><input id="ez" value="'+esc(v.zh)+'"><label for="ee">详细解释</label><textarea id="ee">'+esc(v.explain||'')+'</textarea><button class="p" data-a="esave">保存</button>')},
-async esave(){const v=D.vocab.find(x=>x.id===S.sel);if(!v||S.busy)return;const zhNew=$('#ez').value,ex=$('#ee').value,w0=$('#ew').value.replace(/\s+/g,' ').trim();
-if(!w0)return toast('德语单词不能为空');if(hasCJK(w0)||w0.length>60)return toast('德语单词格式不正确');let nw=normW(w0);
+async esave(){const v=D.vocab.find(x=>x.id===S.sel);if(!v)return;const zhNew=$('#ez').value,ex=$('#ee').value,w0=$('#ew').value.replace(/\s+/g,' ').trim();
+if(!w0)return toast('德语单词不能为空');if(hasCJK(w0)||w0.length>60)return toast('德语单词格式不正确');const nw=normW(w0);
 if(nw===v.word){v.zh=zhNew;v.explain=ex;saveD();closeSheet();render();return}
-const dupOf=w=>D.vocab.some(x=>x.id!==v.id&&bare(x.word)===bare(w));if(dupOf(nw))return toast('「'+nw+'」已在生词本中，无法保存');
-const bt=$('[data-a="esave"]');S.busy=true;if(bt){bt.disabled=true;bt.textContent='处理中…'}
-try{const r=await aiLemma([nw]),o=r&&r[0];
-if(o&&!o.ok&&bare(o.w)!==bare(nw)){const c=await askSuggest(nw,o.w,o.reason);if(!c)return;if(c==='ai'){nw=o.w;if(dupOf(nw))return toast('「'+nw+'」已在生词本中，无法保存')}}
-const old=v.word,zhUser=zhNew!==v.zh;if(bare(old)!==bare(nw))D.deleted['w_'+bare(old)]=Date.now();delete D.deleted['w_'+bare(nw)];
-const art=(nw.match(ART)||[''])[0].trim().toLowerCase();
-Object.assign(v,{word:nw,lemma:nw,article:art,plural:'',genitiv:'',pos:art?'名词':'',zh:zhNew,explain:'',forms:norm({lemma:nw},nw).forms,adjective:null,examples:[],collocations:[],pitfalls:'',synonyms:[],antonyms:[],stage:0,reps:0,interval:0,seen:0,mst:0,ease:2.5,due:Date.now()});
-let msg='已保存，已重置学习进度';
-if(C.ai.apiKey&&navigator.onLine){try{const d=await lookupWord(nw,'');if(em(d.explain))msg+='（AI 未返回详细解释）';else{applyExplain(v,d);if(/^(der|die|das)$/i.test(d.article))v.article=d.article.toLowerCase();if(zhUser)v.zh=zhNew;msg+='，并重新查询了释义和变形'}}catch(e){msg+='（AI 查询失败：'+e.message+'）'}}else msg+='（AI 不可用，未重新查询）';
-saveD();closeSheet();S.busy=false;render();toast(msg)}finally{S.busy=false}},
+if(D.vocab.some(x=>x.id!==v.id&&bare(x.word)===bare(nw)))return toast('「'+nw+'」已在生词本中，无法保存');
+const skip=bare(v.word)===bare(nw),zhUser=zhNew!==v.zh;renameWord(v,nw,zhNew);saveD();closeSheet();render();
+if(!(C.ai.apiKey&&navigator.onLine))return toast('已保存，已重置学习进度（AI 不可用，未校验和重新查询）');
+toast(skip?'已保存，正在后台重新查询…':'已保存，正在后台校验和查询…');bgRename(v.id,nw,skip,zhUser?zhNew:null)},
 go(e){S.sub=e.dataset.s;render()},tp(e){S.tstart='1';S.tq='';S.tset=0;S.tid=e.dataset.id;S.sub='tp';S.manage=false;render()},
 mast(e){const k=S.tid+'_'+e.dataset.i;D.mastered[k]?delete D.mastered[k]:D.mastered[k]=1;saveD();render()},
 ldel(e){if(!confirm('确认删除？'))return;const t=D.importedTopics.find(x=>x.id===S.tid),i=+e.dataset.i,n=t.lines.length;for(let k=i;k<n;k++){const v=D.mastered[t.id+'_'+(k+1)];if(v)D.mastered[t.id+'_'+k]=1;else delete D.mastered[t.id+'_'+k]}t.lines.splice(i,1);t.ut=Date.now();saveD();render()},
@@ -459,7 +465,7 @@ if(k==='forms'&&v&&typeof v==='object'){const f={};for(const fk in v){let fv=v[f
 if(k==='adjective'&&v&&typeof v==='object'&&!v.positive&&!v.komparativ&&!v.superlativ)v=null;
 if(!emptyV(v))r[k]=v}return r}
 const FAT0=['article','plural','genitiv','pos','explain','pitfalls','context','contextForm','source','zh'];
-function fat(v){for(const k of FAT0)if(v[k]==null)v[k]='';for(const k of ['examples','collocations','synonyms','antonyms'])if(!Array.isArray(v[k]))v[k]=[];
+function fat(v){for(const k of FAT0)if(v[k]==null)v[k]='';for(const k of ['examples','collocations','synonyms','antonyms'])if(!Array.isArray(v[k]))v[k]=[];if(v.examples.length>6)v.examples=v.examples.slice(0,6);
 if(!v.forms||typeof v.forms!=='object')v.forms={};if(!v.forms.praesens)v.forms.praesens={};if(!v.forms.praeteritum)v.forms.praeteritum={};if(v.adjective===undefined)v.adjective=null}
 function mergeData(o){if(!o||typeof o!=='object')return;
 for(const k in o.deleted||{}){const t=(o.deleted[k]===1||o.deleted[k]===true)?Date.now():(+o.deleted[k]||0);if(t>dtime(k))D.deleted[k]=t}
@@ -489,5 +495,9 @@ const syncCard=()=>'<div class="card"><h3>同步（Google Apps Script）</h3><la
 /* ===== PWA ===== */
 if('serviceWorker' in navigator&&/^https?:/.test(location.protocol)){navigator.serviceWorker.register('sw.js').then(reg=>{const ask=w=>toast('有新版本可用，点击刷新',()=>{w.postMessage('skip')});if(reg.waiting&&navigator.serviceWorker.controller)ask(reg.waiting);reg.addEventListener('updatefound',()=>{const w=reg.installing;w&&w.addEventListener('statechange',()=>{if(w.state==='installed'&&navigator.serviceWorker.controller)ask(w)})})}).catch(()=>toast('离线功能注册失败，需通过 https 打开'));let rl=false;navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!rl&&localStorage.getItem('dl_upd')!=='x'){rl=true;location.reload()}})}
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&S.playing&&!(C.ui.bg&&C.tts.engine==='azure')){cancelPlay=true;stopAudio()}});addEventListener('online',()=>syncNow());document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')syncNow()});
+function goBack(){if($('#sh').style.display==='block'){closeSheet();return}if(typing())return;if(S.tab===0&&S.sub==='wd'){A.wback();return}if((S.tab===1||S.tab===2)&&S.sub)A.back()}
+(function(){let sx=0,sy=0,st=0,on=false;
+document.addEventListener('touchstart',e=>{if(e.touches.length!==1){on=false;return}const t=e.touches[0];sx=t.clientX;sy=t.clientY;st=Date.now();on=sx<=28||sx>=window.innerWidth-28},{passive:true});
+document.addEventListener('touchend',e=>{if(!on)return;on=false;const t=e.changedTouches[0],dx=t.clientX-sx,dy=t.clientY-sy;if(Date.now()-st>800||Math.abs(dy)>Math.abs(dx)*0.6)return;if((sx<=28&&dx>=70)||(sx>=window.innerWidth-28&&dx<=-70))goBack()},{passive:true})})();
 migrate();if(compact())wr('dl',D);snapAll();render();syncNow();
 </script></body></html>
