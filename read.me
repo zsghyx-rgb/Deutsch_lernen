@@ -1,0 +1,31 @@
+具体修改
+1. 让手机显示儿童模式入口
+在第 44 行找到：
+.kidcard{display:none}@media(min-width:768px){.kidcard{display:block}}
+
+
+替换为：
+.kidcard{display:block}
+
+
+2. 取消打开儿童模式时的宽屏限制
+在第 763 行附近找到：
+function open(){if(!wide.matches)return toast('儿童模式需要宽屏设备（平板 / 电脑）');if(!KS.pw)toast('建议先设置家长密码，否则孩子可以随意退出');document.body.style.overflow='hidden';el.hidden=false;home()}
+
+
+替换为：
+function open(){if(!KS.pw)toast('建议先设置家长密码，否则孩子可以随意退出');document.body.style.overflow='hidden';el.hidden=false;home()}
+
+
+3. 手机窗口变化时不要自动关闭儿童模式
+紧接着找到：
+wide.addEventListener('change',()=>{if(!wide.matches&&!el.hidden)close()});
+
+
+直接删除这一整行即可。
+改完后的效果
+- 手机端能看到儿童模式入口。
+- 点击后可以打开儿童模式。
+- 不会因为手机屏幕宽度不够而被强制关闭。
+- 原来的儿童模式功能、家长密码和学习数据逻辑都保留。
+提醒一下： 这份儿童模式原本主要按宽屏布局设计，手机上可能会出现按钮较挤、内容需要滚动等情况。但以上是最小改动，先让它能打开；如果打开后界面不合适，再单独调整手机布局即可。
