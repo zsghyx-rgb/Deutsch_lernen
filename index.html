@@ -115,7 +115,8 @@ function migrate(){if(!Array.isArray(D.books)||!D.books.length)D.books=[{id:'bk_
 D.books.forEach(b=>{if(!b.ut)b.ut=1});D.vocab.forEach(v=>{if(!v.book||!D.books.find(b=>b.id===v.book))v.book=D.books[0].id;if(!v.ut)v.ut=v.createdAt||1;if(!v.pt)v.pt=v.ut});
 if(!D.plan)D.plan={date:'',done:{},extra:{}};
 D.vocab.forEach(fat);D.importedTopics.forEach(t=>t.lines.forEach(l=>{if(l.zh==null)l.zh=''}));
-D.history.forEach(h=>{const r=h.raw;if(!r)return;if(r.type==='list'&&Array.isArray(r.items)&&r.items.length){if(!CACHE['L|'+h.query])cput('L|'+h.query,r.items);h.p=h.p||r.items[0].p||''}else if(r.type==='sentence'&&r.out){if(!CACHE['S|'+h.query])cput('S|'+h.query,r.out)}else if(r.type==='word'&&r.data&&r.data.lemma){if(!CACHE[h.query+'|'])cput(h.query+'|',r.data)}h.answer=String(h.answer||'').slice(0,60);delete h.raw});
+D.history=D.history.filter((h,i,a)=>h&&h.query&&a.findIndex(y=>hkey(y&&y.query)===hkey(h.query))===i).slice(0,100);
+D.history.forEach(h=>{const r=h.raw;if(!r)return;if(r.type==='list'&&Array.isArray(r.items)&&r.items.length){if(!CACHE[lkey(h.query)])cput(lkey(h.query),r.items);h.p=h.p||r.items[0].p||''}else if(r.type==='sentence'&&r.out){if(!CACHE['S|'+h.query])cput('S|'+h.query,r.out)}else if(r.type==='word'&&r.data&&r.data.lemma){if(!CACHE[h.query+'|'])cput(h.query+'|',r.data)}h.answer=String(h.answer||'').slice(0,60);delete h.raw});
 for(const k of Object.keys(D.deleted)){if(D.deleted[k]===1||D.deleted[k]===true)D.deleted[k]=Date.now();if(k.startsWith('w_')){const nk='w_'+bare(k.slice(2));if(nk!==k){D.deleted[nk]=Math.max(+D.deleted[nk]||0,+D.deleted[k]||0);delete D.deleted[k]}}}}
 const saveD=()=>{touchAll();D.updatedAt=Date.now();D.dirty=1;wr('dl',D);schedSync()},saveC=()=>wr('dl_cfg',C);
 const S={ts:{},pend:{},vstart:'1',tstart:'1',so:{},rv:null,rset:0,sug:[],wd:null,resq:'',tq:'',tset:0,tab:0,sub:'',q:'',res:null,busy:false,vq:'',vlim:100,manage:false,tid:null,rev:null,gen:null,sel:null,playing:false,vsort:C.ui.vsort||'time',vrev:!!C.ui.vrev,vset:0};
@@ -127,13 +128,15 @@ else r=await fetch(u+'/chat/completions',{method:'POST',headers:{'content-type':
 if(!r.ok)throw new Error('AI 服务返回错误 '+r.status+(r.status===429?'（请求太频繁或超出免费额度，稍后再试）':r.status===400||r.status===403?'（请检查 Key 和模型名）':r.status===404?'（模型名不存在）':''));j=await r.json();return parseJ(a.provider==='gemini'?((j.candidates&&j.candidates[0]&&j.candidates[0].content&&j.candidates[0].content.parts)||[]).map(p=>p.text||'').join(''):a.provider==='claude'?j.content[0].text:j.choices[0].message.content)}
 async function mm(t,from,to){if(!navigator.onLine)throw new Error('当前离线，无法翻译');const ac=new AbortController(),tm=setTimeout(()=>ac.abort(),12000);try{const r=await fetch('https://api.mymemory.translated.net/get?q='+encodeURIComponent(t.slice(0,450))+'&langpair='+from+'|'+to,{signal:ac.signal});const j=await r.json();return j.responseData.translatedText}catch(e){throw new Error(ac.signal.aborted?'翻译服务超时，请重试':'无法连接（网络问题，或该服务不允许浏览器直接调用）')}finally{clearTimeout(tm)}}
 const hasCJK=s=>/[\u4e00-\u9fff]/.test(s);
+const hkey=s=>String(s||'').toLowerCase().replace(/^(der|die|das)\s+/,'').replace(/\s+/g,' ').trim();
+const lkey=q=>'L2|'+String(q||'').trim().toLowerCase();
 const str=v=>typeof v==='string'?v:'',arr=v=>Array.isArray(v)?v.filter(x=>typeof x==='string'):[];
 const pr=x=>{x=x||{};return{ich:str(x.ich),du:str(x.du),er:str(x.er),wir:str(x.wir),ihr:str(x.ihr),sie:str(x.sie)}};
 function norm(o,w){o=o&&typeof o==='object'?o:{};const f=o.forms||{},aj=o.adjective;return{lemma:str(o.lemma)||w,pos:str(o.pos),article:str(o.article),plural:str(o.plural),genitiv:str(o.genitiv),zh:str(o.zh),explain:str(o.explain),forms:{praesens:pr(f.praesens),praeteritum:pr(f.praeteritum),perfekt:str(f.perfekt),imperativ:str(f.imperativ),partizipII:str(f.partizipII),hilfsverb:str(f.hilfsverb),konjunktivII:str(f.konjunktivII)},adjective:aj&&typeof aj==='object'?{positive:str(aj.positive),komparativ:str(aj.komparativ),superlativ:str(aj.superlativ)}:null,examples:(Array.isArray(o.examples)?o.examples:[]).filter(e=>e&&e.de).map(e=>({de:str(e.de),zh:str(e.zh)})).slice(0,6),collocations:arr(o.collocations),pitfalls:str(o.pitfalls),synonyms:arr(o.synonyms),antonyms:arr(o.antonyms),note:str(o.note)}}
-const WPROMPT=(w,c)=>'你是德语词典。查询德语单词：'+w+(c?'（上下文：'+c+'）':'')+'。输出JSON：{"lemma":"原形，名词带冠词","pos":"名词/动词/形容词/副词","article":"der|die|das或空","plural":"","genitiv":"","zh":"简明中文释义；列出最常用的1-3个义项，最常用的在前，用“；”分隔（如 morgen：明天；早上）","explain":"2-4句中文解释，说明含义和用法","forms":{"praesens":{"ich":"","du":"","er":"","wir":"","ihr":"","sie":""},"praeteritum":{"ich":"","du":"","er":"","wir":"","ihr":"","sie":""},"perfekt":"","imperativ":"","partizipII":"","hilfsverb":"","konjunktivII":""},"adjective":{"positive":"","komparativ":"","superlativ":""},"examples":[{"de":"B1例句","zh":"翻译"}],"synonyms":[],"antonyms":[],"note":""}。名词必填article/plural/genitiv，动词必填六人称，形容词填三形式，至少3条例句，不确定的留空，不要编造。';
+const WPROMPT=(w,c)=>'你是德语词典，面向德语 A1–B2 学习者。查询：'+w+(c?'（上下文：'+c+'）':'')+'。只输出 JSON：{"lemma":"原形：名词带定冠词且首字母大写（das Haus），动词不定式小写，形容词用原级","pos":"名词/动词/形容词/副词","article":"der|die|das或空","plural":"","genitiv":"","zh":"简明中文释义，1-3个义项，最常用的在前，用；分隔","explain":"1-2句简单中文，说明含义和用法","forms":{"praesens":{"ich":"","du":"","er":"","wir":"","ihr":"","sie":""},"praeteritum":{"ich":"","du":"","er":"","wir":"","ihr":"","sie":""},"perfekt":"","imperativ":"","partizipII":"","hilfsverb":"","konjunktivII":""},"adjective":{"positive":"","komparativ":"","superlativ":""},"examples":[{"de":"B1例句","zh":"翻译"}],"synonyms":[],"antonyms":[],"note":""}。名词必填 article/plural/genitiv；动词必填六人称；形容词填三形式；给 2-3 条例句；不确定留空，不要编造，不要输出多余文字。';
 async function lookupWord(w,ctx){const k=w+'|'+(ctx||'');if(CACHE[k])return CACHE[k];let d;try{d=norm(await ai(WPROMPT(w,ctx)),w)}catch(e){if(e.message!=='noai'&&!/无法连接|离线/.test(e.message))throw e;const z=await mm(w,'de','zh-CN');d=norm({lemma:w,zh:z},w);return d}
 cput(k,d);return d}
-async function translateLines(des){const out=[];for(let i=0;i<des.length;i+=15){const b=des.slice(i,i+15);let r;try{r=await ai('把下列德语句子翻译成中文，输出等长JSON字符串数组：'+JSON.stringify(b));if(!Array.isArray(r)||r.length!==b.length)throw 0}catch(e){r=[];for(const s of b)try{r.push(await mm(s,'de','zh-CN'))}catch(x){r.push('')}toast('AI 不可用，已降级 MyMemory，质量较低')}out.push(...r.map(str))}return out}
+async function translateLines(des){const out=[];for(let i=0;i<des.length;i+=15){const b=des.slice(i,i+15);let r;try{r=await ai('把下列德语句子翻译成简洁自然的汉语，符合 A1–B2 水平，输出等长 JSON 字符串数组：'+JSON.stringify(b));if(!Array.isArray(r)||r.length!==b.length)throw 0}catch(e){r=[];for(const s of b)try{r.push(await mm(s,'de','zh-CN'))}catch(x){r.push('')}toast('AI 不可用，已降级 MyMemory，质量较低')}out.push(...r.map(str))}return out}
 /* ===== TTS ===== */
 let cancelPlay=false,skipOne=false;
 const stopPlay=()=>{cancelPlay=true;stopAudio();S.playing=false};
@@ -183,7 +186,7 @@ applyExplain(y,d);if(/^(der|die|das)$/i.test(d.article))y.article=d.article.toLo
 catch(e){toast('后台查询失败：'+e.message)}finally{delete S.pend[id];ui()}}
 function aiStash(){if(!S.aiCur||!$('#ck'))return;C.ai.keys=C.ai.keys||{};const key=$('#ck').value.trim(),model=$('#cm').value.trim();if(key||model)C.ai.keys[S.aiCur]={key,model}}
 function aiLoad(clear){const k=akey($('#cp').value,$('#cb').value),s=(C.ai.keys||{})[k];S.aiCur=k;if(s){$('#ck').value=s.key||'';if(s.model)$('#cm').value=s.model}else if(clear)$('#ck').value=''}
-const LEMMA_PROMPT=ws=>'你是德语词典与拼写检查器。逐个处理下列德语单词或短语：(1) ok：原文拼写是否正确；(2) w：原形——名词用带定冠词(der/die/das)的单数主格形式且名词首字母大写（如 das Haus），动词用不定式，形容词用原级，其他词原样；拼写有误时 w 为纠正后的原形；(3) reason：拼写有误时用中文简要说明原因，否则留空；(4) zh：最常用中文释义（1-3个义项，用；分隔）。输出等长JSON数组 [{"w":"","ok":true,"reason":"","zh":""}]，不要编造。单词：'+JSON.stringify(ws);
+const LEMMA_PROMPT=ws=>'你是德语词典与拼写检查器，面向德语 A1–B2 学习者。逐个处理下列德语单词或短语：(1) ok：原文拼写是否正确；(2) w：原形——名词用带定冠词(der/die/das)的单数主格形式且名词首字母大写（如 das Haus），动词用不定式，形容词用原级，其他词原样；拼写有误时 w 为纠正后的原形；(3) reason：拼写有误时用中文简要说明原因，否则留空；(4) zh：最常用中文释义（1-3个义项，用；分隔）。输出等长 JSON 数组 [{"w":"","ok":true,"reason":"","zh":""}]，不要编造。单词：'+JSON.stringify(ws);
 async function aiLemma(words,prog){if(!C.ai.apiKey||!navigator.onLine)return null;const out=[];
 for(let i=0;i<words.length;i+=20){const b=words.slice(i,i+20);let r=null;try{r=await ai(LEMMA_PROMPT(b))}catch(e){r=null}
 if(Array.isArray(r)&&r.length===b.length)out.push(...r.map(o=>o&&typeof o==='object'&&str(o.w).trim()?{w:normW(str(o.w).trim()),ok:o.ok!==false,reason:str(o.reason),zh:str(o.zh)}:null));else out.push(...b.map(()=>null));
@@ -217,16 +220,20 @@ if(!TRL[k]){let a=0;try{a=await withT(()=>Translator.availability(o),2500)}catch
 let c=0;try{c=await withT(()=>Translator.create(o),4000)}catch(e){}if(!c)throw 0;TRL[k]=c}
 let r='';try{r=await withT(()=>TRL[k].translate(t),6000)}catch(e){}return r}
 async function transText(q){const zh=hasCJK(q),f=zh?'zh':'de',t=zh?'de':'zh';try{const r=await trLocal(q,f,t);if(r)return r}catch(e){}
-try{const r=await ai('把下面文本翻译成'+(zh?'德语':'中文')+'，输出JSON：{"t":"译文"}。文本：'+q.slice(0,1000));if(str(r.t))return str(r.t)}catch(e){if(e.message!=='noai'&&!/无法连接|离线/.test(e.message))throw e}
+try{const r=await ai('把下面文本翻译成'+(zh?'德语':'中文')+'，简洁自然，符合 A1–B2 水平。只输出 JSON：{"t":"译文"}。文本：'+q.slice(0,1000));if(str(r.t))return str(r.t)}catch(e){if(e.message!=='noai'&&!/无法连接|离线/.test(e.message))throw e}
 return await mm(q,zh?'zh-CN':'de',zh?'de':'zh-CN')}
-const LPROMPT=q=>'你是德汉词典。查询：'+q+'。返回JSON数组，最多8项，按相关度排序：[{"w":"德语词条，名词带冠词如 das Frühstück","g":"复数或语法提示，如 复数 Frühstücke；动词可写 不规则；没有则空","p":"词性缩写 n./vt./vi./adj./adv./prep./conj.","zh":"简明中文释义；列出最常用的1-3个义项，最常用的在前，用“；”分隔（如 morgen：明天；早上）"}]。输入为中文时返回对应的德语词条；包含拼写相近或同词根的常用词条；不确定不要编造。';
-async function lookupList(q){const k='L|'+q;if(CACHE[k])return CACHE[k];let items;
-try{const r=await ai(LPROMPT(q));items=(Array.isArray(r)?r:(r&&r.items)||[]).map(x=>({w:str(x&&x.w),g:str(x&&x.g),p:str(x&&x.p),zh:str(x&&x.zh)})).filter(x=>x.w).slice(0,8);if(!items.length)throw new Error('AI 返回格式异常，请重试');cput(k,items)}
+const LPROMPT=q=>'你是德汉词典，面向德语 A1–B2 学习者。查询：'+q+'。只输出 JSON 数组，最多8项，按相关度排序：[{"w":"德语词条：名词带定冠词且首字母大写（das Frühstück），其它词性小写","g":"复数或语法提示（如 复数 Frühstücke；动词不规则），没有则空","p":"词性 n./v./adj./adv./prep./conj.","zh":"简明中文释义，1-3个义项，最常用的在前，用；分隔"}]。中文查询返回对应的常用德语词条；德语查询只返回与查询词直接对应的词条。不确定不要编造。';
+const LPROMPT_DE=q=>'你是德汉词典，面向德语 A1–B2 学习者。查询德语词：'+q+'。只输出 JSON 数组，最多2项：[{"w":"词条：名词带定冠词且首字母大写（das Klettern），其它词性小写","g":"复数或语法提示，没有则空","p":"词性 n./v./adj./adv./prep./conj.","zh":"简明中文释义，1-2个义项，用；分隔"}]。只列与查询词直接对应的词条（原词，或名词化、大小写不同的同形词），不列派生词、同根词、近义词。';
+async function lookupList(q){const key=lkey(q);if(CACHE[key])return CACHE[key];let items;const de=!hasCJK(q);
+try{const r=await ai(de?LPROMPT_DE(q):LPROMPT(q));items=(Array.isArray(r)?r:(r&&r.items)||[]).map(x=>({w:str(x&&x.w),g:str(x&&x.g),p:str(x&&x.p),zh:str(x&&x.zh)})).filter(x=>x.w);
+if(de){const core=s=>String(s).toLowerCase().replace(/^(der|die|das)\s+/,'').replace(/\s+/g,' ').trim(),cq=core(q),ex=items.filter(x=>core(x.w)===cq);items=(ex.length?ex:items).slice(0,2)}
+else items=items.slice(0,8);
+if(!items.length)throw new Error('AI 返回格式异常，请重试');cput(key,items)}
 catch(e){if(e.message!=='noai'&&!/无法连接|离线/.test(e.message))throw e;const z=await transText(q);items=[hasCJK(q)?{w:z,g:'',p:'',zh:q}:{w:q,g:'',p:'',zh:z}]}
 return items}
 async function doQuery(){const q=S.q.trim();if(!q||S.busy)return;S.busy=true;S.sub='';render();let raw;
 try{const cjk=hasCJK(q);if((cjk&&q.length>8)||(!cjk&&(q.split(/\s+/).length>2||q.length>40))){raw={type:'sentence',src:q,out:CACHE['S|'+q]||await transText(q)};cput('S|'+q,raw.out)}else raw={type:'list',q:q,items:await lookupList(q)};
-S.res=raw;S.resq=q;D.history=D.history.filter(x=>x.query!==q);D.history.unshift({id:uid('h_'),type:raw.type,query:q,answer:String(raw.type==='list'?(raw.items[0]?(cjk?raw.items[0].w:raw.items[0].zh):''):raw.out).slice(0,60),p:raw.type==='list'&&raw.items[0]?raw.items[0].p:'',createdAt:Date.now()});D.history=D.history.slice(0,100);saveD()}catch(e){toast(e.message)}
+S.res=raw;S.resq=q;D.history=D.history.filter(x=>hkey(x&&x.query)!==hkey(q));D.history.unshift({id:uid('h_'),type:raw.type,query:q,answer:String(raw.type==='list'?(raw.items[0]?(cjk?raw.items[0].w:raw.items[0].zh):''):raw.out).slice(0,60),p:raw.type==='list'&&raw.items[0]?raw.items[0].p:'',createdAt:Date.now()});D.history=D.history.slice(0,100);saveD()}catch(e){toast(e.message)}
 S.busy=false;render()}
 const vdata=v=>{const d=norm(v,v.word);d.lemma=v.word;d.pos=v.pos;return d};
 async function showEntry(it){if(S.busy)return;S.sub='wd';S.wd=null;const sv=D.vocab.find(x=>x.lemma.toLowerCase()===it.w.toLowerCase());
@@ -234,7 +241,7 @@ if(sv){S.wd=vdata(sv);render();return}S.busy=true;render();let d;
 try{d=await lookupWord(it.w)}catch(x){toast(x.message==='noai'?'未配置 AI，仅显示基本释义':x.message);d=norm({lemma:it.w,pos:it.p,zh:it.zh},it.w)}
 if(!d.zh)d.zh=it.zh;S.wd=d;S.busy=false;render()}
 function openHist(id){const h=D.history.find(x=>x.id===id);if(!h)return;S.sub='';const nz=s=>s.toLowerCase().replace(/^(der|die|das)\s+/,'').trim();
-if(h.type==='list'){const items=CACHE['L|'+h.query];if(Array.isArray(items)&&items.length){const it=items.find(i=>nz(i.w)===nz(h.query))||items[0];S.q='';showEntry(it);return}}
+if(h.type==='list'){const items=CACHE[lkey(h.query)]||CACHE['L|'+h.query];if(Array.isArray(items)&&items.length){const it=items.find(i=>nz(i.w)===nz(h.query))||items[0];S.q='';showEntry(it);return}}
 else if(h.type==='word'){S.q='';showEntry({w:h.query,p:'',zh:h.answer});return}
 else if(h.type==='sentence'&&CACHE['S|'+h.query]){S.q=h.query;S.res={type:'sentence',src:h.query,out:CACHE['S|'+h.query]};S.resq=h.query.trim();render();return}
 S.q=h.query;doQuery()}
@@ -312,7 +319,7 @@ const RM=[['flip','翻卡（自评记得/忘了）'],['de2zh','看德语选中�
 const rpanel=()=>'<div class="card"><div class="mu sm">复习方式（可多选，随机出题）</div>'+RM.map(m=>chk('rm_'+m[0],(C.ui.rmodes||['flip']).includes(m[0]),m[1])).join('')+chk('ra',!!C.ui.autoDe,'看德语选中文时自动朗读德语')+chk('rx',!!C.ui.showEx,'显示例句（仅翻卡和看德语选中文，不含翻译）')+'</div>';
 const shuf=a=>a.map(x=>[Math.random(),x]).sort((p,q)=>p[0]-q[0]).map(x=>x[1]);
 function distract(v,key){const m=new Set(),own=key==='zh'?v.zh:v.word,add=(w,zh)=>{const t=key==='zh'?zh:w;if(!w||!t||t===own||w.toLowerCase()===v.word.toLowerCase())return;m.add(t.slice(0,40))};
-D.history.slice(0,40).forEach(x=>{const it=CACHE['L|'+x.query];if(Array.isArray(it))it.forEach(i=>add(i.w,i.zh))});D.vocab.forEach(o=>add(o.word,o.zh));return shuf([...m]).slice(0,3)}
+D.history.slice(0,40).forEach(x=>{const it=CACHE[lkey(x.query)]||CACHE['L|'+x.query];if(Array.isArray(it))it.forEach(i=>add(i.w,i.zh))});D.vocab.forEach(o=>add(o.word,o.zh));return shuf([...m]).slice(0,3)}
 function revState(v){if(S.rv&&S.rv.id===v.id)return S.rv;const modes=(C.ui.rmodes&&C.ui.rmodes.length?C.ui.rmodes:['flip']).slice();let mode=shuf(modes)[0],opts=[],ans='';
 if(mode==='de2zh'||mode==='zh2de'){const key=mode==='de2zh'?'zh':'w';ans=(key==='zh'?v.zh:v.word).slice(0,40);const d=distract(v,key);if(!ans||d.length<2)mode='flip';else opts=shuf([ans,...d])}
 if(mode==='write'&&!v.zh)mode='flip';const st=S.rv={id:v.id,mode,opts,ans,picked:-1,done:false,ok:null,typed:'',ex:(C.ui.showEx&&(mode==='flip'||mode==='de2zh')&&(v.examples||[]).length)?shuf(v.examples)[0].de:''};if(mode==='flip'||(mode==='de2zh'&&C.ui.autoDe))setTimeout(()=>say(v.word,'de'),250);return st}
@@ -350,7 +357,7 @@ function syncClr(){const b=$('#clr');if(b)b.hidden=!(S.tab===0&&S.sub!=='wd'&&S.
 (function(){const vv=window.visualViewport;if(!vv)return;const f=()=>{const kb=Math.max(0,window.innerHeight-vv.height-vv.offsetTop);document.documentElement.style.setProperty('--kb',kb+'px');document.body.classList.toggle('kb',kb>80)};vv.addEventListener('resize',f);vv.addEventListener('scroll',f);f()})();
 function render(){render0();syncClr()}
 function render0(){const root=document.documentElement;root.dataset.t=C.theme;$('#nv').innerHTML=TABS.map((t,i)=>'<button class="'+(S.tab===i?'on':'')+'" data-a="tab" data-i="'+i+'">'+t+'</button>').join('');$('#app').innerHTML=V['t'+S.tab]();
-if(S.tab===3){S.aiCur=akey(C.ai.provider,C.ai.baseUrl);$('#cp').value=C.ai.provider;$('#cr').value=String(C.ui.speechRate);$('#ct').value=C.theme;$('#te').value=C.tts.engine;$('#sy').value=String(C.sync.interval);document.querySelectorAll('#app>.card').forEach(c=>{const t=c.firstElementChild;if(!t||t.tagName!=='H3')return;const k=t.textContent;c.classList.add('fold');t.dataset.a='fold';if(!(k in S.so?S.so[k]:k==='AI 服务'))c.classList.add('cl')});if($('#cs'))cacheInfo().then(i=>{if($('#cs'))$('#cs').textContent='已缓存语音 '+i.n+' 条 · '+(i.b/1048576).toFixed(1)+' MB'})}}
+if(S.tab===3){S.aiCur=akey(C.ai.provider,C.ai.baseUrl);$('#cp').value=C.ai.provider;$('#cr').value=String(C.ui.speechRate);$('#ct').value=C.theme;$('#te').value=C.tts.engine;$('#sy').value=String(C.sync.interval);document.querySelectorAll('#app>.card').forEach(c=>{const t=c.firstElementChild;if(!t||t.tagName!=='H3')return;const k=t.textContent;c.classList.add('fold');t.dataset.a='fold';if(!S.so[k])c.classList.add('cl')});if($('#cs'))cacheInfo().then(i=>{if($('#cs'))$('#cs').textContent='已缓存语音 '+i.n+' 条 · '+(i.b/1048576).toFixed(1)+' MB'})}}
 function sheet(h){$('#sh').innerHTML=h;$('#sh').style.display=$('#ov').style.display='block'}
 function closeSheet(){$('#sh').style.display=$('#ov').style.display='none';if(S.spRes){const f=S.spRes;S.spRes=null;f(null)}}
 const DL=[['德语助手','https://www.godic.net/dicts/de/'],['Wiktionary','https://de.wiktionary.org/wiki/'],['Leo 中德','https://dict.leo.org/chinesisch-deutsch/']];
@@ -424,7 +431,7 @@ try{const had=!em(v.explain),hadEx=(v.examples||[]).length,d=await lookupWord(v.
 const art=/^(der|die|das)$/i.test(d.article)?d.article.toLowerCase():((d.lemma.match(/^(der|die|das)\s/i)||[''])[0].trim().toLowerCase());
 if(art&&!ART.test(v.word)&&bare(d.lemma)===bare(v.word)){v.word=v.lemma=art+' '+cap(d.lemma.replace(ART,'').trim());v.article=art}
 let capped=false;if(hadEx>0||(v.examples||[]).length<3){v.examples=v.examples||[];const room=6-v.examples.length,want=Math.min(3,room);
-if(want<=0)capped=true;else{const r=await ai('为德语单词 '+v.word+' 再写'+want+'条B1例句，不要与这些重复：'+JSON.stringify(v.examples.map(x=>x.de))+'。输出JSON数组[{"de":"","zh":""}]');v.examples.push(...(Array.isArray(r)?r:[]).filter(x=>x&&x.de).map(x=>({de:str(x.de),zh:str(x.zh)})).slice(0,want))}}
+if(want<=0)capped=true;else{const r=await ai('为德语单词 '+v.word+' 再写'+want+'条自然常用、适合 A1–B2 的例句，不要与这些重复：'+JSON.stringify(v.examples.map(x=>x.de))+'。输出JSON数组[{"de":"","zh":""}]');v.examples.push(...(Array.isArray(r)?r:[]).filter(x=>x&&x.de).map(x=>({de:str(x.de),zh:str(x.zh)})).slice(0,want))}}
 saveD();toast('已更新'+(capped?'（例句已达上限 6 句）':''))}catch(e){saveD();toast(e.message)}S.busy=false;render()},
 vedit(){const v=D.vocab.find(x=>x.id===S.sel);sheet('<h2>编辑</h2><label for="ew">德语单词</label><input id="ew" autocapitalize="off" autocomplete="off" value="'+esc(v.word)+'"><label for="ez">中文释义</label><input id="ez" value="'+esc(v.zh)+'"><label for="ee">详细解释</label><textarea id="ee">'+esc(v.explain||'')+'</textarea><button class="p" data-a="esave">保存</button>')},
 async esave(){const v=D.vocab.find(x=>x.id===S.sel);if(!v)return;const zhNew=$('#ez').value,ex=$('#ee').value,w0=$('#ew').value.replace(/\s+/g,' ').trim();
@@ -462,7 +469,7 @@ d.lemma=normW(lem);d.zh=z||d.zh;addVocab(d,S.cur.ctx,w,bid);S.busy=false;closeSh
 async 'save-imp'(){const txt=$('#ix').value;let L=parseImport(txt);if(!L.length)return toast('请输入内容');const title=$('#it').value.trim()||'导入文本';const tr=$('#itr').checked;
 if(tr){const need=L.filter(l=>!l.zh);if(need.length){S.busy=true;const keep=[$('#it').value,txt];render();$('#it').value=keep[0];$('#ix').value=keep[1];const z=await translateLines(need.map(l=>l.de));need.forEach((l,i)=>l.zh=z[i]);S.busy=false}}
 mergeTopic({id:uid('imp_'),title,emoji:'📄',source:'import',lines:L});S.sub='';render()},
-async gen(){const sc=$('#gs').value.trim();if(!sc)return toast('请输入场景');S.busy=true;render();try{const r=await ai('场景：'+sc+'。生成B1水平自然常用的德语对话10句，不标说话人，输出JSON：{"title":"简短中文标题","emoji":"一个emoji","lines":[["德语","中文"]]}');if(!Array.isArray(r.lines))throw new Error('AI 返回格式异常，请重试');S.gen={title:str(r.title)||sc,emoji:str(r.emoji)||'💬',lines:r.lines.slice(0,10).map(l=>({de:str(l[0]),zh:str(l[1]),hidden:false}))}}catch(e){toast(e.message==='noai'?'请先在设置中配置 AI':e.message)}S.busy=false;render();if($('#gs'))$('#gs').value=sc},
+async gen(){const sc=$('#gs').value.trim();if(!sc)return toast('请输入场景');S.busy=true;render();try{const r=await ai('场景：'+sc+'。生成 B1 水平、自然常用的德语对话 10 句（每句简短，不标说话人），输出 JSON：{"title":"简短中文标题","emoji":"一个emoji","lines":[["德语","中文"]]}');if(!Array.isArray(r.lines))throw new Error('AI 返回格式异常，请重试');S.gen={title:str(r.title)||sc,emoji:str(r.emoji)||'💬',lines:r.lines.slice(0,10).map(l=>({de:str(l[0]),zh:str(l[1]),hidden:false}))}}catch(e){toast(e.message==='noai'?'请先在设置中配置 AI':e.message)}S.busy=false;render();if($('#gs'))$('#gs').value=sc},
 gsave(){mergeTopic({id:uid('imp_'),title:S.gen.title,emoji:S.gen.emoji,source:'ai',lines:S.gen.lines});S.gen=null;S.sub='';render()},
 preset(e){aiStash();const p={ds:['https://api.deepseek.com/v1','deepseek-chat'],oa:['https://api.openai.com/v1','gpt-4o-mini'],qw:['https://dashscope.aliyuncs.com/compatible-mode/v1','qwen-plus'],gm:['https://generativelanguage.googleapis.com/v1beta','gemini-2.5-flash'],gq:['https://api.groq.com/openai/v1','llama-3.3-70b-versatile']}[e.dataset.p];$('#cp').value=e.dataset.p==='gm'?'gemini':'openai';$('#cb').value=p[0];$('#cm').value=p[1];aiLoad(true)},
 savecfg(){C.ai={provider:$('#cp').value,baseUrl:$('#cb').value.trim(),model:$('#cm').value.trim(),apiKey:$('#ck').value.trim(),keys:Object.assign({},C.ai.keys)};C.ai.keys[akey(C.ai.provider,C.ai.baseUrl)]={key:C.ai.apiKey,model:C.ai.model};S.aiCur=akey(C.ai.provider,C.ai.baseUrl);C.ui.speechRate=+$('#cr').value;C.dict.customUrl=$('#cd').value.trim();C.theme=$('#ct').value;saveC();render();toast('已保存')},
@@ -494,12 +501,12 @@ document.addEventListener('change',e=>{const id=e.target.id,u=C.ui;if(id==='ssp'
 if(id==='tbk'){const t=D.importedTopics.find(x=>x.id===S.tid);t.book=e.target.value;t.ut=Date.now();saveD();return}
 if(id==='wf'){const f=e.target.files[0];if(f){const r=new FileReader();r.onload=()=>{$('#wt').value=String(r.result)};r.readAsText(f)}return}if(id.indexOf('rm_')===0){const k=id.slice(3),s=new Set(u.rmodes||['flip']);if(e.target.checked)s.add(k);else s.delete(k);if(!s.size){s.add('flip');toast('至少保留一种方式')}u.rmodes=[...s];S.rv=null;saveC();render();return}if(['tr','tsp','tz','tm','tb','vr','vz','vrv','ra','rx','vbg'].includes(id)){if(id==='ra'){u.autoDe=e.target.checked;saveC();return}if(id==='rx'){u.showEx=e.target.checked;S.rv=null;saveC();render();return}if(id==='tr'||id==='vr')u.repeat=+e.target.value;if(id==='vz')u.vzh=e.target.checked;if(id==='vrv'){S.vrev=e.target.checked;u.vrev=S.vrev}if(id==='tsp')u.speechRate=+e.target.value;if(id==='tz')u.showZh=e.target.checked;if(id==='tm')u.showMastered=e.target.checked;if(id==='tb'||id==='vbg')u.bg=e.target.checked;saveC();render();return}if(e.target.id==='te'){C.tts.engine=e.target.value;saveC();render();return}if(e.target.id==='ct'){C.theme=e.target.value;saveC();render();return}if(e.target.id==='azd'||e.target.id==='azz')$('#'+e.target.id+'c').hidden=e.target.value!=='__c';if(e.target.id==='vs'){S.vsort=e.target.value;C.ui.vsort=S.vsort;saveC();render()}
 if(e.target.id==='if'){const f=e.target.files[0];if(f){const r=new FileReader();r.onload=()=>{$('#ix').value=String(r.result);if(!$('#it').value)$('#it').value=f.name.replace(/\.\w+$/,'')};r.readAsText(f)}}
-if(e.target.id==='bf'){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const o=JSON.parse(r.result);if(!o||!Array.isArray(o.vocab||[]))throw 0;mergeData(o);saveD();toast('已合并导入');render()}catch(x){toast('备份文件无效')}};r.readAsText(f)}});
+if(e.target.id==='bf'){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const o=JSON.parse(r.result);if(!o||!Array.isArray(o.vocab||[]))throw 0;mergeData(o,true);saveD();toast('已合并导入');render()}catch(x){toast('备份文件无效')}};r.readAsText(f)}});
 addEventListener('online',()=>{if(!typing())render()});addEventListener('offline',()=>{toast('已离线');if(!typing())render()});
 addEventListener('beforeinstallprompt',e=>{e.preventDefault();S.inst=e;if(S.tab===3)render()});
 /* ===== sync (Google Apps Script) ===== */
 let syncing=false,syncT=null,sst='';
-const payload=()=>({plan:D.plan,books:D.books,mastered:D.mastered,vocab:D.vocab.map(slim),importedTopics:D.importedTopics.filter(t=>!D.deleted[t.id]).map(t=>Object.assign({},t,{lines:t.lines.map(l=>{const r={de:l.de};if(l.zh)r.zh=l.zh;return r})})),history:D.history,deleted:D.deleted,order:D.order,sort:D.sort,updatedAt:D.updatedAt,kid:KID.snap()});
+const payload=()=>({plan:D.plan,books:D.books,mastered:D.mastered,vocab:D.vocab.map(slim),importedTopics:D.importedTopics.filter(t=>!D.deleted[t.id]).map(t=>Object.assign({},t,{lines:t.lines.map(l=>{const r={de:l.de};if(l.zh)r.zh=l.zh;return r})})),deleted:D.deleted,order:D.order,sort:D.sort,updatedAt:D.updatedAt,kid:KID.snap()});
 const SN={};
 const PF=['stage','reps','interval','due','mst','seen','ease'],prog=v=>(v.mst?1e6:0)+(v.reps||0)*100+(v.stage||0);
 function scan(apply){const n=Date.now(),chg=(k,s,o,f)=>{const old=SN[k];if(old!==s){if(apply&&(old!==undefined||!o[f||'ut']))o[f||'ut']=n;SN[k]=s}};
@@ -521,7 +528,7 @@ if(!emptyV(v))r[k]=v}return r}
 const FAT0=['article','plural','genitiv','pos','explain','pitfalls','context','contextForm','source','zh'];
 function fat(v){for(const k of FAT0)if(v[k]==null)v[k]='';for(const k of ['examples','collocations','synonyms','antonyms'])if(!Array.isArray(v[k]))v[k]=[];if(v.examples.length>6)v.examples=v.examples.slice(0,6);
 if(!v.forms||typeof v.forms!=='object')v.forms={};if(!v.forms.praesens)v.forms.praesens={};if(!v.forms.praeteritum)v.forms.praeteritum={};if(v.adjective===undefined)v.adjective=null}
-function mergeData(o){if(!o||typeof o!=='object')return;if(o.kid)KID.merge(o.kid);
+function mergeData(o,local){if(!o||typeof o!=='object')return;if(o.kid)KID.merge(o.kid);
 for(const k in o.deleted||{}){const t=(o.deleted[k]===1||o.deleted[k]===true)?Date.now():(+o.deleted[k]||0);if(t>dtime(k))D.deleted[k]=t}
 for(const b of o.books||[]){if(!b||!b.id)continue;const x=D.books.find(y=>y.id===b.id);if(!x)D.books.push(b);else if((b.ut||0)>(x.ut||0))Object.assign(x,b)}
 D.books=D.books.filter(b=>!(dtime(b.id)>(b.ut||0)));
@@ -533,7 +540,8 @@ const st={};for(const t of o.importedTopics||[]){if(!t||!t.id||!Array.isArray(t.
 if(!x){if(dtime(t.id)>(t.ut||0))continue;D.importedTopics.push(t);st[t.id]='remote'}else if((t.ut||0)>(x.ut||0)){Object.assign(x,{lines:t.lines,title:t.title||x.title,emoji:t.emoji||x.emoji,book:t.book,ut:t.ut});st[t.id]='remote'}}
 for(const id in st)if(st[id]==='remote')for(const k of Object.keys(D.mastered))if(k.slice(0,k.lastIndexOf('_'))===id)delete D.mastered[k];
 for(const k in o.mastered||{}){if(st[k.slice(0,k.lastIndexOf('_'))]==='remote')D.mastered[k]=1}
-for(const h of o.history||[])if(h&&h.id&&!D.history.find(y=>y.id===h.id))D.history.push(h);D.history.sort((a,b)=>b.createdAt-a.createdAt);D.history=D.history.slice(0,100);
+if(local)for(const h of o.history||[])if(h&&h.id&&h.query&&!D.history.find(y=>y.id===h.id))D.history.push(h);
+D.history.sort((a,b)=>b.createdAt-a.createdAt);D.history=D.history.filter((h,i,a)=>h&&h.query&&a.findIndex(y=>hkey(y&&y.query)===hkey(h.query))===i).slice(0,100);
 D.order=[...new Set([...(D.order||[]),...(o.order||[])])];
 const lp=plan();if(o.plan&&o.plan.date===lp.date)for(const f of ['done','extra'])for(const b in o.plan[f]||{})lp[f][b]=Math.max(lp[f][b]||0,+o.plan[f][b]||0);
 compact();migrate();snapAll()}
@@ -558,7 +566,7 @@ const KID=(()=>{
 const KEY='dl_kid',DAY=864e5,IV=[0,1,2,4,7,14],CAP=6,W=900,H=300,R=2,LY=[60,110,170,220];
 const COL={der:'#2f7fd0',die:'#d6483c',das:'#2e9e5b'},FF='"KidWrite","Playwrite DE Grund","Schulschrift","Segoe Print","Comic Sans MS",cursive';
 const el=$('#kid'),wide=matchMedia('(min-width:768px)');
-let KS=rd(KEY,{});KS.w=KS.w||{};KS.st=KS.st||{day:'',streak:0,stars:0};KS.rec=KS.rec||[];KS.bd=KS.bd||{};KS.bs=KS.bs||{};KS.goal=KS.goal||{n:6,t:0};KS.lh=KS.lh||[];KS.modes=KS.modes||{q:1,memo:1,clap:1};
+let KS=rd(KEY,{});KS.w=KS.w||{};KS.st=KS.st||{day:'',streak:0,stars:0};KS.rec=KS.rec||[];KS.bd=KS.bd||{};KS.bs=KS.bs||{};KS.goal=KS.goal||{n:6,t:0};KS.lh=(KS.lh||[]).filter((q,i,a)=>q&&a.findIndex(x=>hkey(x)===hkey(q))===i).slice(0,100);KS.modes=KS.modes||{q:1,memo:1,clap:1};
 let Q=[],qi=0,miss={},ws=[],sid=0,pen=false,POOL=[],ERR=false,EV=[],ST=0,bad=0,ACTS=[],AX=0,QRAN=false,SES=0,STAR0=0;
 const save=()=>{wr(KEY,KS);schedSync()},shuf=a=>a.map(x=>[Math.random(),x]).sort((p,q)=>p[0]-q[0]).map(p=>p[1]);
 const day=o=>{const d=new Date(Date.now()-(o||0)*DAY);return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate()};
@@ -708,7 +716,7 @@ const errCount=bid=>words(bid).filter(w=>KS.w[w.id]&&KS.w[w.id].mx).length;
 function pickErr(){const all=words(selBook());return{L:shuf(all.filter(w=>KS.w[w.id]&&KS.w[w.id].mx)).slice(0,CAP),n:all.length,practice:true,err:true,pool:all}}
 
 /* ---- 第4批：配对游戏 / 音节拍手 / 家长验证 / 同步与备份 ---- */
-const quit=async()=>{if(await gate())close()};
+const quit=async()=>{if(await gate()){KS.on=0;save();close()}};
 function endScr(t,sub,again,nb,next){el.onclick=null;el.innerHTML='<div class="kt"><button id="kx">✕</button></div><div class="kb"><div class="hd">'+t+'</div><div class="star">⭐</div><div class="msg">'+sub+'</div>'+(nb||[]).map(b=>'<div class="msg">🏅 新徽章：'+b[1]+' '+b[2]+'</div>').join('')+'<div class="row">'+(next?'<button class="p" id="nx">继续</button>':'')+'<button'+(next?'':' class="p"')+' id="ag">再玩一次</button><button id="bk">返回</button></div></div>';const q=s=>el.querySelector(s);q('#kx').onclick=home;q('#bk').onclick=home;q('#ag').onclick=again;if(next)q('#nx').onclick=next}
 const award=(k,x)=>{KS.st.stars++;KS.st.t=Date.now();KS.rec.push(Object.assign({t:Date.now(),k},x));if(k==='c')KS.bs.cl=(KS.bs.cl||0)+1;if(k==='m')KS.bs.mb=Math.min(KS.bs.mb||99,x.mv);const nb=badges();trim();save();return nb};
 /* 配对记忆：德语 ↔ 中文，6 对 */
@@ -897,7 +905,7 @@ async function lkdo(q){const inp=el.querySelector('#lq'),t=(typeof q==='string'?
     if((cjk&&t.length>8)||(!cjk&&(t.split(/\s+/).length>2||t.length>40)))LK.res={type:'sent',src:t,out:await transText(t)};
     else LK.res={type:'list',items:await lookupList(t)}}
   catch(e){LK.err=(e.message==='noai'||/离线/.test(e.message))?'家长还没有配置 AI，也连不上翻译服务，请先联网或在设置里配置 AI':e.message}
-  LK.busy=false;if(!LK.err){KS.lh=[t,...(KS.lh||[]).filter(x=>x!==t)].slice(0,20);save()}lookup()}
+  LK.busy=false;if(!LK.err){KS.lh=[t,...(KS.lh||[]).filter(x=>hkey(x)!==hkey(t))].slice(0,100);save()}lookup()}
 async function lkDetail(w,zh){LK.detail={w,zh,loading:true};LK.added=false;lookup();
   let d=null;try{d=await lookupWord(w)}catch(e){}
   if(!d)d=norm({lemma:w,zh},w);if(!d.zh)d.zh=zh||'';
@@ -927,11 +935,10 @@ function report(back){sid++;try{stopAudio()}catch(e){}
   el.innerHTML=h;el.onclick=e=>{const b=e.target.closest('button');if(b&&b.id==='kx')back()}}
 function close(){sid++;try{stopAudio()}catch(e){}el.hidden=true;el.onclick=null;document.body.style.overflow=''}
 /* function open(){if(!wide.matches)return toast('儿童模式需要宽屏设备（平板 / 电脑）');if(!KS.pw)toast('建议先设置家长密码，否则孩子可以随意退出');document.body.style.overflow='hidden';el.hidden=false;home()} */
-function open(){if(!KS.pw)toast('建议先设置家长密码，否则孩子可以随意退出');document.body.style.overflow='hidden';el.hidden=false;home()}
+function open(){KS.on=1;save();if(!KS.pw)toast('建议先设置家长密码，否则孩子可以随意退出');document.body.style.overflow='hidden';el.hidden=false;home()}
 /* wide.addEventListener('change',()=>{if(!wide.matches&&!el.hidden)close()});*/
 el.addEventListener('touchstart',e=>e.stopPropagation(),{passive:true});   // 避免边缘滑动触发主应用的“返回”
-S.so['儿童模式']=true;
-function boot(){if(KS.auto&&wide.matches)open()}
+function boot(){if(KS.on||(KS.auto&&wide.matches))open()}
 return{open,close,boot,merge,opts,goalOpts,modeHtml,setMode,setPw,hasPw:()=>!!KS.pw,snap:()=>({w:KS.w,st:KS.st,rec:KS.rec,bd:KS.bd,bs:KS.bs,goal:KS.goal}),auto:()=>!!KS.auto,setAuto:v=>{KS.auto=!!v;save()},report:openReport}})();
 A.kid=()=>KID.open();A.kidauto=t=>{if(t.checked&&!KID.hasPw()){KID.setPw().then(ok=>{if(ok)KID.setAuto(true);else t.checked=false})}else KID.setAuto(t.checked)};A.kidpw=()=>KID.setPw().then(()=>render());A.kidrep=()=>KID.report();A.kidmode=t=>{KID.setMode(t.dataset.m,t.checked);render()};
 migrate();if(compact())wr('dl',D);snapAll();KID.boot();render();syncNow();
