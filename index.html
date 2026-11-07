@@ -85,7 +85,7 @@ nav div{max-width:640px;margin:auto;display:flex}nav button{flex:1;height:56px;b
 #kid .klk{max-width:760px;margin:0 auto;text-align:left}#kid .klk input{font-size:24px;min-height:56px;padding:8px 14px;margin:10px 0}#kid .klk>.row button{flex:1}
 #kid .klrow{display:block;width:100%;min-width:0;text-align:left;min-height:64px;margin:8px 0;font-size:20px;white-space:normal;line-height:1.3}#kid .klrow b{font-size:26px}#kid .klrow .sm2{display:block;margin-top:2px}
 #kid .khist{margin-top:16px;text-align:left;border-top:1px solid var(--ln);padding-top:12px}#kid .khist .chips{margin-top:6px}#kid .khist .chip{min-height:42px;padding:0 14px;font-size:17px}
-#kid .kw{font-size:40px;margin:8px 0;line-height:1.2}#kid .krep{max-width:820px;margin:0 auto;text-align:left;font-size:18px}#kid .krep .kbd1{margin:10px 0}#kid .krep .kbd1>b{font-size:20px}
+#kid .kw{font-size:40px;margin:8px 0;line-height:1.2}#kid .krep{max-width:820px;margin:0 auto;text-align:left;font-size:18px}#kid .krep .kbd1{margin:10px 0}#kid .krep .kbd1>b{font-size:20px}#kid .kdr{display:flex;gap:8px;margin-top:6px}#kid .kdr button{flex:1;min-height:44px;font-size:16px;padding:6px 8px}
 #kid .krow{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:7px 0;border-bottom:1px solid var(--ln);font-size:18px}#kid .krow:last-child{border-bottom:0}
 #kid input{-webkit-user-select:text;user-select:text}
 @media(prefers-reduced-motion:reduce){#kid .shake{animation:none}#kid .bar i{transition:none}}
@@ -108,10 +108,12 @@ const DC={ai:{provider:'openai',baseUrl:'https://api.deepseek.com/v1',apiKey:'',
 let C=rd('dl_cfg',{});for(const k of ['ai','dict','tts','ui','sync'])C[k]=Object.assign({},DC[k],C[k]);C.theme=C.theme||'auto';
 function akey(p,b){return p+'|'+String(b||'').trim().replace(/\/+$/,'').toLowerCase()}
 if(C.ai.apiKey){C.ai.keys=C.ai.keys||{};const k0=akey(C.ai.provider,C.ai.baseUrl);if(!C.ai.keys[k0])C.ai.keys[k0]={key:C.ai.apiKey,model:C.ai.model}}
-let D=Object.assign({version:1,updatedAt:0,mastered:{},vocab:[],importedTopics:[BUILTIN],history:[],deleted:{},order:[],sort:'time'},rd('dl',{}));
+let D=Object.assign({version:1,updatedAt:0,mastered:{},vocab:[],importedTopics:[BUILTIN],history:[],deleted:{},order:[],sort:'time',school:null},rd('dl',{}));
 let CACHE=rd('dl_cache',{});
 const cput=(k,v)=>{CACHE[k]=v;const ks=Object.keys(CACHE);if(ks.length>200)delete CACHE[ks[0]];wr('dl_cache',CACHE)};
 function migrate(){if(!Array.isArray(D.books)||!D.books.length)D.books=[{id:'bk_default',name:'我的生词',daily:10}];
+if(!D.books.some(b=>b.school))D.books.push({id:'bk_school',name:'校内词',school:1,daily:6,ut:1});
+if(D.school&&!Array.isArray(D.school.wks))D.school=null;if(D.school)D.school.wks=D.school.wks.filter(w=>w&&Array.isArray(w.words)&&w.id).slice(0,5);
 D.books.forEach(b=>{if(!b.ut)b.ut=1});D.vocab.forEach(v=>{if(!v.book||!D.books.find(b=>b.id===v.book))v.book=D.books[0].id;if(!v.ut)v.ut=v.createdAt||1;if(!v.pt)v.pt=v.ut});
 if(!D.plan)D.plan={date:'',done:{},extra:{}};
 D.vocab.forEach(fat);D.importedTopics.forEach(t=>t.lines.forEach(l=>{if(l.zh==null)l.zh=''}));
@@ -140,7 +142,7 @@ async function translateLines(des){const out=[];for(let i=0;i<des.length;i+=15){
 /* ===== TTS ===== */
 let cancelPlay=false,skipOne=false;
 const stopPlay=()=>{cancelPlay=true;stopAudio();S.playing=false};
-function sysSpeak(t,lang){return new Promise(res=>{if(!('speechSynthesis' in window)){toast('此设备不支持语音');return res()}const u=new SpeechSynthesisUtterance(t);u.lang=lang==='zh'?'zh-CN':'de-DE';if(lang!=='zh')u.rate=C.ui.speechRate;u.onend=u.onerror=()=>res();speechSynthesis.speak(u)})}
+function sysSpeak(t,lang,spd){return new Promise(res=>{if(!('speechSynthesis' in window)){toast('此设备不支持语音');return res()}const u=new SpeechSynthesisUtterance(t);u.lang=lang==='zh'?'zh-CN':'de-DE';if(lang!=='zh')u.rate=spd||C.ui.speechRate;u.onend=u.onerror=()=>res();speechSynthesis.speak(u)})}
 let azWarned=false,curAudio=null;
 const AZDE=['de-DE-KatjaNeural','de-DE-ConradNeural','de-DE-AmalaNeural','de-DE-BerndNeural','de-DE-ChristophNeural','de-DE-ElkeNeural','de-DE-GiselaNeural','de-DE-KasperNeural','de-DE-KillianNeural','de-DE-KlarissaNeural','de-DE-KlausNeural','de-DE-LouisaNeural','de-DE-MajaNeural','de-DE-RalfNeural','de-DE-SeraphinaNeural','de-DE-TanjaNeural'];
 const AZZH=['zh-CN-XiaoxiaoNeural','zh-CN-XiaoyiNeural','zh-CN-YunjianNeural','zh-CN-YunxiNeural','zh-CN-YunxiaNeural','zh-CN-YunyangNeural','zh-CN-liaoning-XiaobeiNeural','zh-CN-shaanxi-XiaoniNeural'];
@@ -149,18 +151,18 @@ let azDet=null;const AU=new Audio();AU.preload='auto';
 function detectRegion(){const key=C.tts.azureKey,body='<speak version="1.0" xml:lang="de-DE"><voice name="de-DE-KatjaNeural">Hallo</voice></speak>';
 return new Promise(res=>{let n=AZR.length,ok=0;const cs=AZR.map(()=>new AbortController());AZR.forEach((r,i)=>{fetch('https://'+r+'.tts.speech.microsoft.com/cognitiveservices/v1',{method:'POST',signal:cs[i].signal,headers:{'Ocp-Apim-Subscription-Key':key,'Content-Type':'application/ssml+xml','X-Microsoft-OutputFormat':'riff-24khz-16bit-mono-pcm'},body}).then(x=>{if(x.ok&&!ok){ok=1;cs.forEach((c,j)=>j!==i&&c.abort());res(r)}}).catch(()=>{}).finally(()=>{if(--n===0&&!ok)res('')})})})}
 async function getRegion(){const T=C.tts;if(T.azureRegion)return T.azureRegion;if(T.azureAuto)return T.azureAuto;if(!azDet)azDet=detectRegion().finally(()=>{azDet=null});const r=await azDet;if(!r)throw new Error('无法自动确定区域，请在设置中手动填写');T.azureAuto=r;saveC();return r}
-async function azure(t,lang,retry,noPlay){const T=C.tts,zh=lang==='zh',voice=zh?(T.zhVoice||AZZH[0]):(T.deVoice||AZDE[0]),rate=zh?'1':String(C.ui.speechRate);
+async function azure(t,lang,retry,noPlay,spd){const T=C.tts,zh=lang==='zh',voice=zh?(T.zhVoice||AZZH[0]):(T.deVoice||AZDE[0]),rate=zh?'1':String(spd||C.ui.speechRate);
 const req=new Request('https://tts.local/'+encodeURIComponent(voice+'|'+rate+'|'+t));let c=null,r=null;try{c=await caches.open('dl-tts');r=await c.match(req)}catch(e){}
 if(!r){if(!navigator.onLine)throw new Error('当前离线');const ssml='<speak version="1.0" xml:lang="'+(zh?'zh-CN':'de-DE')+'"><voice name="'+esc(voice)+'"><prosody rate="'+rate+'">'+esc(t)+'</prosody></voice></speak>';
 const reg=await getRegion();try{r=await fetch('https://'+encodeURIComponent(reg)+'.tts.speech.microsoft.com/cognitiveservices/v1',{method:'POST',headers:{'Ocp-Apim-Subscription-Key':T.azureKey,'Content-Type':'application/ssml+xml','X-Microsoft-OutputFormat':'riff-24khz-16bit-mono-pcm'},body:ssml})}catch(e){throw new Error('无法连接')}
 if((r.status===401||r.status===403)&&!T.azureRegion&&T.azureAuto&&!retry){delete T.azureAuto;saveC();return azure(t,lang,true,noPlay)}if(!r.ok)throw new Error('错误 '+r.status+(r.status===401?'，Key 或区域不正确':''));if(c)try{await c.put(req,r.clone())}catch(e){}}
 if(noPlay)return;const url=URL.createObjectURL(await r.blob());return new Promise((res,rej)=>{const a=AU;curAudio=a;let done=0;const fin=()=>{if(done)return;done=1;a.onended=a.onpause=a.onerror=null;URL.revokeObjectURL(url);res()};a.onended=fin;a.onpause=fin;a.onerror=()=>{if(done)return;done=1;URL.revokeObjectURL(url);rej(new Error('播放失败'))};a.src=url;a.play().catch(x=>{if(!done){done=1;rej(x)}})})}
-function speak(t,lang){const T=C.tts;if(T.engine==='azure'&&T.azureKey)return azure(t,lang).catch(e=>{if(!azWarned){azWarned=true;toast('Azure 语音失败（'+e.message+'），已改用系统语音')}return sysSpeak(t,lang)});return sysSpeak(t,lang)}
+function speak(t,lang,spd){const T=C.tts;if(T.engine==='azure'&&T.azureKey)return azure(t,lang,false,false,spd).catch(e=>{if(!azWarned){azWarned=true;toast('Azure 语音失败（'+e.message+'），已改用系统语音')}return sysSpeak(t,lang,spd)});return sysSpeak(t,lang,spd)}
 async function precache(items){const T=C.tts;if(T.engine!=='azure'||!T.azureKey)return toast('请先在设置中选择 Azure 并填写 Key');if(!navigator.onLine)return toast('离线，无法缓存');if(S.pc)return;
 const seen=new Set(),L=items.filter(x=>x[0]&&!seen.has(x[1]+x[0])&&seen.add(x[1]+x[0]));if(!L.length)return toast('没有可缓存的内容');S.pc=1;toast('开始缓存 '+L.length+' 条语音…');let n=0,f=0;
 for(let i=0;i<L.length;i++){try{await azure(L[i][0],L[i][1],false,true);n++}catch(e){f++;if(f>=3){toast('缓存中断：'+e.message);break}}if((i+1)%10===0)toast('已缓存 '+(i+1)+'/'+L.length)}S.pc=0;toast('缓存完成 '+n+' 条'+(f?'，失败 '+f+' 条':''))}
 const stopAudio=()=>{speechSynthesis.cancel();if(curAudio)curAudio.pause()};
-const say=(t,l)=>{stopAudio();speak(t,l)};
+const say=(t,l,spd)=>{stopAudio();speak(t,l,spd)};
 async function cacheInfo(){try{const c=await caches.open('dl-tts'),ks=await c.keys();let b=0;for(const k of ks){const r=await c.match(k);if(r)b+=(await r.blob()).size}return{n:ks.length,b}}catch(e){return{n:0,b:0}}}
 const spk=(t,l)=>'<button class="i" data-a="say" data-t="'+esc(t)+'" data-l="'+(l||'de')+'" aria-label="发音"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z" fill="currentColor"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/></svg></button>';
 /* ===== vocab ===== */
@@ -349,7 +351,7 @@ return h+'<div id="tl">'+tlist(t)+'</div>'};
 V.imp=()=>'<h1><button data-a="back">‹ 返回</button>导入文本</h1><label for="it">标题</label><input id="it"><label for="ix">文本（每行一句，或 德语 | 中文（支持 | ｜ 和制表符，中文在前也能识别），最多 200 句）</label><textarea id="ix"></textarea><label for="if">上传 .txt/.md</label><input id="if" type="file" accept=".txt,.md"><label class="c"><input type="checkbox" id="itr" checked>自动翻译成中文</label><button class="p" data-a="save-imp" '+(S.busy?'disabled':'')+'>'+(S.busy?'翻译中…':'保存为主题')+'</button>';
 V.gen=()=>{let h='<h1><button data-a="back">‹ 返回</button>AI 生成</h1><label for="gs">场景</label><input id="gs" placeholder="在火车站买票"><button class="p" data-a="gen" '+(S.busy?'disabled':'')+'>'+(S.busy?'生成中…':'生成对话 (10句)')+'</button>';
 if(S.gen)h+='<div class="card"><h3>'+esc(S.gen.emoji+' '+S.gen.title)+'</h3>'+S.gen.lines.map(l=>'<div class="li"><div class="g">'+esc(l.de)+'<div class="mu">'+esc(l.zh)+'</div></div></div>').join('')+'<button class="p" data-a="gsave">保存为主题</button></div>';return h};
-V.t3=()=>{const a=C.ai;return '<h1>设置</h1><div class="card"><h3>AI 服务</h3><label for="cp">提供商</label><select id="cp"><option value="openai">OpenAI 兼容</option><option value="claude">Claude</option><option value="gemini">Google Gemini（AI Studio）</option></select><label for="cb">Base URL</label><input id="cb" value="'+esc(a.baseUrl)+'"><label for="cm">模型</label><input id="cm" list="ml" value="'+esc(a.model)+'"><datalist id="ml"><option value="gemini-2.5-flash"><option value="gemini-2.5-flash-lite"><option value="gemini-2.5-pro"><option value="llama-3.3-70b-versatile"><option value="deepseek-chat"></datalist><label for="ck">API Key</label><input id="ck" type="password" value="'+esc(a.apiKey)+'"><div class="row"><button data-a="preset" data-p="ds">DeepSeek</button><button data-a="preset" data-p="oa">OpenAI</button><button data-a="preset" data-p="qw">通义千问</button><button data-a="preset" data-p="gm">Google AI Studio</button><button data-a="preset" data-p="gq">Groq</button></div><div class="row" style="margin-top:8px"><button class="p" data-a="savecfg">保存设置</button><button data-a="testai">测试 AI</button></div></div><div class="card"><h3>语音与词典</h3><label for="cr">德语语速</label><select id="cr"><option>0.6</option><option>0.8</option><option>1</option></select><label for="cd">自定义词典网址（{w} 代表单词）</label><input id="cd" value="'+esc(C.dict.customUrl)+'"><button data-a="savecfg">保存</button></div>'+syncCard()+voiceCard()+'<div class="card kidcard"><h3>儿童模式</h3><p class="mu">四线格描红、听写、拼字母、游戏。需要宽屏设备（平板 / 电脑）。</p><label for="kbk">练习哪个生词本（儿童模式查词时，新词也加入这个本子）</label><select id="kbk">'+KID.opts()+'</select><label for="kgl2">每天目标（个词）</label><select id="kgl2">'+KID.goalOpts()+'</select><div class="mu" style="margin-top:12px">学习方式（点“开始”后依次进行，至少选一项）</div>'+KID.modeHtml()+'<label class="c" style="margin-top:12px"><input type="checkbox" data-a="kidauto"'+(KID.auto()?' checked':'')+'>每次打开自动进入儿童模式（仅宽屏；需先设置家长密码）</label><div class="row"><button data-a="kidpw">'+(KID.hasPw()?'修改家长密码':'设置家长密码')+'</button><button data-a="kidrep">📊 学习报告</button><button class="p" data-a="kid">进入儿童模式</button></div></div><div class="card"><h3>外观</h3><label for="ct">主题</label><select id="ct"><option value="auto">跟随系统</option><option value="light">浅色</option><option value="dark">深色</option></select></div><div class="card"><h3>应用</h3><p class="mu">网络：'+(navigator.onLine?'在线':'离线')+'</p>'+(S.inst?'<button class="p" data-a="inst">添加到主屏幕</button>':'')+'</div><div class="card"><h3>数据管理</h3><div class="row"><button data-a="seed">恢复内置主题</button><button data-a="exp">导出备份</button><button data-a="imp-b">导入备份</button><button class="d" data-a="wipe">清除本机数据</button></div><input id="bf" type="file" accept=".json" hidden></div>'};
+V.t3=()=>{const a=C.ai;return '<h1>设置</h1><div class="card"><h3>AI 服务</h3><label for="cp">提供商</label><select id="cp"><option value="openai">OpenAI 兼容</option><option value="claude">Claude</option><option value="gemini">Google Gemini（AI Studio）</option></select><label for="cb">Base URL</label><input id="cb" value="'+esc(a.baseUrl)+'"><label for="cm">模型</label><input id="cm" list="ml" value="'+esc(a.model)+'"><datalist id="ml"><option value="gemini-2.5-flash"><option value="gemini-2.5-flash-lite"><option value="gemini-2.5-pro"><option value="llama-3.3-70b-versatile"><option value="deepseek-chat"></datalist><label for="ck">API Key</label><input id="ck" type="password" value="'+esc(a.apiKey)+'"><div class="row"><button data-a="preset" data-p="ds">DeepSeek</button><button data-a="preset" data-p="oa">OpenAI</button><button data-a="preset" data-p="qw">通义千问</button><button data-a="preset" data-p="gm">Google AI Studio</button><button data-a="preset" data-p="gq">Groq</button></div><div class="row" style="margin-top:8px"><button class="p" data-a="savecfg">保存设置</button><button data-a="testai">测试 AI</button></div></div><div class="card"><h3>语音与词典</h3><label for="cr">德语语速</label><select id="cr"><option>0.6</option><option>0.8</option><option>1</option></select><label for="cd">自定义词典网址（{w} 代表单词）</label><input id="cd" value="'+esc(C.dict.customUrl)+'"><button data-a="savecfg">保存</button></div>'+syncCard()+voiceCard()+'<div class="card kidcard"><h3>儿童模式</h3><p class="mu">四线格描红、听写、拼字母、游戏；每天 10–15 分钟。</p><label for="kbk">练习哪个生词本（儿童模式查词时，新词也加入这个本子）</label><select id="kbk">'+KID.opts()+'</select><label for="kgl2">每天目标（个词）</label><select id="kgl2">'+KID.goalOpts()+'</select><div class="mu" style="margin-top:12px">学习方式（点“开始”后依次进行，至少选一项）</div>'+KID.modeHtml()+'<div class="mu" style="margin-top:12px">本周校内词</div>'+KID.schoolHtml()+'<label class="c" style="margin-top:12px"><input type="checkbox" data-a="kidauto"'+(KID.auto()?' checked':'')+'>每次打开自动进入儿童模式（需先设置家长密码）</label><div class="row"><button data-a="kidpw">'+(KID.hasPw()?'修改家长密码':'设置家长密码')+'</button><button data-a="kidrep">📊 学习报告'+(KID.pendN()?' · 待批改 '+KID.pendN():'')+'</button><button class="p" data-a="kid">进入儿童模式</button></div></div><div class="card"><h3>外观</h3><label for="ct">主题</label><select id="ct"><option value="auto">跟随系统</option><option value="light">浅色</option><option value="dark">深色</option></select></div><div class="card"><h3>应用</h3><p class="mu">网络：'+(navigator.onLine?'在线':'离线')+'</p>'+(S.inst?'<button class="p" data-a="inst">添加到主屏幕</button>':'')+'</div><div class="card"><h3>数据管理</h3><div class="row"><button data-a="seed">恢复内置主题</button><button data-a="exp">导出备份</button><button data-a="imp-b">导入备份</button><button class="d" data-a="wipe">清除本机数据</button></div><input id="bf" type="file" accept=".json" hidden></div>'};
 /* ===== render ===== */
 function vf(id,list,val,lab){const c=val&&!list.includes(val);return '<label for="'+id+'">'+lab+'</label><select id="'+id+'">'+list.map(v=>'<option'+(v===val?' selected':'')+'>'+v+'</option>').join('')+'<option value="__c"'+(c?' selected':'')+'>自定义…</option></select><input id="'+id+'c" placeholder="voice 名称" value="'+esc(c?val:'')+'"'+(c?'':' hidden')+'>'}
 const voiceCard=()=>{const T=C.tts,az=T.engine==='azure';return '<div class="card"><h3>语音（TTS）</h3><label for="te">引擎</label><select id="te"><option value="system">系统语音</option><option value="azure">Azure</option></select>'+(az?vf('azd',AZDE,T.deVoice,'德语声音')+vf('azz',AZZH,T.zhVoice,'中文声音')+'<label for="azk">Azure Key</label><input id="azk" type="password" value="'+esc(T.azureKey||'')+'"><label for="azr">区域（可留空，自动检测）</label><input id="azr" value="'+esc(T.azureRegion||'')+'">':'<p class="mu">系统语音：德语 de-DE、中文 zh-CN；息屏后会停止。</p>')+'<div class="row"><button class="p" data-a="azsave">保存并试听</button>'+(az?'<button data-a="azclr">清除缓存</button>':'')+'</div>'+(az?'<p class="mu" id="cs">缓存：…</p>':'')+'</div>'};
@@ -506,7 +508,7 @@ addEventListener('online',()=>{if(!typing())render()});addEventListener('offline
 addEventListener('beforeinstallprompt',e=>{e.preventDefault();S.inst=e;if(S.tab===3)render()});
 /* ===== sync (Google Apps Script) ===== */
 let syncing=false,syncT=null,sst='';
-const payload=()=>({plan:D.plan,books:D.books,mastered:D.mastered,vocab:D.vocab.map(slim),importedTopics:D.importedTopics.filter(t=>!D.deleted[t.id]).map(t=>Object.assign({},t,{lines:t.lines.map(l=>{const r={de:l.de};if(l.zh)r.zh=l.zh;return r})})),deleted:D.deleted,order:D.order,sort:D.sort,updatedAt:D.updatedAt,kid:KID.snap()});
+const payload=()=>({plan:D.plan,books:D.books,mastered:D.mastered,vocab:D.vocab.map(slim),importedTopics:D.importedTopics.filter(t=>!D.deleted[t.id]).map(t=>Object.assign({},t,{lines:t.lines.map(l=>{const r={de:l.de};if(l.zh)r.zh=l.zh;return r})})),deleted:D.deleted,order:D.order,sort:D.sort,updatedAt:D.updatedAt,school:D.school,kid:KID.snapSync()});
 const SN={};
 const PF=['stage','reps','interval','due','mst','seen','ease'],prog=v=>(v.mst?1e6:0)+(v.reps||0)*100+(v.stage||0);
 function scan(apply){const n=Date.now(),chg=(k,s,o,f)=>{const old=SN[k];if(old!==s){if(apply&&(old!==undefined||!o[f||'ut']))o[f||'ut']=n;SN[k]=s}};
@@ -528,7 +530,7 @@ if(!emptyV(v))r[k]=v}return r}
 const FAT0=['article','plural','genitiv','pos','explain','pitfalls','context','contextForm','source','zh'];
 function fat(v){for(const k of FAT0)if(v[k]==null)v[k]='';for(const k of ['examples','collocations','synonyms','antonyms'])if(!Array.isArray(v[k]))v[k]=[];if(v.examples.length>6)v.examples=v.examples.slice(0,6);
 if(!v.forms||typeof v.forms!=='object')v.forms={};if(!v.forms.praesens)v.forms.praesens={};if(!v.forms.praeteritum)v.forms.praeteritum={};if(v.adjective===undefined)v.adjective=null}
-function mergeData(o,local){if(!o||typeof o!=='object')return;if(o.kid)KID.merge(o.kid);
+function mergeData(o,local){if(!o||typeof o!=='object')return;const p0=KID.pendN();if(o.kid)KID.merge(o.kid);const p1=KID.pendN();if(p1>p0&&document.getElementById('kid').hidden)toast('有 '+(p1-p0)+' 个听写待家长批改');
 for(const k in o.deleted||{}){const t=(o.deleted[k]===1||o.deleted[k]===true)?Date.now():(+o.deleted[k]||0);if(t>dtime(k))D.deleted[k]=t}
 for(const b of o.books||[]){if(!b||!b.id)continue;const x=D.books.find(y=>y.id===b.id);if(!x)D.books.push(b);else if((b.ut||0)>(x.ut||0))Object.assign(x,b)}
 D.books=D.books.filter(b=>!(dtime(b.id)>(b.ut||0)));
@@ -542,6 +544,9 @@ for(const id in st)if(st[id]==='remote')for(const k of Object.keys(D.mastered))i
 for(const k in o.mastered||{}){if(st[k.slice(0,k.lastIndexOf('_'))]==='remote')D.mastered[k]=1}
 if(local)for(const h of o.history||[])if(h&&h.id&&h.query&&!D.history.find(y=>y.id===h.id))D.history.push(h);
 D.history.sort((a,b)=>b.createdAt-a.createdAt);D.history=D.history.filter((h,i,a)=>h&&h.query&&a.findIndex(y=>hkey(y&&y.query)===hkey(h.query))===i).slice(0,100);
+if(o.school&&Array.isArray(o.school.wks)){D.school=D.school||{wks:[]};for(const w of o.school.wks){if(!w||!w.id||!Array.isArray(w.words))continue;const x=D.school.wks.find(y=>y.id===w.id);
+  if(!x)D.school.wks.push(w);else{x.words=[...new Set([...(x.words||[]),...w.words])];x.days=[...new Set([...(x.days||[]),...(w.days||[])])];if((w.added||0)>(x.added||0)){x.dict=w.dict||x.dict;x.added=w.added}}}
+  D.school.wks=D.school.wks.sort((a,b)=>(b.added||0)-(a.added||0)).slice(0,5)}
 D.order=[...new Set([...(D.order||[]),...(o.order||[])])];
 const lp=plan();if(o.plan&&o.plan.date===lp.date)for(const f of ['done','extra'])for(const b in o.plan[f]||{})lp[f][b]=Math.max(lp[f][b]||0,+o.plan[f][b]||0);
 compact();migrate();snapAll()}
@@ -566,9 +571,22 @@ const KID=(()=>{
 const KEY='dl_kid',DAY=864e5,IV=[0,1,2,4,7,14],CAP=6,W=900,H=300,R=2,LY=[60,110,170,220];
 const COL={der:'#2f7fd0',die:'#d6483c',das:'#2e9e5b'},FF='"KidWrite","Playwrite DE Grund","Schulschrift","Segoe Print","Comic Sans MS",cursive';
 const el=$('#kid'),wide=matchMedia('(min-width:768px)');
-let KS=rd(KEY,{});KS.w=KS.w||{};KS.st=KS.st||{day:'',streak:0,stars:0};KS.rec=KS.rec||[];KS.bd=KS.bd||{};KS.bs=KS.bs||{};KS.goal=KS.goal||{n:6,t:0};KS.lh=(KS.lh||[]).filter((q,i,a)=>q&&a.findIndex(x=>hkey(x)===hkey(q))===i).slice(0,100);KS.modes=KS.modes||{q:1,memo:1,clap:1};
-let Q=[],qi=0,miss={},ws=[],sid=0,pen=false,POOL=[],ERR=false,EV=[],ST=0,bad=0,ACTS=[],AX=0,QRAN=false,SES=0,STAR0=0;
+let KS=rd(KEY,{});KS.w=KS.w||{};KS.st=KS.st||{day:'',streak:0,stars:0};KS.rec=KS.rec||[];KS.bd=KS.bd||{};KS.bs=KS.bs||{};KS.goal=KS.goal||{n:6,t:0};KS.lh=(KS.lh||[]).filter((q,i,a)=>q&&a.findIndex(x=>hkey(x)===hkey(q))===i).slice(0,100);KS.modes=KS.modes||{q:1,memo:1,clap:1};KS.dic=KS.dic||[];KS.dic.forEach(z=>{if(z&&!z.id)z.id=(z.t||0).toString(36)+'|'+(z.w||'')+'|'+(z.d||'')});KS.la=KS.la||{d:'',n:0};
+/* 进度改按单词（去冠词小写）存，兼容旧版按 v.id 存的键 */
+(function(){const m={};D.vocab.forEach(v=>{m[v.id]=bare(v.lemma||v.word)});for(const k in KS.w){const nk=m[k];if(nk&&nk!==k){const a=KS.w[k],b=KS.w[nk];if(!b||(a.t||0)>(b.t||0))KS.w[nk]=a;delete KS.w[k]}}})();
+let Q=[],qi=0,miss={},ws=[],sid=0,pen=false,POOL=[],ERR=false,EV=[],ST=0,SST=0,bad=0,ACTS=[],AX=0,QRAN=false,SES=0,STAR0=0;
+let SCHOOL=false,SW=[],SD=1,XW=[],ADV={},TOT={},ANS={},SETT={},DRES={},EV2=[],EVCUR=null;
 const save=()=>{wr(KEY,KS);schedSync()},shuf=a=>a.map(x=>[Math.random(),x]).sort((p,q)=>p[0]-q[0]).map(p=>p[1]);
+/* 听写记录：唯一 id + 家长批改结果（g=家长判定，gt=批改时间，ga=是否已按批改调整过盒号） */
+const dicId=t=>t.toString(36)+Math.random().toString(36).slice(2,6);
+const encSt=ss=>(ss||[]).map(s=>s.map(p=>Math.round(+p[0]).toString(36)+'.'+Math.round(+p[1]).toString(36)).join(',')).filter(Boolean).join(';');
+const decSt=z=>String(z||'').split(';').filter(Boolean).map(s=>s.split(',').map(p=>{const a=p.split('.');return[parseInt(a[0],36)||0,parseInt(a[1],36)||0]}));
+const dOk=x=>x&&x.g!=null?!!x.g:!!(x&&x.ok);
+/* 家长判定与孩子自评不一致时只调整一次：孩子说对、家长说错 → 降档并进错词本 */
+function applyGrade(x){if(!x||x.g==null||x.ga)return;x.ga=1;const k=ks(x.w),td=day(),t=Date.now();
+  if(!x.g&&x.ok){k.b=Math.max(1,(k.b||0)-2);k.up=td;k.d=t+IV[k.b]*DAY;k.t=t;k.mx=1;k.cc=0}
+  else if(x.g&&!x.ok){KS.st.stars++;k.t=t}}
+const dicPending=()=>(KS.dic||[]).filter(d=>d&&d.g==null&&d.t>Date.now()-7*DAY).slice(-8).reverse();
 const day=o=>{const d=new Date(Date.now()-(o||0)*DAY);return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate()};
 const mk=()=>{const c=document.createElement('canvas');c.width=W;c.height=H;return c};
 const cv=c=>{c.width=W*R;c.height=H*R;const x=c.getContext('2d');x.scale(R,R);return x};
@@ -576,16 +594,31 @@ const font=()=>document.fonts&&document.fonts.load?document.fonts.load('110px Ki
 const chip=w=>w.art?'<span class="ka" style="background:'+COL[w.art]+'">'+w.art+'</span>':'';
 const ks=id=>KS.w[id]||(KS.w[id]={b:0,d:0,tl:0});
 
-/* 取词：来自当前生词本，只用单个德语词且有中文释义 */
-function words(bid){return D.vocab.filter(v=>(bid==='*'||v.book===bid)&&v.zh).map(v=>{const raw=String(v.lemma||v.word).trim(),m=raw.match(/^(der|die|das)\s+(.+)$/i);
-  return{id:v.id,de:(m?m[2]:raw).trim(),art:m?m[1].toLowerCase():(/^(der|die|das)$/i.test(v.article)?v.article.toLowerCase():''),zh:String(v.zh).split(/[；;，,]/)[0].trim()}}).filter(w=>/^[A-Za-zÄÖÜäöüß-]{1,16}$/.test(w.de)&&w.zh)}
-function pick(bid){const all=words(bid),now=Date.now();
+/* 取词：来自当前生词本，只用单个德语词且有中文释义；id 用单词本身，便于跨设备同步进度 */
+const wObj=v=>{const raw=String(v.lemma||v.word).trim(),m=raw.match(/^(der|die|das)\s+(.+)$/i);
+  return{id:bare(raw),vid:v.id,de:(m?m[2]:raw).trim(),art:m?m[1].toLowerCase():(/^(der|die|das)$/i.test(v.article)?v.article.toLowerCase():''),zh:String(v.zh).split(/[；;，,]/)[0].trim()}};
+const okW=w=>/^[A-Za-zÄÖÜäöüß-]{1,16}$/.test(w.de)&&w.zh;
+function words(bid){return D.vocab.filter(v=>(bid==='*'||v.book===bid)&&v.zh).map(v=>{const w=wObj(v);return okW(w)?w:null}).filter(Boolean)}
+/* ---- 本周校内词 ---- */
+const BOOK_SCHOOL='bk_school';
+const schoolWks=()=>D.school&&Array.isArray(D.school.wks)?D.school.wks:[];
+const schoolWk=()=>{const td=dd(day());return schoolWks().find(w=>w&&w.dict&&dd(w.dict)>=td)||null};
+function wordsOfWeek(wk){if(!wk)return[];const keys=new Set(wk.words||[]);
+  return D.vocab.filter(v=>keys.has(bare(v.lemma||v.word))&&v.zh).map(v=>{const w=wObj(v);return okW(w)?w:null}).filter(Boolean)}
+const schoolWords=()=>wordsOfWeek(schoolWk());
+const dayNo=()=>{const wk=schoolWk();if(!wk)return 1;const ds=wk.days||[],td=day();return Math.max(1,Math.min(4,ds.includes(td)?ds.length:ds.length+1))};
+const uniqW=L=>{const m=new Map();L.forEach(w=>{if(!m.has(w.id))m.set(w.id,w)});return [...m.values()]};
+/* 校内周结束后（或换成新一周后），旧校内词自动并入常规复习 */
+const regPool=()=>{const a=words(selBook()),wk=schoolWk();if(!wk)return uniqW([...a,...words(BOOK_SCHOOL)]);
+  const act=new Set(wk.words||[]);return uniqW([...a,...words(BOOK_SCHOOL).filter(w=>!act.has(w.id))])};
+function pick(bid,pool){const all=pool||words(bid),now=Date.now();
   const due=all.filter(w=>KS.w[w.id]&&KS.w[w.id].d<=now).sort((a,b)=>KS.w[a.id].b-KS.w[b.id].b),nw=all.filter(w=>!KS.w[w.id]);
   let L=[...due,...nw].slice(0,CAP),practice=false;
   if(!L.length&&all.length){practice=true;L=shuf(all).sort((a,b)=>ks(a.id).b-ks(b.id).b).slice(0,CAP)}
   return{L,n:all.length,practice,pool:all}}
-/* 每个词按盒号安排三项：低盒描红+拼写；中盒描红+听写+拼写；高盒两项默写 */
+/* 常规：每个词按盒号安排三项；校内：按第几天安排（第1天全描红，第2天首字母描红+挖空，第3天虚线+拼字母，第4天默写） */
 const plan=w=>{const b=ks(w.id).b,a=b>=3?['dictE','gap','dictZ']:b===2?['trace','spellZ','gap']:['trace','pickE','spellE'];if(w.art)a.push('art');return a};
+const sPlan=(w,d)=>{const a=d<=1?['trace0']:d===2?['trace','gap']:d===3?['trace','spellZ']:['dictZ','spellZ'];if(w.art)a.push('art');return a};
 
 /* ---- 首页 ---- */
 const selBook=()=>KS.bk==='*'?'*':(D.books.find(b=>b.id===KS.bk)?KS.bk:D.books[0].id);
@@ -598,9 +631,12 @@ function setMode(k,on){const m=modes();m[k]=!!on;if(!Object.keys(m).some(x=>m[x]
 const modeHtml=()=>MODE_LIST.map(([k,_,t])=>'<label class="c"><input type="checkbox" data-a="kidmode" data-m="'+k+'"'+(modes()[k]?' checked':'')+'>'+t+'</label>').join('');
 function home(){sid++;SES++;try{stopAudio()}catch(e){}
   const bid=selBook();if(KS.bk!=='*'&&!D.books.find(b=>b.id===KS.bk))KS.bk=bid;
-  const p=pick(bid),ne=errCount(bid),bn=bid==='*'?'全部生词本':((D.books.find(b=>b.id===bid)||{}).name||'—');
+  const sw=schoolWords(),school=sw.length>0,wk=school?schoolWk():null;
+  const p=school?{L:sw,n:sw.length,pool:sw,school:true,day:dayNo()}:pick(bid,regPool());
+  const ne=errCount(bid),bn=bid==='*'?'全部生词本':((D.books.find(b=>b.id===bid)||{}).name||'—');
   const mt=modes(),ml=MODE_LIST.filter(([k])=>mt[k]).map(x=>x[1]).join(' → ');
-  el.innerHTML='<div class="kt"><button id="kx">✕</button><div class="kst">⭐ '+KS.st.stars+' · 🔥 连续 '+KS.st.streak+' 天</div></div><div class="kb"><div class="hd">Wörter üben</div><div class="kgl">'+ring()+'</div><div class="msg">'+(p.n?(p.practice?'今天的都练完啦，可以加练':'今天要练 '+p.L.length+' 个词'):'这个本子里还没有可练的词（需要有中文释义的单个德语词）')+'</div><div class="row"><button class="p" id="kgo"'+(p.n?'':' disabled')+'>开始</button><button id="klook">🔍 查词</button></div><div class="row"><button id="kbd">🏅 徽章 '+Object.keys(KS.bd).length+'/'+BG.length+'</button><button id="kerr"'+(ne?'':' disabled')+'>📕 错词本（'+ne+'）</button></div><div class="row"><button class="sm" id="kfx">缓存本册德语发音（需在设置里启用 Azure）</button></div><div class="sm2">本轮学习：'+esc(ml||'未选择（请在设置里勾选）')+'</div><div class="sm2">练习生词本：'+esc(bn)+'（在 设置 → 儿童模式 中更改）</div></div>';
+  const msg=school?'本周校内词 · 第 '+p.day+' 天（'+sw.length+' 个词）':(p.n?(p.practice?'今天的都练完啦，可以加练':'今天要练 '+p.L.length+' 个词'):'这个本子里还没有可练的词（需要有中文释义的单个德语词）');
+  el.innerHTML='<div class="kt"><button id="kx">✕</button><div class="kst">⭐ '+KS.st.stars+' · 🔥 连续 '+KS.st.streak+' 天</div></div><div class="kb"><div class="hd">Wörter üben</div><div class="kgl">'+ring()+'</div><div class="msg">'+msg+'</div><div class="row"><button class="p" id="kgo"'+(p.n?'':' disabled')+'>开始学习</button><button id="klook">🔍 查词</button></div><div class="row"><button id="kbd">🏅 徽章 '+Object.keys(KS.bd).length+'/'+BG.length+'</button><button id="kerr"'+(ne?'':' disabled')+'>📕 错词本（'+ne+'）</button></div><div class="row"><button class="sm" id="kfx">缓存本册德语发音（需在设置里启用 Azure）</button></div><div class="sm2">'+(school?'每天 10–15 分钟：先练本周词，最后听写 · 听写日 '+esc(wk.dict.slice(5)):'本轮学习：'+esc(ml||'未选择（请在设置里勾选）'))+'</div><div class="sm2">练习生词本：'+esc(bn)+'（在 设置 → 儿童模式 中更改）</div></div>';
   el.onclick=e=>{if(!el.contains(e.target))return;const t=e.target.closest('button');if(!t)return;
     if(t.id==='kx')return quit();
     if(t.id==='kfx')return precache(words(bid).map(w=>[w.de,'de']));
@@ -608,18 +644,34 @@ function home(){sid++;SES++;try{stopAudio()}catch(e){}
     if(t.id==='klook')return klook();
     if(t.id==='kgo')start(p);if(t.id==='kerr')start(pickErr())}}
 function start(p){SES++;const tok=SES;ws=p.L||[];Q=[];miss={};qi=0;AX=0;QRAN=false;STAR0=KS.st.stars;
-  const pl=ws.map(plan);POOL=p.pool||[];ERR=!!p.err;EV=[];ST=Date.now();
-  for(let r=0;r<4;r++)ws.forEach((w,i)=>{if(pl[i][r])Q.push([w,pl[i][r]])});
-  const m=modes(),pool=words(selBook()),gw=ws.length?ws:pool;ACTS=[];
+  SCHOOL=!!p.school;SW=SCHOOL?ws:[];SD=p.day||1;XW=[];ADV={};TOT={};ANS={};SETT={};DRES={};EV=[];EV2=[];EVCUR=EV;ST=SST=Date.now();
+  POOL=p.pool||[];ERR=!!p.err;
+  const t0=Date.now();ws.forEach(w=>{ADV[w.id]=SCHOOL?true:(!KS.w[w.id]||KS.w[w.id].d<=t0)});
+  const pl=ws.map(w=>SCHOOL?sPlan(w,SD):plan(w));
+  if(SCHOOL)ws.forEach((w,i)=>pl[i].forEach(mm=>Q.push([w,mm])));
+  else for(let r=0;r<4;r++)ws.forEach((w,i)=>{if(pl[i][r])Q.push([w,pl[i][r]])});
+  Q.forEach(([w])=>TOT[w.id]=(TOT[w.id]||0)+1);
+  const m=modes(),pool=(p.pool&&p.pool.length?p.pool:words(selBook())),gw=ws.length?ws:pool;ACTS=[];
   const hasSyl=(ws.some(w=>syl(w.de).length>1)||pool.some(w=>syl(w.de).length>1)),hasArt=(ws.some(w=>w.art)||pool.some(w=>w.art));
-  if(p.err){if(Q.length)ACTS.push('q')}
+  if(SCHOOL){ACTS=['q'];if(SD===1&&m.clap&&gw.length)ACTS.push('clap');ACTS.push('xq','sdict')}
+  else if(p.err){if(Q.length)ACTS.push('q')}
   else{if(m.q&&Q.length)ACTS.push('q');if(m.memo&&(ws.length>=3||pool.length>=3))ACTS.push('memo');if(m.clap&&gw.length)ACTS.push('clap');
     if(m.syl&&hasSyl)ACTS.push('syl');if(m.hear&&gw.length)ACTS.push('hear');if(m.sort&&hasArt)ACTS.push('sort')}
   if(!ACTS.length)return toast('请在 设置 → 儿童模式 里选择至少一种学习方式');
   sid++;font().then(()=>{if(tok===SES)runAct(tok)})}
-function runAct(tok){if(tok!==SES)return;const a=ACTS[AX++];if(!a)return done();
-  if(a==='q'){QRAN=true;EV=[];miss={};qi=0;ST=Date.now();return step()}
-  const pool=words(selBook()),gw=ws.length?ws:pool;
+function runAct(tok){if(tok!==SES)return;
+  if(SCHOOL&&ACTS[AX]!=='sdict'&&Date.now()-SST>12*60000){const i=ACTS.indexOf('sdict');if(i>=0)AX=i;else return doneSchool()}
+  if(!SCHOOL&&Date.now()-SST>13*60000)return done();
+  const a=ACTS[AX++];if(!a)return SCHOOL?doneSchool():done();
+  if(a==='q'){QRAN=true;EV=[];EVCUR=EV;miss={};qi=0;ST=Date.now();return step()}
+  if(a==='xq'){if(!SCHOOL||Date.now()-SST>8*60000)return runAct(tok);
+    const ex=uniqW(regPool().filter(w=>!SW.some(s=>s.id===w.id))).slice(0,3);
+    if(!ex.length)return runAct(tok);
+    XW=ex;ws=ex;Q=[];miss={};EV2=[];EVCUR=EV2;QRAN=false;qi=0;ADV={};TOT={};ANS={};SETT={};
+    ex.forEach(w=>plan(w).slice(0,2).forEach(mm=>Q.push([w,mm])));Q.forEach(([w])=>TOT[w.id]=(TOT[w.id]||0)+1);
+    return step()}
+  if(a==='sdict')return dictation(SW,SD,()=>doneSchool());
+  const pool=POOL.length?POOL:words(selBook()),gw=ws.length?ws:pool;
   if(a==='memo'){const mp=ws.length>=3?ws:pool;if(mp.length<3)return runAct(tok);return memo(mp,()=>runAct(tok))}
   if(a==='clap'){if(!gw.length)return runAct(tok);return clap(gw,()=>runAct(tok))}
   if(a==='syl'){const mp=ws.filter(w=>syl(w.de).length>1).length>=3?ws:pool;if(!mp.some(w=>syl(w.de).length>1))return runAct(tok);return sylPlay(mp,()=>runAct(tok))}
@@ -627,7 +679,7 @@ function runAct(tok){if(tok!==SES)return;const a=ACTS[AX++];if(!a)return done();
   if(a==='sort'){const mp=ws.filter(w=>w.art).length>=3?ws:pool;if(!mp.some(w=>w.art))return runAct(tok);return artSort(mp,()=>runAct(tok))}}
 function step(){if(qi>=Q.length)return runAct(SES);const[w,m]=Q[qi],my=sid;bad=0;el.onclick=null;
   el.innerHTML='<div class="kt"><button id="kx">✕</button><div class="bar"><i style="width:'+qi/Q.length*100+'%"></i></div></div><div class="kb" id="kb"></div>';
-  el.querySelector('#kx').onclick=()=>{if(confirm('先退出这次练习吗？本次进度不保存'))home()};
+  el.querySelector('#kx').onclick=()=>{if(confirm('先退出这次练习吗？已做完的单词会保存'))home()};
   const box=el.querySelector('#kb');({trace,trace0:trace,dictE:dict,dictZ:dict,spellE:spell,spellZ:spell,pickE:kpick,art:kart,gap:kgap})[m](w,m,box,my)}
 function pass(box,my){logQ();box.insertAdjacentHTML('beforeend','<div class="star">⭐</div>');setTimeout(()=>{if(my===sid){qi++;step()}},900)}
 
@@ -639,12 +691,18 @@ function layout(t){const x=mk().getContext('2d');let fs=110;x.font=fs+'px '+FF;l
 function ghost(x,t,lvl,col){const L=layout(t);x.save();x.font=L.fs+'px '+FF;x.textAlign='left';x.textBaseline='alphabetic';x.fillStyle=x.strokeStyle=col;
   if(lvl===0)x.fillText(t,L.x0,LY[2]);else{x.lineWidth=2;x.setLineDash([7,7]);x.strokeText(t,L.x0,LY[2]);x.setLineDash([]);if(lvl===1)x.fillText(t[0],L.x0,LY[2])}x.restore()}
 function ink(c){const x=cv(c);x.lineWidth=14;x.lineCap=x.lineJoin='round';x.strokeStyle=getComputedStyle(document.body).getPropertyValue('--pr').trim()||'#1f5f8b';
-  let last=null;const P=e=>{const r=c.getBoundingClientRect();return[(e.clientX-r.left)*W/r.width,(e.clientY-r.top)*H/r.height]};
-  const seg=p=>{x.beginPath();x.moveTo(...last);x.lineTo(...p);x.stroke();last=p};
-  c.onpointerdown=e=>{if(e.pointerType==='pen')pen=true;if(pen&&e.pointerType==='touch')return;e.preventDefault();c.setPointerCapture(e.pointerId);last=P(e);x.beginPath();x.moveTo(...last);x.lineTo(last[0]+.1,last[1]);x.stroke()};
+  let last=null,cur=null;const ps=[];
+  const P=e=>{const r=c.getBoundingClientRect();return[(e.clientX-r.left)*W/r.width,(e.clientY-r.top)*H/r.height]};
+  const seg=p=>{x.beginPath();x.moveTo(...last);x.lineTo(...p);x.stroke();last=p;if(cur)cur.push(p)};
+  c.onpointerdown=e=>{if(e.pointerType==='pen')pen=true;if(pen&&e.pointerType==='touch')return;e.preventDefault();c.setPointerCapture(e.pointerId);last=P(e);cur=[last];ps.push(cur);x.beginPath();x.moveTo(...last);x.lineTo(last[0]+.1,last[1]);x.stroke()};
   c.onpointermove=e=>{if(!last||(pen&&e.pointerType==='touch'))return;(e.getCoalescedEvents?e.getCoalescedEvents():[e]).forEach(ev=>seg(P(ev)))};
-  c.onpointerup=c.onpointercancel=()=>{last=null};
-  return{cv:c,clear:()=>x.clearRect(0,0,W,H)}}
+  c.onpointerup=c.onpointercancel=()=>{last=null;cur=null};
+  const simp=s=>{const o=[];let l=null;for(const p of s){if(!l||Math.hypot(p[0]-l[0],p[1]-l[1])>=2){o.push([Math.round(p[0]),Math.round(p[1])]);l=p}}if(o.length===1)o.push([o[0][0]+.1,o[0][1]]);return o};
+  return{cv:c,clear:()=>{x.clearRect(0,0,W,H);ps.length=0},strokes:()=>ps.map(simp).filter(s=>s.length)}}
+/* 把保存的笔画重新画到四线格上（家长查看听写用） */
+function drawInk(x,ss){x.lineWidth=14;x.lineCap=x.lineJoin='round';x.strokeStyle=getComputedStyle(document.body).getPropertyValue('--pr').trim()||'#1f5f8b';
+  (ss||[]).forEach(s=>{if(!s.length)return;x.beginPath();s.forEach((p,j)=>j?x.lineTo(p[0],p[1]):x.moveTo(p[0],p[1]));x.stroke()})}
+function paint(c,ss){drawInk(cv(c),ss)}
 // 覆盖率=字形被笔迹盖住的比例；出界率=笔迹落在字形外扩范围之外的比例
 function score(t,c){const L=layout(t),g=mk(),d=mk(),u=mk(),gx=g.getContext('2d'),dx=d.getContext('2d'),ux=u.getContext('2d');ux.drawImage(c,0,0,W,H);
   for(const x of[gx,dx]){x.font=L.fs+'px '+FF;x.textAlign='left';x.fillText(t,L.x0,LY[2])}dx.lineWidth=44;dx.lineJoin='round';dx.strokeText(t,L.x0,LY[2]);
@@ -711,9 +769,10 @@ function kgap(w,m,box,my){const L=[...w.de],lw=w.de.toLowerCase();let hid=[0];
       if(ans.every((p,k)=>p.c===L[hid[k]])){lock=true;say(w.de,'de');pass(box,my)}
       else{mis(w);lock=true;box.querySelector('#ksl').classList.add('shake');setTimeout(()=>{if(my!==sid)return;pool.forEach(p=>p.u=false);ans=[];lock=false;draw()},600)}}};
   draw()}
-/* 错词本：做错的词进入错词本，之后连续 2 次练习全对才移出 */
-const errCount=bid=>words(bid).filter(w=>KS.w[w.id]&&KS.w[w.id].mx).length;
-function pickErr(){const all=words(selBook());return{L:shuf(all.filter(w=>KS.w[w.id]&&KS.w[w.id].mx)).slice(0,CAP),n:all.length,practice:true,err:true,pool:all}}
+/* 错词本：做错的词进入错词本，之后连续 2 次练习全对才移出（含本周校内词） */
+const errPool=bid=>uniqW([...words(bid),...words(BOOK_SCHOOL)]);
+const errCount=bid=>errPool(bid).filter(w=>KS.w[w.id]&&KS.w[w.id].mx).length;
+function pickErr(){const all=errPool(selBook());return{L:shuf(all.filter(w=>KS.w[w.id]&&KS.w[w.id].mx)).slice(0,CAP),n:all.length,practice:true,err:true,pool:all}}
 
 /* ---- 第4批：配对游戏 / 音节拍手 / 家长验证 / 同步与备份 ---- */
 const quit=async()=>{if(await gate()){KS.on=0;save();close()}};
@@ -798,6 +857,13 @@ function artSort(pool,next){const all=(pool&&pool.length?pool:words(selBook())).
 /* 同步 / 备份：以每个词的 t（最后更新时间）取较新者 */
 function merge(r){if(!r||typeof r!=='object')return;let ch=0;
   for(const id in r.w||{}){const a=r.w[id],b=KS.w[id];if(a&&(!b||(a.t||0)>(b.t||0))){KS.w[id]=a;ch=1}}
+  /* 听写记录按 id 合并；家长批改以 gt 较新者为准，并只调整一次盒号 */
+  const dn=Date.now();
+  for(const e of r.dic||[]){if(!e||!e.id||!(e.t>dn-90*DAY))continue;
+    let x=KS.dic.find(z=>z.id===e.id);
+    if(!x){x={id:e.id,t:e.t,wk:e.wk||'',d:e.d||dk(e.t),w:e.w,de:e.de,zh:e.zh,ok:e.ok?1:0,st:e.z?decSt(e.z):(e.st||[])};KS.dic.push(x);ch=1}
+    if(e.g!=null&&(e.gt||0)>(x.gt||0)){x.g=e.g?1:0;x.gt=e.gt||0;if(!x.ga)applyGrade(x);ch=1}}
+  if(ch){KS.dic.sort((a,b)=>a.t-b.t);KS.dic=KS.dic.filter(z=>z.t>dn-90*DAY).slice(-400)}
   const x=r.st;if(x&&(x.t||0)>(KS.st.t||0)){KS.st=x;ch=1}
   const have=new Set(KS.rec.map(y=>y.t+y.k));for(const y of r.rec||[])if(y&&!have.has(y.t+y.k)){KS.rec.push(y);ch=1}KS.rec.sort((a,b)=>a.t-b.t);trim();
   for(const k in r.bd||{})if(!KS.bd[k]||r.bd[k]<KS.bd[k]){KS.bd[k]=r.bd[k];ch=1}
@@ -844,15 +910,21 @@ const BG=[['s3','🔥','三天连击','连续练习 3 天',()=>KS.st.streak>=3],
  ['cr','🧹','错词清零','从错词本移出 5 个词',()=>(KS.bs.cr||0)>=5],['gd','🎯','说到做到','达成今日目标 5 次',()=>(KS.bs.gd||0)>=5]];
 function badges(){const out=[];BG.forEach(b=>{if(!KS.bd[b[0]]&&b[4]()){KS.bd[b[0]]=Date.now();out.push(b)}});return out}
 const mis=w=>{miss[w.id]=1;bad=1};
-function logQ(){const[w,m]=Q[qi];EV.push([m,bad?0:1,w.id]);if(!bad){if(m==='art')KS.bs.art=(KS.bs.art||0)+1;if(m==='gap'&&/[äöüß]/i.test(w.de))KS.bs.um=(KS.bs.um||0)+1}}
+/* 每个词做完立刻结算并保存：同一天最多升一盒；只有到期/新词（校内每天）才升降盒 */
+function settle(w){if(SETT[w.id])return;SETT[w.id]=1;const t=Date.now(),td=day(),k=ks(w.id),ok=!miss[w.id];
+  if(ok){if(k.mx&&++k.cc>=2){k.mx=0;k.cc=0;KS.bs.cr=(KS.bs.cr||0)+1}}else{k.tl=Math.max(0,(k.tl||0)-1);k.mx=1;k.cc=0}
+  if(ADV[w.id]&&k.up!==td){if(ok)k.b=Math.min(5,(k.b||0)+1);else k.b=Math.max(1,(k.b||0)-2);k.up=td;k.d=t+IV[k.b]*DAY;k.t=t}
+  if(ok)KS.st.stars++;save()}
+function logQ(){const[w,m]=Q[qi];(EVCUR||EV).push([m,bad?0:1,w.id]);if(!bad){if(m==='art')KS.bs.art=(KS.bs.art||0)+1;if(m==='gap'&&/[äöüß]/i.test(w.de))KS.bs.um=(KS.bs.um||0)+1}
+  ANS[w.id]=(ANS[w.id]||0)+1;if(QRAN&&ANS[w.id]>=(TOT[w.id]||0))settle(w)}
 function wall(){el.onclick=null;el.innerHTML='<div class="kt"><button id="kx">←</button><div class="kst">已获得 '+Object.keys(KS.bd).length+' / '+BG.length+'</div></div><div class="kb"><div class="hd">我的徽章</div><div class="kbg">'+BG.map(b=>{const g=KS.bd[b[0]];return'<div class="kbd1'+(g?'':' lk')+'"><div class="e">'+(g?b[1]:'🔒')+'</div><b>'+b[2]+'</b><div class="sm2">'+b[3]+'</div></div>'}).join('')+'</div></div>';el.querySelector('#kx').onclick=home}
 /* ---- 结算：Leitner 盒子 1/2/4/7/14 天 ---- */
 function done(){const t=Date.now();let clean=0;
   const s=KS.st,td=day();if(s.day!==td){s.streak=s.day&&dd(td)-dd(s.day)===1?s.streak+1:1;s.day=td}
   let extra='';
   if(QRAN){
-    ws.forEach(w=>{const k=ks(w.id),ok=!miss[w.id];if(ok){clean++;if(k.mx&&++k.cc>=2){k.mx=0;k.cc=0;KS.bs.cr=(KS.bs.cr||0)+1}}else{k.tl=Math.max(0,(k.tl||0)-1);k.mx=1;k.cc=0}k.b=ok?Math.min(5,k.b+1):1;k.d=t+IV[k.b]*DAY;k.t=t});
-    s.stars+=clean;s.t=t;
+    ws.forEach(w=>{if(!miss[w.id])clean++});
+    s.t=t;
     const c={};EV.forEach(([m,ok])=>{m=m==='trace0'?'trace':m;const a=c[m]||(c[m]=[0,0]);a[0]++;a[1]+=ok});
     KS.rec.push({t,k:'s',dur:Math.round((t-ST)/1000),w:ws.length,c,er:[...new Set(EV.filter(e=>!e[1]).map(e=>e[2]))]});trim();
     const g=goalInfo();let bonus=0;if(g.p>=g.n&&s.gd!==td){s.gd=td;s.stars++;KS.bs.gd=(KS.bs.gd||0)+1;bonus=1}
@@ -863,7 +935,49 @@ function done(){const t=Date.now();let clean=0;
   const body=QRAN?'<div class="star">'+('⭐'.repeat(clean)||'💪')+'</div><div class="sum">'+ws.map(w=>'<span>'+(miss[w.id]?'🔁':'✅')+' '+w.art+' '+esc(w.de)+'</span>').join('')+'</div><div class="msg">🔁 的词明天会再出现</div>'
     :'<div class="star">'+('⭐'.repeat(Math.min(gained,12))||'💪')+'</div><div class="msg">游戏完成，真棒！</div>';
   el.innerHTML='<div class="kt"><button id="kx">✕</button></div><div class="kb"><div class="hd">今天练完啦！</div>'+body+extra+'<div class="row"><button class="p" id="ag">再练一轮</button><button id="bk">返回</button></div></div>';
-  const q=s=>el.querySelector(s);q('#kx').onclick=home;q('#bk').onclick=home;q('#ag').onclick=()=>{const p=ERR?pickErr():pick(selBook());if(p.L.length)start(p);else home()}}
+  const q=s=>el.querySelector(s);q('#kx').onclick=home;q('#bk').onclick=home;q('#ag').onclick=()=>{const p=ERR?pickErr():pick(selBook(),regPool());if(p.L.length)start(p);else home()}}
+/* ---- 校内词：每天最后的听写（平板手写，答案由孩子/家长在平板上核对） ---- */
+const nextFri=()=>{const d=new Date(),k=(5-d.getDay()+7)%7;d.setDate(d.getDate()+k);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
+const sayTwice=t=>{stopAudio();speak(t,'de').then(()=>new Promise(r=>setTimeout(r,450))).then(()=>speak(t,'de',.72)).catch(()=>{})};
+function dictation(L,dn,next){
+  if(!L.length)return next();
+  const my=++sid;const R=L.map(w=>({w,st:null,ok:null}));let i=0;
+  const startW=()=>{if(my!==sid)return;if(i>=R.length)return review(0);
+    const x=R[i],w=x.w;el.onclick=null;
+    el.innerHTML='<div class="kt"><button id="kx">✕</button><div class="bar"><i style="width:'+i/R.length*100+'%"></i></div></div><div class="kb"><div class="hd"><b>听写 '+(i+1)+' / '+R.length+'</b><button id="sp">🔊 再听一遍</button></div><div class="msg">在四线格里写下来。写完点“写好了”，答案最后一起对。</div>'+gw()+'<div class="row"><button id="cl">重写</button><button class="p" id="ok">写好了</button></div></div>';
+    const cs=el.querySelectorAll('canvas'),q=s=>el.querySelector(s);grid(cv(cs[0]));const pad=ink(cs[1]);
+    q('#kx').onclick=home;q('#sp').onclick=()=>sayTwice(w.de);q('#cl').onclick=()=>{pad.clear();sayTwice(w.de)};
+    q('#ok').onclick=()=>{x.st=pad.strokes();i++;startW()};
+    sayTwice(w.de)};
+  const review=j=>{if(my!==sid)return;if(j>=R.length)return finish();
+    const x=R[j],w=x.w;el.onclick=null;
+    el.innerHTML='<div class="kt"><button id="kx">✕</button><div class="bar"><i style="width:'+j/R.length*100+'%"></i></div></div><div class="kb"><div class="hd"><b>对答案 '+(j+1)+' / '+R.length+'</b></div><div class="msg">正确答案：<b>'+(w.art?w.art+' ':'')+esc(w.de)+'</b></div>'+gw()+'<div class="row"><button class="p" id="y">✅ 对</button><button id="n">🔁 不对</button></div></div>';
+    const cs=el.querySelectorAll('canvas'),q=s=>el.querySelector(s);grid(cv(cs[0]));ghost(cv(cs[0]),w.de,0,'rgba(46,125,79,.5)');paint(cs[1],x.st||[]);
+    q('#kx').onclick=home;
+    const pick=ok=>{x.ok=ok;DRES[w.id]=ok;record(x);review(j+1)};
+    q('#y').onclick=()=>pick(1);q('#n').onclick=()=>pick(0)};
+  const record=x=>{const t=Date.now(),wk=schoolWk(),k=ks(x.w.id),td=day();
+    KS.dic.push({id:dicId(t),t,wk:wk?wk.id:'',d:day(),w:x.w.id,de:x.w.de,zh:x.w.zh||'',ok:x.ok?1:0,st:x.st||[]});
+    KS.dic=KS.dic.filter(z=>z.t>t-90*DAY).slice(-400);
+    if(x.ok){if(k.mx&&++k.cc>=2){k.mx=0;k.cc=0;KS.bs.cr=(KS.bs.cr||0)+1}
+      if(k.up!==td){k.b=Math.min(5,(k.b||0)+1);k.up=td;k.d=t+IV[k.b]*DAY;k.t=t}
+      KS.st.stars++}
+    else{k.tl=Math.max(0,(k.tl||0)-1);k.mx=1;k.cc=0;k.b=Math.max(1,(k.b||0)-2);k.up=td;k.d=t+IV[k.b]*DAY;k.t=t}
+    save()};
+  const finish=()=>{if(my!==sid)return;next()};
+  startW()}
+function doneSchool(){const t=Date.now();const s=KS.st,td=day();
+  if(s.day!==td){s.streak=s.day&&dd(td)-dd(s.day)===1?s.streak+1:1;s.day=td}
+  s.t=t;
+  const wk=schoolWk();if(wk)wk.days=[...new Set([...(wk.days||[]),td])];
+  const c={};EV.forEach(([m,ok])=>{m=m==='trace0'?'trace':m;const a=c[m]||(c[m]=[0,0]);a[0]++;a[1]+=ok});
+  KS.rec.push({t,k:'s',dur:Math.round((t-SST)/1000),w:SW.length,c,er:[...new Set(EV.filter(e=>!e[1]).map(e=>e[2]))]});trim();
+  const g=goalInfo();let bonus=0;if(g.p>=g.n&&s.gd!==td){s.gd=td;s.stars++;KS.bs.gd=(KS.bs.gd||0)+1;bonus=1}
+  const nb=badges(),gained=Math.max(0,s.stars-STAR0);save();if(wk)saveD();
+  const okN=SW.filter(w=>DRES[w.id]).length;
+  const body='<div class="star">'+('⭐'.repeat(Math.min(gained,12))||'💪')+'</div><div class="sum">'+SW.map(w=>'<span>'+(DRES[w.id]?'✅':'🔁')+' '+w.art+' '+esc(w.de)+'</span>').join('')+'</div><div class="msg">听写 '+okN+' / '+SW.length+' 个正确'+(okN<SW.length?'，🔁 的词明天会再出现':'')+'</div>';
+  el.innerHTML='<div class="kt"><button id="kx">✕</button></div><div class="kb"><div class="hd">今天练完啦！</div>'+body+(bonus?'<div class="msg">🎯 今日目标达成！额外 +1 ⭐</div>':'')+nb.map(b=>'<div class="msg">🏅 新徽章：'+b[1]+' '+b[2]+'</div>').join('')+'<div class="msg sm2">家长可在“学习报告”里查看本周校内词。</div><div class="row"><button class="p" id="bk">返回</button></div></div>';
+  el.querySelector('#kx').onclick=home;el.querySelector('#bk').onclick=home}
 /* ---- 查词：复用成人模式的词典 / 翻译结果，只能加入设置里选定的儿童生词本 ---- */
 let LK=null;
 const lkTarget=()=>{const b=D.books.find(x=>x.id===kidBookId());return b?b.name:'生词本'};
@@ -877,6 +991,12 @@ function lkDetailHtml(){const L=LK.detail;if(L.loading)return '<div class="msg">
   return h+'</div>'}
 function lkHist(){const H=KS.lh||[];if(!H.length)return '';
   return '<div class="khist"><div class="sm2">最近查过</div><div class="chips">'+H.map(q=>'<button class="chip" data-h="'+esc(q)+'">'+esc(q)+'</button>').join('')+'</div></div>'}
+function sugChips(q){const t=bare(q);if(!t||t.length<2)return'';const m=new Map();
+  D.vocab.forEach(v=>{const x=bare(v.lemma||v.word);if(!x||x===t||Math.abs(x.length-t.length)>2||m.has(x))return;const d=lev(t,x);if(d<=2)m.set(x,d)});
+  const L=[...m.entries()].sort((a,b)=>a[1]-b[1]).slice(0,5);if(!L.length)return'';
+  return '<div class="sm2" style="margin-top:10px">是不是想查：</div><div class="chips">'+L.map(([x])=>'<button class="chip" data-h="'+esc(x)+'">'+esc(x)+'</button>').join('')+'</div>'}
+const lev=(a,b)=>{const m=a.length,n=b.length,d=[...Array(m+1)].map((_,i)=>[i]);for(let j=1;j<=n;j++)d[0][j]=j;
+  for(let i=1;i<=m;i++)for(let j=1;j<=n;j++)d[i][j]=Math.min(d[i-1][j]+1,d[i][j-1]+1,d[i-1][j-1]+(a[i-1]===b[j-1]?0:1));return d[m][n]};
 function lkHtml(){
   let h;
   if(LK.detail)h=lkDetailHtml();
@@ -885,7 +1005,7 @@ function lkHtml(){
   else{const r=LK.res;
     if(!r)h='<div class="sm2">输入德语或中文单词查意思；输入长句可以翻译。查到的词可以加入《'+esc(lkTarget())+'》。</div>';
     else if(r.type==='sent')h='<div class="kbd1"><div class="sm2">'+esc(r.src)+'</div><div class="kw">'+esc(r.out)+'</div></div>';
-    else if(!r.items.length)h='<div class="msg">没有找到，换个拼写试试。</div>';
+    else if(!r.items.length)h='<div class="msg">没有找到，换个拼写试试。</div>'+sugChips(LK.q);
     else h=r.items.map(x=>'<button class="kopt klrow" data-w="'+esc(x.w)+'" data-zh="'+esc(x.zh)+'"><b>'+esc(x.w)+'</b>'+(x.p?' <span class="sm2">'+esc(x.p)+'</span>':'')+(x.g?' <span class="sm2">'+esc(x.g)+'</span>':'')+(x.zh?'<span class="sm2">'+esc(x.zh)+'</span>':'')+'</button>').join('')}
   return h+(LK.detail?'':lkHist())}
 function lookup(){if(!LK)LK={q:'',res:null,err:'',busy:false,detail:null,added:false};
@@ -910,36 +1030,83 @@ async function lkDetail(w,zh){LK.detail={w,zh,loading:true};LK.added=false;looku
   let d=null;try{d=await lookupWord(w)}catch(e){}
   if(!d)d=norm({lemma:w,zh},w);if(!d.zh)d.zh=zh||'';
   LK.detail={w,zh,d,loading:false};lookup()}
-async function lkadd(){const L=LK.detail;if(!L||L.loading||LK.busy)return;LK.busy=true;lookup();
-  try{const d=Object.assign({},L.d||norm({lemma:L.w,zh:L.zh},L.w));d.lemma=normW(d.lemma||L.w);if(!d.zh)d.zh=L.zh||'';addVocab(d,'',L.w,kidBookId());const v=D.vocab.find(x=>bare(x.word)===bare(d.lemma));LK.added=!!(v&&v.book===kidBookId())}
+async function lkadd(){const L=LK.detail;if(!L||L.loading||LK.busy)return;
+  const base=Object.assign({},L.d||norm({lemma:L.w,zh:L.zh},L.w)),isNew=!D.vocab.find(x=>bare(x.lemma||x.word)===bare(base.lemma||L.w)),td=day();
+  if(!KS.la||KS.la.d!==td)KS.la={d:td,n:0};
+  if(isNew&&KS.la.n>=3)return toast('今天自己查的词已经加了 3 个，明天再继续吧');
+  LK.busy=true;lookup();
+  try{const d=Object.assign({},base);d.lemma=normW(d.lemma||L.w);if(!d.zh)d.zh=L.zh||'';addVocab(d,'',L.w,kidBookId());const v=D.vocab.find(x=>bare(x.word)===bare(d.lemma));LK.added=!!(v&&v.book===kidBookId());if(isNew&&LK.added){KS.la.n++;save()}}
   catch(e){toast('加入失败：'+e.message)}
   LK.busy=false;lookup()}
 /* ---- 学习报告 ---- */
+let RBACK=null;
+function gradeDic(id,g){const d=KS.dic.find(x=>x.id===id);if(!d)return;d.g=g?1:0;d.gt=Date.now();d.ga=0;applyGrade(d);save();toast(g?'已记为写对':'已记为写错，这个词会再练');const sc=el.scrollTop;report(RBACK||home);el.scrollTop=sc}
 const MODES={trace:'描红',dictE:'听写·听音',dictZ:'听写·看中文',spellE:'拼字母·听音',spellZ:'拼字母·看中文',pickE:'听音选词',art:'冠词',gap:'挖空'};
 function openReport(){const wasOpen=!el.hidden;if(!wasOpen){document.body.style.overflow='hidden';el.hidden=false}report(wasOpen?home:close)}
-function report(back){sid++;try{stopAudio()}catch(e){}
-  const recs=KS.rec.filter(r=>r.k==='s'),ds=[];
+function report(back){RBACK=back||home;sid++;try{stopAudio()}catch(e){}  const recs=KS.rec.filter(r=>r.k==='s'),ds=[];
   for(let i=0;i<7;i++){const key=day(i),rs=recs.filter(r=>dk(r.t)===key);let w=0,ok=0,n=0,dur=0;
     rs.forEach(r=>{w+=r.w||0;dur+=r.dur||0;for(const m in r.c||{}){const a=r.c[m];n+=a[0];ok+=a[1]}});
     ds.push({key,w,dur,acc:n?Math.round(ok/n*100):-1})}
   const per={};recs.filter(r=>r.t>Date.now()-30*DAY).forEach(r=>{for(const m in r.c||{}){const k2=m==='trace0'?'trace':m,a=per[k2]||(per[k2]={n:0,o:0});a.n+=r.c[m][0];a.o+=r.c[m][1]}});
-  const bx={nw:0,md:0,ms:0};words(selBook()).forEach(w=>{const k2=KS.w[w.id];if(!k2)bx.nw++;else if(k2.b>=4)bx.ms++;else bx.md++});
-  const errs=words(selBook()).filter(w=>KS.w[w.id]&&KS.w[w.id].mx),today=ds[0],pm=Object.keys(per),sb=selBook();
+  const rp=uniqW([...words(selBook()),...schoolWords()]);
+  const bx={nw:0,md:0,ms:0};rp.forEach(w=>{const k2=KS.w[w.id];if(!k2||!k2.b)bx.nw++;else if(k2.b>=4)bx.ms++;else bx.md++});
+  const errs=rp.filter(w=>KS.w[w.id]&&KS.w[w.id].mx),today=ds[0],pm=Object.keys(per),sb=selBook();
   let h='<div class="kt"><button id="kx">✕</button><div class="kst">家长查看</div></div><div class="kb"><div class="hd">📊 学习报告</div><div class="krep">';
   h+='<div class="kbd1"><b>今日</b><div class="krow"><span>练习单词</span><b>'+today.w+' 个</b></div><div class="krow"><span>用时</span><b>'+Math.round(today.dur/60)+' 分钟</b></div><div class="krow"><span>正确率</span><b>'+(today.acc<0?'—':today.acc+'%')+'</b></div><div class="krow"><span>累计星星</span><b>'+KS.st.stars+' ⭐</b></div><div class="krow"><span>连续练习</span><b>'+KS.st.streak+' 天</b></div></div>';
+  const pend=dicPending(),g7=(KS.dic||[]).filter(d=>d&&d.g!=null&&d.t>Date.now()-7*DAY);
+  if(pend.length||g7.length){h+='<div class="kbd1"><b>家长批改听写'+(pend.length?'（待批改 '+pend.length+'）':'')+'</b>';
+    if(pend.length){h+='<div class="sm2">孩子的手写会从平板同步到这里。对照下面的正确答案，点“写对了 / 写错了”。</div>'+pend.map(d=>{
+      const w2=D.vocab.find(v=>bare(v.lemma||v.word)===d.w),txt=d.de||(w2?String(w2.lemma||w2.word):d.w);
+      return '<div class="kdic"><div class="krow"><span><b>'+esc(txt)+'</b></span><span class="sm2">'+(d.d?esc(d.d.slice(5)):'')+' · 孩子自评：'+(d.ok?'✅ 对':'🔁 不对')+'</span></div><div class="gw" style="margin:6px 0"><canvas data-dic="'+esc(d.id)+'"></canvas></div><div class="row kdr"><button class="p" data-grade="1" data-did="'+esc(d.id)+'">✅ 写对了</button><button data-grade="0" data-did="'+esc(d.id)+'">🔁 写错了</button></div></div>'}).join('')}
+    else h+='<div class="sm2">没有待批改的听写。</div>';
+    if(g7.length)h+='<div class="sm2" style="margin-top:8px">最近 7 天已批改 '+g7.length+' 个，'+g7.filter(d=>d.g).length+' 个正确。</div>';
+    h+='</div>'}
+  const wk=schoolWk()||schoolWks()[0]||null;
+  if(wk){const act=!!schoolWk(),sw=wordsOfWeek(wk),left=Math.max(0,dd(wk.dict)-dd(day()));
+    const dls=[...new Set(wk.days||[])].sort();
+    const trend=dls.map((k2,i)=>{const es=(KS.dic||[]).filter(x=>x&&x.wk===wk.id&&x.d===k2),n=es.length,ok=es.filter(dOk).length;
+      return n?'<div class="krow"><span>第 '+(i+1)+' 天听写</span><span>'+ok+' / '+n+' 正确</span></div>':''}).join('');
+    h+='<div class="kbd1"><b>'+(act?'本周校内词（第 '+dayNo()+' 天）':'最近一周校内词（已结束）')+'</b><div class="krow"><span>听写日</span><b>'+esc(wk.dict)+(act?' · 还有 '+left+' 天':'')+'</b></div>'+sw.map(w=>{const r=(KS.dic||[]).filter(x=>x.w===w.id&&x.wk===wk.id).slice(-1)[0];return '<div class="krow"><span>'+esc((w.art?w.art+' ':'')+w.de)+'</span><b>'+(r?((r.g!=null?'家长 ':'')+(dOk(r)?'✅ 对':'🔁 不对')):'—')+'</b></div>'}).join('')+trend+'</div>'}
+
   h+='<div class="kbd1"><b>最近 7 天</b>'+ds.slice().reverse().map(x=>'<div class="krow"><span>'+x.key.slice(5)+'</span><span>'+x.w+' 词 · '+(x.acc<0?'—':x.acc+'%')+'</span></div>').join('')+'</div>';
   h+='<div class="kbd1"><b>各题型正确率（近 30 天）</b>'+(pm.length?pm.map(k2=>'<div class="krow"><span>'+esc(MODES[k2]||k2)+'</span><b>'+Math.round(per[k2].o/per[k2].n*100)+'%（'+per[k2].o+'/'+per[k2].n+'）</b></div>').join(''):'<div class="sm2">还没有练习记录</div>')+'</div>';
   h+='<div class="kbd1"><b>生词本进度</b><div class="krow"><span>还没学</span><b>'+bx.nw+' 个</b></div><div class="krow"><span>学习中</span><b>'+bx.md+' 个</b></div><div class="krow"><span>已掌握</span><b>'+bx.ms+' 个</b></div><div class="krow"><span>当前生词本</span><b>'+esc(sb==='*'?'全部':((D.books.find(b=>b.id===sb)||{}).name||'—'))+'</b></div></div>';
   h+='<div class="kbd1"><b>错词本（'+errs.length+'）</b>'+(errs.length?errs.slice(0,12).map(w=>'<div class="krow"><span>'+esc((w.art?w.art+' ':'')+w.de)+'</span><span class="sm2">'+esc(w.zh)+'</span></div>').join('')+(errs.length>12?'<div class="sm2">…还有 '+(errs.length-12)+' 个</div>':''):'<div class="sm2">没有错词 🎉</div>')+'</div>';
   h+='</div></div>';
-  el.innerHTML=h;el.onclick=e=>{const b=e.target.closest('button');if(b&&b.id==='kx')back()}}
+  el.innerHTML=h;
+  el.querySelectorAll('canvas[data-dic]').forEach(c=>{const d=KS.dic.find(x=>x.id===c.getAttribute('data-dic'));if(!d)return;const x=cv(c);grid(x);drawInk(x,d.st)});
+  el.onclick=e=>{const b=e.target.closest('button');if(!b)return;if(b.id==='kx')return back();if(b.dataset.grade!=null)return gradeDic(b.dataset.did,+b.dataset.grade)}}
 function close(){sid++;try{stopAudio()}catch(e){}el.hidden=true;el.onclick=null;document.body.style.overflow=''}
+/* ---- 本周校内词：家长在设置里录入，儿童模式按天安排 ---- */
+function schoolHtml(){const wk=schoolWk();
+  const txt=wk?wk.words.map(k=>{const v=D.vocab.find(x=>bare(x.lemma||x.word)===k);return v?(normW(v.lemma||v.word)+(v.zh?' | '+String(v.zh).split(/[；;，,]/)[0]:'')):k}).join('\n'):'';
+  return '<label for="ksw">本周校内词（每行一个，可写“德语 | 中文”，最多 8 个）</label><textarea id="ksw" placeholder="der Donnerstag | 星期四&#10;der Hund | 狗&#10;liegen | 躺">'+esc(txt)+'</textarea><label for="ksd">听写日</label><input id="ksd" type="date" value="'+esc(wk?wk.dict:nextFri())+'"><div class="row"><button data-a="kswsave">保存本周词表</button>'+(wk?'<button data-a="kswend">结束本周</button>':'')+'</div><p class="mu xs">保存后，儿童模式优先练校内词；每天最后听写一次，周结束后自动进入常规复习。</p>'}
+async function saveSchool(){const ta=document.getElementById('ksw'),di=document.getElementById('ksd');
+  if(!ta)return;const txt=ta.value.replace(/\r/g,'').trim();if(!txt)return toast('请先输入本周的词');
+  const list=parseWords(txt);if(!list.length)return toast('没有识别到德语单词');if(list.length>8)return toast('一周最多 8 个词');
+  try{await enrich(list)}catch(e){}
+  const keys=[];let noZh=0;
+  for(const it of list){const lemma=normW(it.w),k=bare(lemma);if(!k||keys.includes(k))continue;keys.push(k);
+    let v=D.vocab.find(x=>bare(x.lemma||x.word)===k);
+    if(!v){v={id:uid('v_'),createdAt:Date.now(),due:Date.now(),interval:0,ease:2.5,reps:0,stage:0,seen:0,mst:0,book:BOOK_SCHOOL};D.vocab.push(v)}
+    else{v.book=BOOK_SCHOOL;delete D.deleted['w_'+k]}
+    v.word=lemma;v.lemma=lemma;const am=lemma.match(/^(der|die|das)\s+/i);if(am)v.article=am[1].toLowerCase();v.zh=it.zh||v.zh||'';if(!v.zh)noZh++;v.ut=Date.now();v.pt=Date.now()}
+  if(!keys.length)return toast('没有识别到德语单词');
+  const date=di&&di.value?di.value:nextFri(),cur=schoolWk();
+  const same=cur&&keys.length===cur.words.length&&keys.every(k=>cur.words.includes(k));
+  const wk=same?Object.assign({},cur,{dict:date}):{id:'sw_'+Date.now(),words:keys,dict:date,added:Date.now(),days:[]};
+  D.school={wks:[wk,...schoolWks().filter(w=>!cur||w.id!==cur.id)].slice(0,5)};
+  saveD();toast('已保存本周 '+keys.length+' 个词'+(noZh?'，其中 '+noZh+' 个还没有中文释义':''));
+  render()}
+function endSchool(){const wk=schoolWk();if(!wk)return;wk.dict='2000-01-01';saveD();toast('本周已结束，这些词会进入常规复习');render()}
 /* function open(){if(!wide.matches)return toast('儿童模式需要宽屏设备（平板 / 电脑）');if(!KS.pw)toast('建议先设置家长密码，否则孩子可以随意退出');document.body.style.overflow='hidden';el.hidden=false;home()} */
 function open(){KS.on=1;save();if(!KS.pw)toast('建议先设置家长密码，否则孩子可以随意退出');document.body.style.overflow='hidden';el.hidden=false;home()}
 /* wide.addEventListener('change',()=>{if(!wide.matches&&!el.hidden)close()});*/
 el.addEventListener('touchstart',e=>e.stopPropagation(),{passive:true});   // 避免边缘滑动触发主应用的“返回”
 function boot(){if(KS.on||(KS.auto&&wide.matches))open()}
-return{open,close,boot,merge,opts,goalOpts,modeHtml,setMode,setPw,hasPw:()=>!!KS.pw,snap:()=>({w:KS.w,st:KS.st,rec:KS.rec,bd:KS.bd,bs:KS.bs,goal:KS.goal}),auto:()=>!!KS.auto,setAuto:v=>{KS.auto=!!v;save()},report:openReport}})();
-A.kid=()=>KID.open();A.kidauto=t=>{if(t.checked&&!KID.hasPw()){KID.setPw().then(ok=>{if(ok)KID.setAuto(true);else t.checked=false})}else KID.setAuto(t.checked)};A.kidpw=()=>KID.setPw().then(()=>render());A.kidrep=()=>KID.report();A.kidmode=t=>{KID.setMode(t.dataset.m,t.checked);render()};
+const snapBase=()=>({w:KS.w,st:KS.st,rec:KS.rec,bd:KS.bd,bs:KS.bs,goal:KS.goal});
+const snapSync=()=>Object.assign(snapBase(),{dic:KS.dic.filter(d=>d&&d.t>Date.now()-14*DAY).slice(-40).map(d=>({id:d.id,t:d.t,d:d.d,wk:d.wk,w:d.w,de:d.de,zh:d.zh,ok:d.ok,z:encSt(d.st),g:d.g,gt:d.gt,ga:d.ga}))});
+return{open,close,boot,merge,opts,goalOpts,modeHtml,setMode,setPw,hasPw:()=>!!KS.pw,snap:()=>Object.assign(snapBase(),{dic:KS.dic}),snapSync,pendN:()=>dicPending().length,auto:()=>!!KS.auto,setAuto:v=>{KS.auto=!!v;save()},report:openReport,schoolHtml,saveSchool,endSchool,schoolActive:()=>!!schoolWk()}})();
+A.kid=()=>KID.open();A.kidauto=t=>{if(t.checked&&!KID.hasPw()){KID.setPw().then(ok=>{if(ok)KID.setAuto(true);else t.checked=false})}else KID.setAuto(t.checked)};A.kidpw=()=>KID.setPw().then(()=>render());A.kidrep=()=>KID.report();A.kidmode=t=>{KID.setMode(t.dataset.m,t.checked);render()};A.kswsave=()=>KID.saveSchool();A.kswend=()=>KID.endSchool();
 migrate();if(compact())wr('dl',D);snapAll();KID.boot();render();syncNow();
 </script></body></html>
