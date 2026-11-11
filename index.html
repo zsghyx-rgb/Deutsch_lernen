@@ -86,6 +86,15 @@ nav div{max-width:640px;margin:auto;display:flex}nav button{flex:1;height:56px;b
 #kid .klrow{display:block;width:100%;min-width:0;text-align:left;min-height:64px;margin:8px 0;font-size:20px;white-space:normal;line-height:1.3}#kid .klrow b{font-size:26px}#kid .klrow .sm2{display:block;margin-top:2px}
 #kid .khist{margin-top:16px;text-align:left;border-top:1px solid var(--ln);padding-top:12px}#kid .khist .chips{margin-top:6px}#kid .khist .chip{min-height:42px;padding:0 14px;font-size:17px}
 #kid .kw{font-size:40px;margin:8px 0;line-height:1.2}#kid .krep{max-width:820px;margin:0 auto;text-align:left;font-size:18px}#kid .krep .kbd1{margin:10px 0}#kid .krep .kbd1>b{font-size:20px}#kid .kdr{display:flex;gap:8px;margin-top:6px}#kid .kdr button{flex:1;min-height:44px;font-size:16px;padding:6px 8px}
+#kid .ktools{display:flex;gap:12px;align-items:center;justify-content:space-between;max-width:900px;margin:0 auto 10px}
+#kid .ktools .tg{display:flex;gap:10px;order:1;flex-wrap:wrap}
+#kid .ktools>button{order:2;min-width:190px}
+#kid .ktools.lh .tg{order:2;justify-content:flex-end}#kid .ktools.lh>button{order:1}
+#kid .ktools button{min-height:56px;font-size:20px;padding:0 16px}
+#kid .ktools button.on{border-color:var(--pr);background:color-mix(in srgb,var(--pr) 14%,var(--card))}
+#kid .ktools>#nx{margin-left:auto}#kid .ktools.lh>#nx{margin-left:0;margin-right:auto}
+#kid button:disabled{opacity:.45}
+#kid canvas{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
 #kid .krow{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:7px 0;border-bottom:1px solid var(--ln);font-size:18px}#kid .krow:last-child{border-bottom:0}
 #kid input{-webkit-user-select:text;user-select:text}
 @media(prefers-reduced-motion:reduce){#kid .shake{animation:none}#kid .bar i{transition:none}}
@@ -352,7 +361,7 @@ return h+'<div id="tl">'+tlist(t)+'</div>'};
 V.imp=()=>'<h1><button data-a="back">‹ 返回</button>导入文本</h1><label for="it">标题</label><input id="it"><label for="ix">文本（每行一句，或 德语 | 中文（支持 | ｜ 和制表符，中文在前也能识别），最多 200 句）</label><textarea id="ix"></textarea><label for="if">上传 .txt/.md</label><input id="if" type="file" accept=".txt,.md"><label class="c"><input type="checkbox" id="itr" checked>自动翻译成中文</label><button class="p" data-a="save-imp" '+(S.busy?'disabled':'')+'>'+(S.busy?'翻译中…':'保存为主题')+'</button>';
 V.gen=()=>{let h='<h1><button data-a="back">‹ 返回</button>AI 生成</h1><label for="gs">场景</label><input id="gs" placeholder="在火车站买票"><button class="p" data-a="gen" '+(S.busy?'disabled':'')+'>'+(S.busy?'生成中…':'生成对话 (10句)')+'</button>';
 if(S.gen)h+='<div class="card"><h3>'+esc(S.gen.emoji+' '+S.gen.title)+'</h3>'+S.gen.lines.map(l=>'<div class="li"><div class="g">'+esc(l.de)+'<div class="mu">'+esc(l.zh)+'</div></div></div>').join('')+'<button class="p" data-a="gsave">保存为主题</button></div>';return h};
-V.t3=()=>{const a=C.ai;return '<h1>设置</h1><div class="card"><h3>AI 服务</h3><label for="cp">提供商</label><select id="cp"><option value="openai">OpenAI 兼容</option><option value="claude">Claude</option><option value="gemini">Google Gemini（AI Studio）</option></select><label for="cb">Base URL</label><input id="cb" value="'+esc(a.baseUrl)+'"><label for="cm">模型</label><input id="cm" list="ml" value="'+esc(a.model)+'"><datalist id="ml"><option value="gemini-2.5-flash"><option value="gemini-2.5-flash-lite"><option value="gemini-2.5-pro"><option value="llama-3.3-70b-versatile"><option value="deepseek-chat"></datalist><label for="ck">API Key</label><input id="ck" type="password" value="'+esc(a.apiKey)+'"><div class="row"><button data-a="preset" data-p="ds">DeepSeek</button><button data-a="preset" data-p="oa">OpenAI</button><button data-a="preset" data-p="qw">通义千问</button><button data-a="preset" data-p="gm">Google AI Studio</button><button data-a="preset" data-p="gq">Groq</button></div><div class="row" style="margin-top:8px"><button class="p" data-a="savecfg">保存设置</button><button data-a="testai">测试 AI</button></div></div><div class="card"><h3>语音与词典</h3><label for="cr">德语语速</label><select id="cr"><option>0.6</option><option>0.8</option><option>1</option></select><label for="cd">自定义词典网址（{w} 代表单词）</label><input id="cd" value="'+esc(C.dict.customUrl)+'"><button data-a="savecfg">保存</button></div>'+syncCard()+voiceCard()+'<div class="card kidcard"><h3>儿童模式</h3><p class="mu">四线格描红、听写、拼字母、游戏；每天 10–15 分钟。</p><label for="kbk">练习哪个生词本（儿童模式查词时，新词也加入这个本子）</label><select id="kbk">'+KID.opts()+'</select><label for="kgl2">每天目标（个词）</label><select id="kgl2">'+KID.goalOpts()+'</select><div class="mu" style="margin-top:12px">学习方式（点“开始”后依次进行，至少选一项）</div>'+KID.modeHtml()+'<div class="mu" style="margin-top:12px">单词练习的题型（可只勾选想练的，至少保留一项；校内词每天都按这里勾选的题型练）</div>'+KID.qtypesHtml()+'<div class="mu" style="margin-top:12px">本周校内词</div>'+KID.schoolHtml()+'<label class="c" style="margin-top:12px"><input type="checkbox" data-a="kidauto"'+(KID.auto()?' checked':'')+'>每次打开自动进入儿童模式（需先设置家长密码）</label><div class="row"><button data-a="kidpw">'+(KID.hasPw()?'修改家长密码':'设置家长密码')+'</button><button data-a="kidrep">📊 学习报告'+(KID.pendN()?' · 待批改 '+KID.pendN():'')+'</button><button class="p" data-a="kid">进入儿童模式</button></div></div><div class="card"><h3>外观</h3><label for="ct">主题</label><select id="ct"><option value="auto">跟随系统</option><option value="light">浅色</option><option value="dark">深色</option></select></div><div class="card"><h3>应用</h3><p class="mu">网络：'+(navigator.onLine?'在线':'离线')+'</p>'+(S.inst?'<button class="p" data-a="inst">添加到主屏幕</button>':'')+'</div><div class="card"><h3>数据管理</h3><div class="row"><button data-a="seed">恢复内置主题</button><button data-a="exp">导出备份</button><button data-a="imp-b">导入备份</button><button class="d" data-a="wipe">清除本机数据</button></div><input id="bf" type="file" accept=".json" hidden></div>'};
+V.t3=()=>{const a=C.ai;return '<h1>设置</h1><div class="card"><h3>AI 服务</h3><label for="cp">提供商</label><select id="cp"><option value="openai">OpenAI 兼容</option><option value="claude">Claude</option><option value="gemini">Google Gemini（AI Studio）</option></select><label for="cb">Base URL</label><input id="cb" value="'+esc(a.baseUrl)+'"><label for="cm">模型</label><input id="cm" list="ml" value="'+esc(a.model)+'"><datalist id="ml"><option value="gemini-2.5-flash"><option value="gemini-2.5-flash-lite"><option value="gemini-2.5-pro"><option value="llama-3.3-70b-versatile"><option value="deepseek-chat"></datalist><label for="ck">API Key</label><input id="ck" type="password" value="'+esc(a.apiKey)+'"><div class="row"><button data-a="preset" data-p="ds">DeepSeek</button><button data-a="preset" data-p="oa">OpenAI</button><button data-a="preset" data-p="qw">通义千问</button><button data-a="preset" data-p="gm">Google AI Studio</button><button data-a="preset" data-p="gq">Groq</button></div><div class="row" style="margin-top:8px"><button class="p" data-a="savecfg">保存设置</button><button data-a="testai">测试 AI</button></div></div><div class="card"><h3>语音与词典</h3><label for="cr">德语语速</label><select id="cr"><option>0.6</option><option>0.8</option><option>1</option></select><label for="cd">自定义词典网址（{w} 代表单词）</label><input id="cd" value="'+esc(C.dict.customUrl)+'"><button data-a="savecfg">保存</button></div>'+syncCard()+voiceCard()+'<div class="card kidcard"><h3>儿童模式</h3><p class="mu">四线格描红、听写、拼字母、游戏；每天 10–15 分钟。</p><label for="kbk">练习哪个生词本（儿童模式查词时，新词也加入这个本子）</label><select id="kbk">'+KID.opts()+'</select><label for="kgl2">每天目标（个词）</label><select id="kgl2">'+KID.goalOpts()+'</select>'+KID.handHtml()+'<div class="mu" style="margin-top:12px">学习方式（点“开始”后依次进行，至少选一项）</div>'+KID.modeHtml()+'<div class="mu" style="margin-top:12px">单词练习的题型（可只勾选想练的，至少保留一项；校内词每天都按这里勾选的题型练）</div>'+KID.qtypesHtml()+'<div class="mu" style="margin-top:12px">本周校内词</div>'+KID.schoolHtml()+'<label class="c" style="margin-top:12px"><input type="checkbox" data-a="kidauto"'+(KID.auto()?' checked':'')+'>每次打开自动进入儿童模式（需先设置家长密码）</label><div class="row"><button data-a="kidpw">'+(KID.hasPw()?'修改家长密码':'设置家长密码')+'</button><button data-a="kidrep">📊 学习报告'+(KID.pendN()?' · 待批改 '+KID.pendN():'')+'</button><button class="p" data-a="kid">进入儿童模式</button></div></div><div class="card"><h3>外观</h3><label for="ct">主题</label><select id="ct"><option value="auto">跟随系统</option><option value="light">浅色</option><option value="dark">深色</option></select></div><div class="card"><h3>应用</h3><p class="mu">网络：'+(navigator.onLine?'在线':'离线')+'</p>'+(S.inst?'<button class="p" data-a="inst">添加到主屏幕</button>':'')+'</div><div class="card"><h3>数据管理</h3><div class="row"><button data-a="seed">恢复内置主题</button><button data-a="exp">导出备份</button><button data-a="imp-b">导入备份</button><button class="d" data-a="wipe">清除本机数据</button></div><input id="bf" type="file" accept=".json" hidden></div>'};
 /* ===== render ===== */
 function vf(id,list,val,lab){const c=val&&!list.includes(val);return '<label for="'+id+'">'+lab+'</label><select id="'+id+'">'+list.map(v=>'<option'+(v===val?' selected':'')+'>'+v+'</option>').join('')+'<option value="__c"'+(c?' selected':'')+'>自定义…</option></select><input id="'+id+'c" placeholder="voice 名称" value="'+esc(c?val:'')+'"'+(c?'':' hidden')+'>'}
 const voiceCard=()=>{const T=C.tts,az=T.engine==='azure';return '<div class="card"><h3>语音（TTS）</h3><label for="te">引擎</label><select id="te"><option value="system">系统语音</option><option value="azure">Azure</option></select>'+(az?vf('azd',AZDE,T.deVoice,'德语声音')+vf('azz',AZZH,T.zhVoice,'中文声音')+'<label for="azk">Azure Key</label><input id="azk" type="password" value="'+esc(T.azureKey||'')+'"><label for="azr">区域（可留空，自动检测）</label><input id="azr" value="'+esc(T.azureRegion||'')+'">':'<p class="mu">系统语音：德语 de-DE、中文 zh-CN；息屏后会停止。</p>')+'<div class="row"><button class="p" data-a="azsave">保存并试听</button>'+(az?'<button data-a="azclr">清除缓存</button>':'')+'</div>'+(az?'<p class="mu" id="cs">缓存：…</p>':'')+'</div>'};
@@ -647,7 +656,7 @@ function home(){sid++;SES++;try{stopAudio()}catch(e){}
   const ne=errCount(bid),bn=bid==='*'?'全部生词本':((D.books.find(b=>b.id===bid)||{}).name||'—');
   const mt=modes(),ml=MODE_LIST.filter(([k])=>mt[k]).map(x=>x[1]).join(' → ');
   const msg=school?'本周校内词 · 第 '+p.day+' 天（'+sw.length+' 个词）':(p.n?(p.practice?'今天的都练完啦，可以加练':'今天要练 '+p.L.length+' 个词'):'这个本子里还没有可练的词（需要有中文释义的单个德语词）');
-  el.innerHTML='<div class="kt"><button id="kx">✕</button><div class="kst">⭐ '+KS.st.stars+' · 🔥 连续 '+KS.st.streak+' 天</div></div><div class="kb"><div class="hd">Wörter üben</div><div class="kgl">'+ring()+'</div><div class="msg">'+msg+'</div><div class="row"><button class="p" id="kgo"'+(p.n?'':' disabled')+'>开始学习</button><button id="klook">🔍 查词</button></div><div class="row"><button id="kbd">🏅 徽章 '+Object.keys(KS.bd).length+'/'+BG.length+'</button><button id="kerr"'+(ne?'':' disabled')+'>📕 错词本（'+ne+'）</button></div><div class="row"><button class="sm" id="kfx">缓存本册德语发音（需在设置里启用 Azure）</button></div><div class="sm2">'+(school?'每天 10–15 分钟：先练本周词，最后听写 · 听写日 '+esc(wk.dict.slice(5)):'本轮学习：'+esc(ml||'未选择（请在设置里勾选）'))+'</div><div class="sm2">练习生词本在 设置 → 儿童模式 中更改）</div></div>';
+  el.innerHTML='<div class="kt"><button id="kx">✕</button><div class="kst">⭐ '+KS.st.stars+' · 🔥 连续 '+KS.st.streak+' 天</div></div><div class="kb"><div class="hd">Wörter üben</div><div class="kgl">'+ring()+'</div><div class="msg">'+msg+'</div><div class="row"><button class="p" id="kgo"'+(p.n?'':' disabled')+'>开始学习</button><button id="klook">🔍 查词</button></div><div class="row"><button id="kbd">🏅 徽章 '+Object.keys(KS.bd).length+'/'+BG.length+'</button><button id="kerr"'+(ne?'':' disabled')+'>📕 错词本（'+ne+'）</button></div><div class="row"><button class="sm" id="kfx">缓存本册德语发音（需在设置里启用 Azure）</button></div><div class="sm2">'+(school?'每天 10–15 分钟：先练本周词，最后听写 · 听写日 '+esc(wk.dict.slice(5)):'本轮学习：'+esc(ml||'未选择（请在设置里勾选）'))+'</div><div class="sm2">练习生词本：'+esc(bn)+'（在 设置 → 儿童模式 中更改）</div></div>';
   el.onclick=e=>{if(!el.contains(e.target))return;const t=e.target.closest('button');if(!t)return;
     if(t.id==='kx')return quit();
     if(t.id==='kfx')return precache(words(bid).map(w=>[w.de,'de']));
@@ -701,15 +710,48 @@ function layout(t){const x=mk().getContext('2d');let fs=110;x.font=fs+'px '+FF;l
 /* lvl0 全描红；lvl1 首字母描红+其余虚线；lvl2 全虚线 */
 function ghost(x,t,lvl,col){const L=layout(t);x.save();x.font=L.fs+'px '+FF;x.textAlign='left';x.textBaseline='alphabetic';x.fillStyle=x.strokeStyle=col;
   if(lvl===0)x.fillText(t,L.x0,LY[2]);else{x.lineWidth=2;x.setLineDash([7,7]);x.strokeText(t,L.x0,LY[2]);x.setLineDash([]);if(lvl===1)x.fillText(t[0],L.x0,LY[2])}x.restore()}
-function ink(c){const x=cv(c);x.lineWidth=14;x.lineCap=x.lineJoin='round';x.strokeStyle=getComputedStyle(document.body).getPropertyValue('--pr').trim()||'#1f5f8b';
-  let last=null,cur=null;const ps=[];
-  const P=e=>{const r=c.getBoundingClientRect();return[(e.clientX-r.left)*W/r.width,(e.clientY-r.top)*H/r.height]};
+/* ---- 防误触：手掌 / 长按菜单 ---- */
+let penT=0,blkT=0;const PALM=40,ER_R=30,penRecent=ms=>Date.now()-penT<ms;
+el.addEventListener('contextmenu',e=>e.preventDefault());                       // 屏蔽浏览器的长按/右键菜单
+el.addEventListener('pointerdown',e=>{if(e.pointerType==='pen'){penT=Date.now();return}
+  if(e.pointerType==='touch'&&(penRecent(1500)||e.width>PALM||e.height>PALM)){blkT=Date.now();if(e.cancelable)e.preventDefault()}},true);   // 笔刚用过 / 接触面积大 = 手掌
+el.addEventListener('pointermove',e=>{if(e.pointerType==='pen')penT=Date.now()},true);
+el.addEventListener('pointerover',e=>{if(e.pointerType==='pen')penT=Date.now()},true);
+el.addEventListener('click',e=>{if(Date.now()-blkT<800){e.stopPropagation();e.preventDefault()}},true);   // 被挡掉的触摸不再触发按钮
+/* ---- 写字板：笔 / 橡皮 / 撤销；strokes 是家长查看用的笔画数据 ---- */
+function ink(c){const x=cv(c),col=()=>getComputedStyle(document.body).getPropertyValue('--pr').trim()||'#1f5f8b';
+  let last=null,cur=null,tool='pen',er=false;const ps=[],hist=[];
+  const style=()=>{x.lineWidth=14;x.lineCap=x.lineJoin='round';x.strokeStyle=col()};style();
+  const P=e=>{const r=c.getBoundingClientRect();return[(e.clientX-r.left)*W/(r.width||W),(e.clientY-r.top)*H/(r.height||H)]};
+  const redraw=()=>{x.clearRect(0,0,W,H);style();ps.forEach(s=>{if(!s.length)return;x.beginPath();s.forEach((p,j)=>j?x.lineTo(p[0],p[1]):x.moveTo(p[0],p[1]));if(s.length===1)x.lineTo(s[0][0]+.1,s[0][1]);x.stroke()})};
+  const snap=()=>{hist.push(JSON.stringify(ps));if(hist.length>40)hist.shift()};
   const seg=p=>{x.beginPath();x.moveTo(...last);x.lineTo(...p);x.stroke();last=p;if(cur)cur.push(p)};
-  c.onpointerdown=e=>{if(e.pointerType==='pen')pen=true;if(pen&&e.pointerType==='touch')return;e.preventDefault();c.setPointerCapture(e.pointerId);last=P(e);cur=[last];ps.push(cur);x.beginPath();x.moveTo(...last);x.lineTo(last[0]+.1,last[1]);x.stroke()};
-  c.onpointermove=e=>{if(!last||(pen&&e.pointerType==='touch'))return;(e.getCoalescedEvents?e.getCoalescedEvents():[e]).forEach(ev=>seg(P(ev)))};
-  c.onpointerup=c.onpointercancel=()=>{last=null;cur=null};
+  const dense=s=>{const o=[];for(let i=0;i<s.length;i++){o.push(s[i]);if(i<s.length-1){const a=s[i],b=s[i+1],d=Math.hypot(b[0]-a[0],b[1]-a[1]);for(let t=8;t<d;t+=8)o.push([a[0]+(b[0]-a[0])*t/d,a[1]+(b[1]-a[1])*t/d])}}return o};
+  const erase=p=>{let ch=false;const out=[];for(const s of ps){let sg=[];for(const q of dense(s)){if(Math.hypot(q[0]-p[0],q[1]-p[1])<ER_R){ch=true;if(sg.length){out.push(sg);sg=[]}}else sg.push(q)}if(sg.length)out.push(sg)}if(ch){ps.length=0;out.forEach(s=>ps.push(s));redraw()}};
+  const eraseTo=p=>{const a=last||p,d=Math.hypot(p[0]-a[0],p[1]-a[1]);for(let t=0;t<=d;t+=10)erase([a[0]+(p[0]-a[0])*(d?t/d:0),a[1]+(p[1]-a[1])*(d?t/d:0)]);erase(p);last=p};
+  const palm=e=>e.pointerType==='touch'&&(penRecent(60000)||e.width>PALM||e.height>PALM||e.isPrimary===false);
+  c.onpointerdown=e=>{if(last)return;if(e.pointerType==='pen')penT=Date.now();if(palm(e))return;
+    e.preventDefault();try{c.setPointerCapture(e.pointerId)}catch(_){}
+    er=tool==='eraser'||(e.pointerType==='pen'&&((e.buttons&32)||e.button===5));   // 触控笔的橡皮端也能擦
+    snap();last=P(e);if(er){erase(last)}else{cur=[last];ps.push(cur);x.beginPath();x.moveTo(...last);x.lineTo(last[0]+.1,last[1]);x.stroke()}};
+  c.onpointermove=e=>{if(!last)return;if(e.pointerType==='pen')penT=Date.now();if(palm(e))return;(e.getCoalescedEvents?e.getCoalescedEvents():[e]).forEach(ev=>er?eraseTo(P(ev)):seg(P(ev)))};
+  c.onpointerup=c.onpointercancel=()=>{last=null;cur=null;er=false};
   const simp=s=>{const o=[];let l=null;for(const p of s){if(!l||Math.hypot(p[0]-l[0],p[1]-l[1])>=2){o.push([Math.round(p[0]),Math.round(p[1])]);l=p}}if(o.length===1)o.push([o[0][0]+.1,o[0][1]]);return o};
-  return{cv:c,clear:()=>{x.clearRect(0,0,W,H);ps.length=0},strokes:()=>ps.map(simp).filter(s=>s.length)}}
+  return{cv:c,
+    clear:()=>{if(ps.length)snap();ps.length=0;x.clearRect(0,0,W,H)},
+    undo:()=>{if(!hist.length)return;ps.length=0;JSON.parse(hist.pop()).forEach(s=>ps.push(s));redraw()},
+    setTool:t=>{tool=t},tool:()=>tool,
+    len:()=>ps.reduce((a,s)=>{for(let i=1;i<s.length;i++)a+=Math.hypot(s[i][0]-s[i-1][0],s[i][1]-s[i-1][1]);return a},0),   // 笔迹总长度（点不算）
+    strokes:()=>ps.map(simp).filter(s=>s.length)}}
+/* ---- 顶部按钮栏（远离握笔的手）+ 防连点：按钮刚出现时锁一小会儿，写完要点“下一个”才继续 ---- */
+const lockBtn=(b,ms)=>{if(!b)return;b.disabled=true;setTimeout(()=>{b.disabled=false},ms||700)};
+const toolsHTML=(main,mid,extra)=>'<div class="ktools'+(KS.hand==='l'?' lh':'')+'"><div class="tg">'+(extra||'')+'<button id="un">↩ 撤销</button><button id="er">🧽 橡皮</button><button id="cl">🗑 重写</button></div><button class="p" id="'+(mid||'ok')+'">'+main+'</button></div>';
+const wireTools=(q,pad,afterClear)=>{q('#un').onclick=pad.undo;const eb=q('#er');
+  eb.onclick=()=>{const on=pad.tool()!=='eraser';pad.setTool(on?'eraser':'pen');eb.classList.toggle('on',on);eb.textContent=on?'✏️ 写字':'🧽 橡皮'};
+  q('#cl').onclick=()=>{pad.clear();if(afterClear)afterClear()}};
+function toNext(box,my){logQ();box.insertAdjacentHTML('beforeend','<div class="star">⭐</div>');const bar=box.querySelector('.ktools');
+  if(!bar){setTimeout(()=>{if(my===sid){qi++;step()}},900);return}
+  bar.innerHTML='<button class="p" id="nx">下一个 →</button>';const b=bar.querySelector('#nx');lockBtn(b,800);b.onclick=()=>{if(my!==sid)return;b.disabled=true;qi++;step()}}
 /* 把保存的笔画重新画到四线格上（家长查看听写用） */
 function drawInk(x,ss){x.lineWidth=14;x.lineCap=x.lineJoin='round';x.strokeStyle=getComputedStyle(document.body).getPropertyValue('--pr').trim()||'#1f5f8b';
   (ss||[]).forEach(s=>{if(!s.length)return;x.beginPath();s.forEach((p,j)=>j?x.lineTo(p[0],p[1]):x.moveTo(p[0],p[1]));x.stroke()})}
@@ -721,23 +763,26 @@ function score(t,c){const L=layout(t),g=mk(),d=mk(),u=mk(),gx=g.getContext('2d')
   for(let i=3;i<G.length;i+=4){const a=G[i]>60,b=U[i]>60;if(a){gt++;if(b)gh++}if(b){ut++;if(D[i]<=60)uo++}}
   return{cov:gt&&ut?gh/gt:0,out:ut?uo/ut:1}}
 
-function trace(w,m,box,my){const k=ks(w.id),lvl=m==='trace0'?0:Math.min(2,k.tl||0),hint=['沿着灰色的字描一遍','首字母描红，后面沿着虚线写','沿着虚线把单词写出来'][lvl];
-  box.innerHTML='<div class="hd">'+chip(w)+'<b>'+esc(w.de)+'</b><span>'+esc(w.zh)+'</span></div>'+gw()+'<div class="msg" id="msg">'+hint+'</div><div class="row"><button id="sp">🔊 听</button><button id="cl">重写</button><button class="p" id="ok">写好了</button></div>';
+function trace(w,m,box,my){const k=ks(w.id),lvl=m==='trace0'?0:Math.min(2,k.tl||0),hint=['沿着灰色的字描一遍','首字母描红，后面沿着虚线写','沿着虚线把单词写出来'][lvl],Ls=layout(w.de),need=Math.max(120,(W-2*Ls.x0)*.4);
+  box.innerHTML=toolsHTML('写好了','ok','<button id="sp">🔊 听</button>')+'<div class="hd">'+chip(w)+'<b>'+esc(w.de)+'</b><span>'+esc(w.zh)+'</span></div>'+gw()+'<div class="msg" id="msg">'+hint+'</div>';
   const cs=box.querySelectorAll('canvas'),b=cv(cs[0]);grid(b);ghost(b,w.de,lvl,'rgba(140,150,160,.5)');
-  const q=s=>box.querySelector(s),pad=ink(cs[1]);let tries=0;q('#sp').onclick=()=>say(w.de,'de');q('#cl').onclick=pad.clear;say(w.de,'de');
-  q('#ok').onclick=()=>{const r=score(w.de,pad.cv);
-    if((r.cov>=.5&&r.out<=.45)||tries>=2){q('#ok').disabled=true;if(tries>0)bad=1;if(m==='trace'&&tries===0)k.tl=Math.min(2,(k.tl||0)+1);pass(box,my)}
+  const q=s=>box.querySelector(s),pad=ink(cs[1]);let tries=0;wireTools(q,pad);q('#sp').onclick=()=>say(w.de,'de');say(w.de,'de');lockBtn(q('#ok'));
+  q('#ok').onclick=()=>{if(pad.len()<need){q('#msg').textContent='先把字写出来，再点“写好了”';return}   // 没写字不能过关，也不算一次尝试
+    const r=score(w.de,pad.cv);
+    if((r.cov>=.5&&r.out<=.45)||tries>=2){q('#ok').disabled=true;if(tries>0)bad=1;if(m==='trace'&&tries===0)k.tl=Math.min(2,(k.tl||0)+1);toNext(box,my)}
     else{tries++;q('#msg').textContent=r.cov<.5?'再写完整一点':'写在格子里的字上面哦';pad.clear()}}}
 
 /* 四线格默写：自检（看答案叠加在自己的字迹上，自己或家长判断对错） */
-function dict(w,m,box,my){const ear=m==='dictE';
-  box.innerHTML=(ear?'<div class="hd"><button class="p" id="sp">🔊 听一听，写下来</button></div>':'<div class="hd">'+chip(w)+'<b>'+esc(w.zh)+'</b></div>')+gw()+'<div class="msg" id="msg">在四线格里写出德语单词（名词连定冠词一起写）</div><div class="row" id="ctl"><button id="cl">重写</button><button class="p" id="ksh">看答案</button></div>';
+function dict(w,m,box,my){const ear=m==='dictE',need=Math.max(80,[...dtx(w)].filter(c=>c!==' ').length*16);
+  box.innerHTML=toolsHTML('看答案','ksh')+(ear?'<div class="hd"><button class="p" id="sp">🔊 听一听，写下来</button></div>':'<div class="hd">'+chip(w)+'<b>'+esc(w.zh)+'</b></div>')+gw()+'<div class="msg" id="msg">在四线格里写出德语单词（名词连定冠词一起写）</div>';
   const cs=box.querySelectorAll('canvas'),q=s=>box.querySelector(s);grid(cv(cs[0]));const pad=ink(cs[1]);
-  if(ear){q('#sp').onclick=()=>say(dtx(w),'de');say(dtx(w),'de')}q('#cl').onclick=pad.clear;
-  q('#ksh').onclick=()=>{ghost(cv(cs[2]),dtx(w),0,'rgba(46,125,79,.5)');cs[1].onpointerdown=null;say(dtx(w),'de');
+  if(ear){q('#sp').onclick=()=>say(dtx(w),'de');say(dtx(w),'de')}wireTools(q,pad);lockBtn(q('#ksh'));
+  q('#ksh').onclick=()=>{if(pad.len()<need){q('#msg').textContent='先写一写，再看答案';return}
+    ghost(cv(cs[2]),dtx(w),0,'rgba(46,125,79,.5)');cs[1].onpointerdown=null;say(dtx(w),'de');
     q('#msg').innerHTML='正确答案：<b>'+esc(dtx(w))+'</b>　和你写的一样吗？';
-    q('#ctl').innerHTML='<button class="p" id="y">✅ 一样，写对了</button><button id="n">🔁 不一样</button>';
-    q('#y').onclick=()=>{q('#ctl').remove();pass(box,my)};
+    q('.ktools').innerHTML='<div class="tg"><button id="n">🔁 不一样</button></div><button class="p" id="y">✅ 一样，写对了</button>';
+    lockBtn(q('#y'),900);lockBtn(q('#n'),900);
+    q('#y').onclick=()=>{q('#y').disabled=true;toNext(box,my)};
     q('#n').onclick=()=>{mis(w);logQ();Q.splice(qi+1,0,[w,'trace0']);qi++;step()}}}   // 写错：马上描红一遍
 
 /* 点字母拼写：spellE 听音；spellZ 看中文 */
@@ -886,7 +931,7 @@ function merge(r){if(!r||typeof r!=='object')return;let ch=0;
   if(r.goal&&(r.goal.t||0)>(KS.goal.t||0)){KS.goal=r.goal;ch=1}
   if(ch)wr(KEY,KS)}
 const opts=()=>'<option value="*"'+(KS.bk==='*'?' selected':'')+'>全部生词本（'+words('*').length+' 个可练）</option>'+D.books.map(b=>'<option value="'+esc(b.id)+'"'+(b.id===selBook()?' selected':'')+'>'+esc(b.name)+'（'+words(b.id).length+'）</option>').join('');
-document.addEventListener('change',e=>{if(e.target.id==='kbk'){KS.bk=e.target.value;save()}if(e.target.id==='kgl2'){KS.goal={n:+e.target.value,t:Date.now()};save()}});
+document.addEventListener('change',e=>{if(e.target.id==='kbk'){KS.bk=e.target.value;save()}if(e.target.id==='kgl2'){KS.goal={n:+e.target.value,t:Date.now()};save()}if(e.target.id==='khand'){KS.hand=e.target.value==='l'?'l':'r';save()}});
 /* ---- 第5批：家长密码 / 练习记录 / 今日目标 / 徽章 ---- */
 const hx=b=>[...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('');
 async function hsh(p,salt){if(window.crypto&&crypto.subtle){try{const k=await crypto.subtle.importKey('raw',new TextEncoder().encode(p),'PBKDF2',false,['deriveBits']);return hx(await crypto.subtle.deriveBits({name:'PBKDF2',salt:new TextEncoder().encode(salt),iterations:100000,hash:'SHA-256'},k,256))}catch(e){}}
@@ -961,10 +1006,11 @@ function dictation(L,dn,next){
   const my=++sid;const R=L.map(w=>({w,st:null,ok:null}));let i=0;
   const startW=()=>{if(my!==sid)return;if(i>=R.length)return review(0);
     const x=R[i],w=x.w;el.onclick=null;
-    el.innerHTML='<div class="kt"><button id="kx">✕</button><div class="bar"><i style="width:'+i/R.length*100+'%"></i></div></div><div class="kb"><div class="hd"><b>听写 '+(i+1)+' / '+R.length+'</b><button id="sp">🔊 再听一遍</button></div><div class="msg">在四线格里写下来；名词连定冠词一起写（如 die Katze）。写完点“写好了”，答案最后一起对。</div>'+gw()+'<div class="row"><button id="cl">重写</button><button class="p" id="ok">写好了</button></div></div>';
+    el.innerHTML='<div class="kt"><button id="kx">✕</button><div class="bar"><i style="width:'+i/R.length*100+'%"></i></div></div><div class="kb">'+toolsHTML('写好了','ok')+'<div class="hd"><b>听写 '+(i+1)+' / '+R.length+'</b><button id="sp">🔊 再听一遍</button></div><div class="msg">在四线格里写下来；名词连定冠词一起写（如 die Katze）。写完点“写好了”，答案最后一起对。</div>'+gw()+'</div>';
     const cs=el.querySelectorAll('canvas'),q=s=>el.querySelector(s);grid(cv(cs[0]));const pad=ink(cs[1]);
-    q('#kx').onclick=home;q('#sp').onclick=()=>sayTwice(dtx(w));q('#cl').onclick=()=>{pad.clear();sayTwice(dtx(w))};
-    q('#ok').onclick=()=>{x.st=pad.strokes();i++;startW()};
+    q('#kx').onclick=home;q('#sp').onclick=()=>sayTwice(dtx(w));wireTools(q,pad,()=>sayTwice(dtx(w)));lockBtn(q('#ok'),900);
+    const need=Math.max(80,[...dtx(w)].filter(c=>c!==' ').length*16);
+    q('#ok').onclick=()=>{if(pad.len()<need){q('.msg').textContent='还没写呢，先把单词写出来哦';return}x.st=pad.strokes();i++;startW()};
     sayTwice(dtx(w))};
   const review=j=>{if(my!==sid)return;if(j>=R.length)return finish();
     const x=R[j],w=x.w;el.onclick=null;
@@ -972,7 +1018,7 @@ function dictation(L,dn,next){
     const cs=el.querySelectorAll('canvas'),q=s=>el.querySelector(s);grid(cv(cs[0]));ghost(cv(cs[0]),dtx(w),0,'rgba(46,125,79,.5)');paint(cs[1],x.st||[]);
     q('#kx').onclick=home;
     const pick=ok=>{x.ok=ok;DRES[w.id]=ok;record(x);review(j+1)};
-    q('#y').onclick=()=>pick(1);q('#n').onclick=()=>pick(0)};
+    q('#y').onclick=()=>pick(1);q('#n').onclick=()=>pick(0);lockBtn(q('#y'),900);lockBtn(q('#n'),900)};
   const record=x=>{const t=Date.now(),wk=schoolWk(),k=ks(x.w.id),td=day();
     KS.dic.push({id:dicId(t),t,wk:wk?wk.id:'',d:day(),w:x.w.id,de:dtx(x.w),zh:x.w.zh||'',ok:x.ok?1:0,st:x.st||[]});
     KS.dic=KS.dic.filter(z=>z.t>t-90*DAY).slice(-400);
@@ -1123,7 +1169,7 @@ el.addEventListener('touchstart',e=>e.stopPropagation(),{passive:true});   // �
 function boot(){if(KS.on||(KS.auto&&wide.matches))open()}
 const snapBase=()=>({w:KS.w,st:KS.st,rec:KS.rec,bd:KS.bd,bs:KS.bs,goal:KS.goal});
 const snapSync=()=>Object.assign(snapBase(),{dic:KS.dic.filter(d=>d&&d.t>Date.now()-14*DAY).slice(-40).map(d=>({id:d.id,t:d.t,d:d.d,wk:d.wk,w:d.w,de:d.de,zh:d.zh,ok:d.ok,z:encSt(d.st),g:d.g,gt:d.gt,ga:d.ga}))});
-return{open,close,boot,merge,opts,goalOpts,modeHtml,qtypesHtml,setMode,setQt,setPw,hasPw:()=>!!KS.pw,snap:()=>Object.assign(snapBase(),{dic:KS.dic}),snapSync,pendN:()=>dicPending().length,auto:()=>!!KS.auto,setAuto:v=>{KS.auto=!!v;save()},report:openReport,schoolHtml,saveSchool,endSchool,schoolActive:()=>!!schoolWk()}})();
+return{open,close,boot,merge,opts,goalOpts,handHtml:()=>'<label for="khand">写字时按钮放在（避开握笔的手）</label><select id="khand"><option value="r"'+(KS.hand!=='l'?' selected':'')+'>右手写字：按钮在上方，“写好了”靠右</option><option value="l"'+(KS.hand==='l'?' selected':'')+'>左手写字：按钮在上方，“写好了”靠左</option></select>',modeHtml,qtypesHtml,setMode,setQt,setPw,hasPw:()=>!!KS.pw,snap:()=>Object.assign(snapBase(),{dic:KS.dic}),snapSync,pendN:()=>dicPending().length,auto:()=>!!KS.auto,setAuto:v=>{KS.auto=!!v;save()},report:openReport,schoolHtml,saveSchool,endSchool,schoolActive:()=>!!schoolWk()}})();
 A.kid=()=>KID.open();A.kidauto=t=>{if(t.checked&&!KID.hasPw()){KID.setPw().then(ok=>{if(ok)KID.setAuto(true);else t.checked=false})}else KID.setAuto(t.checked)};A.kidpw=()=>KID.setPw().then(()=>render());A.kidrep=()=>KID.report();A.kidmode=t=>{KID.setMode(t.dataset.m,t.checked);render()};A.kidqt=t=>{KID.setQt(t.dataset.t,t.checked);render()};A.kswsave=()=>KID.saveSchool();A.kswend=()=>KID.endSchool();
 migrate();if(compact())wr('dl',D);snapAll();KID.boot();render();syncNow();
 </script></body></html>
