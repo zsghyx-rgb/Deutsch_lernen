@@ -55,6 +55,7 @@ nav div{max-width:640px;margin:auto;display:flex}nav button{flex:1;height:56px;b
 #kid .ka{color:#fff;border-radius:10px;padding:0 12px;font-size:24px;font-weight:700}
 #kid .gw{position:relative;aspect-ratio:3/1;max-width:900px;margin:0 auto;background:var(--card);border:1px solid var(--ln);border-radius:14px}
 #kid .gw canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none}#kid .gw .ca{pointer-events:none}
+#kid .gw.ans{max-width:900px;margin-bottom:8px}#kid .gwlab{text-align:center;font-size:15px;color:var(--mu);margin:8px 0 4px}
 #kid .row{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin:14px 0}#kid .kb>.row button{flex:1 1 0;min-width:0;white-space:normal}#kid .kb>.row.kopts button{flex:1 1 140px;font-size:24px}
 #kid .kbk{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin:12px 0}
 #kid .slots,#kid .pool{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin:16px 0;min-height:72px}
@@ -310,6 +311,7 @@ if(a.length>S.vlim)h+='<button data-a="more">加载更多</button>';return h};
 const vupd=()=>{const el=$('#vl');if(el)el.innerHTML=vlist()};
 V.bk=()=>{const b=D.books.find(x=>x.id===S.bid);if(!b){S.sub='';return V.t1()}const r=dueRev(b.id).length,nl=newList(b).length,pool=D.vocab.filter(v=>v.book===b.id&&isNew(v)).length,none=!r&&!nl,a=sortedVocab(),zh=C.ui.vzh!==false;
 let h='<h1><button data-a="back">‹ 返回</button><span class="g" style="flex:1;text-align:center">'+esc(b.name)+'</span></h1><div class="card"><div class="row"><div class="g"><b>今日任务</b><div class="mu sm">复习 '+r+' · 新词 '+nl+'（每天 '+(b.daily||10)+' 个）</div>'+(none&&!pool?'<div class="mu sm">没有待学的新词了</div>':'')+'</div>'+(none?'<button class="p" data-a="bmore" '+(pool?'':'disabled')+'>再学 5 个</button>':'<button class="p" data-a="lstart">开始学习</button>')+'</div></div>';
+h+='<div class="card"><h3>✍️ 手写练习（儿童模式）</h3><p class="mu sm">用儿童模式的描红、拼字母、听写等题型练这个本子，词数可以比每天任务多；不进入校内词流程。</p><div class="row"><div class="g">'+KID.bnHtml()+'</div><button class="p" data-a="klaunch">开始手写练习</button></div></div>';
 h+='<div class="row"><button class="p" data-a="vplay">'+(S.playing?'■ 停止':'▶ 连续播放')+'</button><button data-a="mng">'+(S.manage?'完成':'管理')+'</button><button data-a="bimp">导入单词</button><button data-a="vset" aria-label="设置面板">⚙ 设置</button></div>';
 if(b.school)h+='<div class="card"><h3>本周校内词</h3><p class="mu sm">《校内词》会长期保留所有校内词；这里填的是这一周要练、要听写的词，每周换一次。儿童模式会优先练它们，每天最后听写。</p>'+KID.schoolHtml()+'</div>';
 if(S.vset)h+=vpanel();
@@ -361,7 +363,7 @@ return h+'<div id="tl">'+tlist(t)+'</div>'};
 V.imp=()=>'<h1><button data-a="back">‹ 返回</button>导入文本</h1><label for="it">标题</label><input id="it"><label for="ix">文本（每行一句，或 德语 | 中文（支持 | ｜ 和制表符，中文在前也能识别），最多 200 句）</label><textarea id="ix"></textarea><label for="if">上传 .txt/.md</label><input id="if" type="file" accept=".txt,.md"><label class="c"><input type="checkbox" id="itr" checked>自动翻译成中文</label><button class="p" data-a="save-imp" '+(S.busy?'disabled':'')+'>'+(S.busy?'翻译中…':'保存为主题')+'</button>';
 V.gen=()=>{let h='<h1><button data-a="back">‹ 返回</button>AI 生成</h1><label for="gs">场景</label><input id="gs" placeholder="在火车站买票"><button class="p" data-a="gen" '+(S.busy?'disabled':'')+'>'+(S.busy?'生成中…':'生成对话 (10句)')+'</button>';
 if(S.gen)h+='<div class="card"><h3>'+esc(S.gen.emoji+' '+S.gen.title)+'</h3>'+S.gen.lines.map(l=>'<div class="li"><div class="g">'+esc(l.de)+'<div class="mu">'+esc(l.zh)+'</div></div></div>').join('')+'<button class="p" data-a="gsave">保存为主题</button></div>';return h};
-V.t3=()=>{const a=C.ai;return '<h1>设置</h1><div class="card"><h3>AI 服务</h3><label for="cp">提供商</label><select id="cp"><option value="openai">OpenAI 兼容</option><option value="claude">Claude</option><option value="gemini">Google Gemini（AI Studio）</option></select><label for="cb">Base URL</label><input id="cb" value="'+esc(a.baseUrl)+'"><label for="cm">模型</label><input id="cm" list="ml" value="'+esc(a.model)+'"><datalist id="ml"><option value="gemini-2.5-flash"><option value="gemini-2.5-flash-lite"><option value="gemini-2.5-pro"><option value="llama-3.3-70b-versatile"><option value="deepseek-chat"></datalist><label for="ck">API Key</label><input id="ck" type="password" value="'+esc(a.apiKey)+'"><div class="row"><button data-a="preset" data-p="ds">DeepSeek</button><button data-a="preset" data-p="oa">OpenAI</button><button data-a="preset" data-p="qw">通义千问</button><button data-a="preset" data-p="gm">Google AI Studio</button><button data-a="preset" data-p="gq">Groq</button></div><div class="row" style="margin-top:8px"><button class="p" data-a="savecfg">保存设置</button><button data-a="testai">测试 AI</button></div></div><div class="card"><h3>语音与词典</h3><label for="cr">德语语速</label><select id="cr"><option>0.6</option><option>0.8</option><option>1</option></select><label for="cd">自定义词典网址（{w} 代表单词）</label><input id="cd" value="'+esc(C.dict.customUrl)+'"><button data-a="savecfg">保存</button></div>'+syncCard()+voiceCard()+'<div class="card kidcard"><h3>儿童模式</h3><p class="mu">四线格描红、听写、拼字母、游戏；每天 10–15 分钟。</p><label for="kbk">练习哪个生词本（儿童模式查词时，新词也加入这个本子）</label><select id="kbk">'+KID.opts()+'</select><label for="kgl2">每天目标（个词）</label><select id="kgl2">'+KID.goalOpts()+'</select>'+KID.handHtml()+KID.penHtml()+'<div class="mu" style="margin-top:12px">学习方式（点“开始”后依次进行，至少选一项）</div>'+KID.modeHtml()+'<div class="mu" style="margin-top:12px">单词练习的题型（可只勾选想练的，至少保留一项；校内词每天都按这里勾选的题型练）</div>'+KID.qtypesHtml()+'<div class="mu" style="margin-top:12px">本周校内词</div>'+KID.schoolHtml()+'<label class="c" style="margin-top:12px"><input type="checkbox" data-a="kidauto"'+(KID.auto()?' checked':'')+'>每次打开自动进入儿童模式（需先设置家长密码）</label><div class="row"><button data-a="kidpw">'+(KID.hasPw()?'修改家长密码':'设置家长密码')+'</button><button data-a="kidrep">📊 学习报告'+(KID.pendN()?' · 待批改 '+KID.pendN():'')+'</button><button class="p" data-a="kid">进入儿童模式</button></div></div><div class="card"><h3>外观</h3><label for="ct">主题</label><select id="ct"><option value="auto">跟随系统</option><option value="light">浅色</option><option value="dark">深色</option></select></div><div class="card"><h3>应用</h3><p class="mu">网络：'+(navigator.onLine?'在线':'离线')+'</p>'+(S.inst?'<button class="p" data-a="inst">添加到主屏幕</button>':'')+'</div><div class="card"><h3>数据管理</h3><div class="row"><button data-a="seed">恢复内置主题</button><button data-a="exp">导出备份</button><button data-a="imp-b">导入备份</button><button class="d" data-a="wipe">清除本机数据</button></div><input id="bf" type="file" accept=".json" hidden></div>'};
+V.t3=()=>{const a=C.ai;return '<h1>设置</h1><div class="card"><h3>AI 服务</h3><label for="cp">提供商</label><select id="cp"><option value="openai">OpenAI 兼容</option><option value="claude">Claude</option><option value="gemini">Google Gemini（AI Studio）</option></select><label for="cb">Base URL</label><input id="cb" value="'+esc(a.baseUrl)+'"><label for="cm">模型</label><input id="cm" list="ml" value="'+esc(a.model)+'"><datalist id="ml"><option value="gemini-2.5-flash"><option value="gemini-2.5-flash-lite"><option value="gemini-2.5-pro"><option value="llama-3.3-70b-versatile"><option value="deepseek-chat"></datalist><label for="ck">API Key</label><input id="ck" type="password" value="'+esc(a.apiKey)+'"><div class="row"><button data-a="preset" data-p="ds">DeepSeek</button><button data-a="preset" data-p="oa">OpenAI</button><button data-a="preset" data-p="qw">通义千问</button><button data-a="preset" data-p="gm">Google AI Studio</button><button data-a="preset" data-p="gq">Groq</button></div><div class="row" style="margin-top:8px"><button class="p" data-a="savecfg">保存设置</button><button data-a="testai">测试 AI</button></div></div><div class="card"><h3>语音与词典</h3><label for="cr">德语语速</label><select id="cr"><option>0.6</option><option>0.8</option><option>1</option></select><label for="cd">自定义词典网址（{w} 代表单词）</label><input id="cd" value="'+esc(C.dict.customUrl)+'"><button data-a="savecfg">保存</button></div>'+syncCard()+voiceCard()+'<div class="card kidcard"><h3>儿童模式</h3><p class="mu">四线格描红、听写、拼字母、游戏；每天约 '+KID.lim()+' 分钟（可在下面调整）。</p><label for="kbk">练习哪个生词本（儿童模式查词时，新词也加入这个本子）</label><select id="kbk">'+KID.opts()+'</select><label for="kgl2">每天目标（个词）</label><select id="kgl2">'+KID.goalOpts()+'</select>'+KID.limHtml()+KID.handHtml()+KID.penHtml()+'<div class="mu" style="margin-top:12px">学习方式（点“开始”后依次进行，至少选一项）</div>'+KID.modeHtml()+'<div class="mu" style="margin-top:12px">单词练习的题型（可只勾选想练的，至少保留一项；校内词每天都按这里勾选的题型练）</div>'+KID.qtypesHtml()+'<div class="mu" style="margin-top:12px">本周校内词</div>'+KID.schoolHtml()+'<label class="c" style="margin-top:12px"><input type="checkbox" data-a="kidauto"'+(KID.auto()?' checked':'')+'>每次打开自动进入儿童模式（需先设置家长密码）</label><div class="row"><button data-a="kidpw">'+(KID.hasPw()?'修改家长密码':'设置家长密码')+'</button><button data-a="kidrep">📊 学习报告'+(KID.pendN()?' · 待批改 '+KID.pendN():'')+'</button><button class="p" data-a="kid">进入儿童模式</button></div></div><div class="card"><h3>外观</h3><label for="ct">主题</label><select id="ct"><option value="auto">跟随系统</option><option value="light">浅色</option><option value="dark">深色</option></select></div><div class="card"><h3>应用</h3><p class="mu">网络：'+(navigator.onLine?'在线':'离线')+'</p>'+(S.inst?'<button class="p" data-a="inst">添加到主屏幕</button>':'')+'</div><div class="card"><h3>数据管理</h3><div class="row"><button data-a="seed">恢复内置主题</button><button data-a="exp">导出备份</button><button data-a="imp-b">导入备份</button><button class="d" data-a="wipe">清除本机数据</button></div><input id="bf" type="file" accept=".json" hidden></div>'};
 /* ===== render ===== */
 function vf(id,list,val,lab){const c=val&&!list.includes(val);return '<label for="'+id+'">'+lab+'</label><select id="'+id+'">'+list.map(v=>'<option'+(v===val?' selected':'')+'>'+v+'</option>').join('')+'<option value="__c"'+(c?' selected':'')+'>自定义…</option></select><input id="'+id+'c" placeholder="voice 名称" value="'+esc(c?val:'')+'"'+(c?'':' hidden')+'>'}
 const voiceCard=()=>{const T=C.tts,az=T.engine==='azure';return '<div class="card"><h3>语音（TTS）</h3><label for="te">引擎</label><select id="te"><option value="system">系统语音</option><option value="azure">Azure</option></select>'+(az?vf('azd',AZDE,T.deVoice,'德语声音')+vf('azz',AZZH,T.zhVoice,'中文声音')+'<label for="azk">Azure Key</label><input id="azk" type="password" value="'+esc(T.azureKey||'')+'"><label for="azr">区域（可留空，自动检测）</label><input id="azr" value="'+esc(T.azureRegion||'')+'">':'<p class="mu">系统语音：德语 de-DE、中文 zh-CN；息屏后会停止。</p>')+'<div class="row"><button class="p" data-a="azsave">保存并试听</button>'+(az?'<button data-a="azclr">清除缓存</button>':'')+'</div>'+(az?'<p class="mu" id="cs">缓存：…</p>':'')+'</div>'};
@@ -581,11 +583,11 @@ const KID=(()=>{
 const KEY='dl_kid',DAY=864e5,IV=[0,1,2,4,7,14],CAP=6,W=900,H=300,R=2,LY=[60,110,170,220];
 const COL={der:'#2f7fd0',die:'#d6483c',das:'#2e9e5b'},FF='"KidWrite","Playwrite DE Grund","Schulschrift","Segoe Print","Comic Sans MS",cursive';
 const el=$('#kid'),wide=matchMedia('(min-width:768px)');
-let KS=rd(KEY,{});KS.w=KS.w||{};KS.st=KS.st||{day:'',streak:0,stars:0};KS.rec=KS.rec||[];KS.bd=KS.bd||{};KS.bs=KS.bs||{};KS.goal=KS.goal||{n:6,t:0};KS.lh=(KS.lh||[]).filter((q,i,a)=>q&&a.findIndex(x=>hkey(x)===hkey(q))===i).slice(0,100);KS.modes=KS.modes||{q:1,memo:1,clap:1};KS.dic=KS.dic||[];KS.dic.forEach(z=>{if(z&&!z.id)z.id=(z.t||0).toString(36)+'|'+(z.w||'')+'|'+(z.d||'')});KS.la=KS.la||{d:'',n:0};
+let KS=rd(KEY,{});KS.w=KS.w||{};KS.st=KS.st||{day:'',streak:0,stars:0};KS.rec=KS.rec||[];KS.bd=KS.bd||{};KS.bs=KS.bs||{};KS.goal=KS.goal||{n:6,t:0};KS.lh=(KS.lh||[]).filter((q,i,a)=>q&&a.findIndex(x=>hkey(x)===hkey(q))===i).slice(0,100);KS.modes=KS.modes||{q:1,memo:1,clap:1};KS.dic=KS.dic||[];KS.dic.forEach(z=>{if(z&&!z.id)z.id=(z.t||0).toString(36)+'|'+(z.w||'')+'|'+(z.d||'')});KS.la=KS.la||{d:'',n:0};KS.lim=KS.lim||20;KS.bn=KS.bn||10;
 /* 进度改按单词（去冠词小写）存，兼容旧版按 v.id 存的键 */
 (function(){const m={};D.vocab.forEach(v=>{m[v.id]=bare(v.lemma||v.word)});for(const k in KS.w){const nk=m[k];if(nk&&nk!==k){const a=KS.w[k],b=KS.w[nk];if(!b||(a.t||0)>(b.t||0))KS.w[nk]=a;delete KS.w[k]}}})();
 let Q=[],qi=0,miss={},ws=[],sid=0,pen=false,POOL=[],ERR=false,EV=[],ST=0,SST=0,bad=0,ACTS=[],AX=0,QRAN=false,SES=0,STAR0=0;
-let SCHOOL=false,SW=[],SD=1,XW=[],ADV={},TOT={},ANS={},SETT={},DRES={},EV2=[],EVCUR=null;
+let SCHOOL=false,SW=[],SD=1,XW=[],ADV={},TOT={},ANS={},SETT={},DRES={},EV2=[],EVCUR=null,DQ=[];
 const save=()=>{wr(KEY,KS);schedSync()},shuf=a=>a.map(x=>[Math.random(),x]).sort((p,q)=>p[0]-q[0]).map(p=>p[1]);
 /* 听写记录：唯一 id + 家长批改结果（g=家长判定，gt=批改时间，ga=是否已按批改调整过盒号） */
 const dicId=t=>t.toString(36)+Math.random().toString(36).slice(2,6);
@@ -621,10 +623,11 @@ const uniqW=L=>{const m=new Map();L.forEach(w=>{if(!m.has(w.id))m.set(w.id,w)});
 /* 校内周结束后（或换成新一周后），旧校内词自动并入常规复习 */
 const regPool=()=>{const a=words(selBook()),wk=schoolWk();if(!wk)return uniqW([...a,...words(BOOK_SCHOOL)]);
   const act=new Set(wk.words||[]);return uniqW([...a,...words(BOOK_SCHOOL).filter(w=>!act.has(w.id))])};
-function pick(bid,pool){const all=pool||words(bid),now=Date.now();
+const skippedW=w=>{const k=ks(w.id);return !!k.sk&&(k.d||0)>Date.now()};   // 两次全对 → 跳过一个月；到期后自动回到练习
+function pick(bid,pool,cap){const all=(pool||words(bid)).filter(w=>!skippedW(w)),now=Date.now(),lim=cap||CAP;
   const due=all.filter(w=>KS.w[w.id]&&KS.w[w.id].d<=now).sort((a,b)=>KS.w[a.id].b-KS.w[b.id].b),nw=all.filter(w=>!KS.w[w.id]);
-  let L=[...due,...nw].slice(0,CAP),practice=false;
-  if(!L.length&&all.length){practice=true;L=shuf(all).sort((a,b)=>ks(a.id).b-ks(b.id).b).slice(0,CAP)}
+  let L=[...due,...nw].slice(0,lim),practice=false;
+  if(!L.length&&all.length){practice=true;L=shuf(all).sort((a,b)=>ks(a.id).b-ks(b.id).b).slice(0,lim)}
   return{L,n:all.length,practice,pool:all}}
 /* 单词练习的题型可以单独勾选：描红 / 听音选词 / 拼字母 / 听写 / 挖空 / 冠词 */
 const QTYPES=[['trace','描红'],['pick','听音选词'],['spell','拼字母'],['dict','听写'],['gap','挖空'],['art','冠词']];
@@ -637,6 +640,7 @@ function setQt(k,on){const q=Object.assign({},KS.qt||{});q[k]=on?1:0;if(!QTYPES.
 /* 常规：每个词按盒号安排三项；校内：按第几天安排（第1天全描红，第2天首字母描红+挖空，第3天虚线+拼字母，第4天默写） */
 const plan=w=>{const b=ks(w.id).b,base=b>=3?['dictE','gap','dictZ']:b===2?['trace','spellZ','gap']:['trace','pickE','spellE'];
   let a=base.filter(qOn);if(!a.length)a=[qFirst()];if(w.art&&qOn('art'))a.push('art');return a};
+const isDict=m=>m==='dictE'||m==='dictZ';
 const sPlan=(w,d)=>{const base=d<=1?['trace0']:d===2?['trace','gap']:d===3?['trace','spellZ']:['dictZ','spellZ'];
   let a=base.filter(qOn);if(!a.length)a=[qFirst()];if(w.art&&qOn('art'))a.push('art');return a};
 
@@ -656,38 +660,48 @@ function home(){sid++;SES++;try{stopAudio()}catch(e){}
   const ne=errCount(bid),bn=bid==='*'?'全部生词本':((D.books.find(b=>b.id===bid)||{}).name||'—');
   const mt=modes(),ml=MODE_LIST.filter(([k])=>mt[k]).map(x=>x[1]).join(' → ');
   const msg=school?'本周校内词 · 第 '+p.day+' 天（'+sw.length+' 个词）':(p.n?(p.practice?'今天的都练完啦，可以加练':'今天要练 '+p.L.length+' 个词'):'这个本子里还没有可练的词（需要有中文释义的单个德语词）');
-  el.innerHTML='<div class="kt"><button id="kx">✕</button><div class="kst">⭐ '+KS.st.stars+' · 🔥 连续 '+KS.st.streak+' 天</div></div><div class="kb"><div class="hd">Wörter üben</div><div class="kgl">'+ring()+'</div><div class="msg">'+msg+'</div><div class="row"><button class="p" id="kgo"'+(p.n?'':' disabled')+'>开始学习</button><button id="klook">🔍 查词</button></div><div class="row"><button id="kbd">🏅 徽章 '+Object.keys(KS.bd).length+'/'+BG.length+'</button><button id="kerr"'+(ne?'':' disabled')+'>📕 错词本（'+ne+'）</button></div><div class="sm2">'+(school?'每天 10–15 分钟：先练本周词，最后听写 · 听写日 '+esc(wk.dict.slice(5)):'本轮学习：'+esc(ml||'未选择（请在设置里勾选）'))+'</div><div class="sm2">练习生词本：'+esc(bn)+'（在 设置 → 儿童模式 中更改）</div></div>';
+  el.innerHTML='<div class="kt"><button id="kx">✕</button><div class="kst">⭐ '+KS.st.stars+' · 🔥 连续 '+KS.st.streak+' 天</div></div><div class="kb"><div class="hd">Wörter üben</div><div class="kgl">'+ring()+'</div><div class="msg">'+msg+'</div><div class="row"><button class="p" id="kgo"'+(p.n?'':' disabled')+'>开始学习</button><button id="klook">🔍 查词</button></div><div class="row"><button id="kbd">🏅 徽章 '+Object.keys(KS.bd).length+'/'+BG.length+'</button><button id="kerr"'+(ne?'':' disabled')+'>📕 错词本（'+ne+'）</button></div><div class="sm2">'+(school?'每天约 '+LIM()+' 分钟：先练本周词，最后听写 · 听写日 '+esc(wk.dict.slice(5)):'本轮学习：'+esc(ml||'未选择（请在设置里勾选）'))+'</div><div class="sm2">练习生词本：'+esc(bn)+'（在 设置 → 儿童模式 中更改）</div></div>';
   el.onclick=e=>{if(!el.contains(e.target))return;const t=e.target.closest('button');if(!t)return;
     if(t.id==='kx')return quit();
     if(t.id==='kbd')return wall();
     if(t.id==='klook')return klook();
     if(t.id==='kgo')start(p);if(t.id==='kerr')start(pickErr())}}
-function start(p){SES++;const tok=SES;ws=p.L||[];Q=[];miss={};qi=0;AX=0;QRAN=false;STAR0=KS.st.stars;
+/* 从生词本直接进入儿童模式练习：沿用同样的学习方式和题型，词数可以设得比平时多 */
+function launch(bid,n){const b=D.books.find(x=>x.id===bid);if(!b)return toast('找不到这个本子');
+  const pool=words(bid);if(!pool.length)return toast('这个本子里还没有可练的词（需要有中文释义的单个德语词）');
+  KS.bk=bid;KS.on=1;if(n)KS.bn=Math.max(1,Math.min(100,+n||10));save();
+  const p=pick(bid,pool,KS.bn||10);if(!p.n)return toast('这个本子的词都学会了，过段时间再复习');
+  document.body.style.overflow='hidden';el.hidden=false;start(p)}
+function start(p){SES++;const tok=SES;ws=p.L||[];Q=[];DQ=[];miss={};qi=0;AX=0;QRAN=false;STAR0=KS.st.stars;
   SCHOOL=!!p.school;SW=SCHOOL?ws:[];SD=p.day||1;XW=[];ADV={};TOT={};ANS={};SETT={};DRES={};EV=[];EV2=[];EVCUR=EV;ST=SST=Date.now();
   POOL=p.pool||[];ERR=!!p.err;
   const t0=Date.now();ws.forEach(w=>{ADV[w.id]=SCHOOL?true:(!KS.w[w.id]||KS.w[w.id].d<=t0)});
   const pl=ws.map(w=>SCHOOL?sPlan(w,SD):plan(w));
   if(SCHOOL)ws.forEach((w,i)=>pl[i].forEach(mm=>Q.push([w,mm])));
-  else for(let r=0;r<4;r++)ws.forEach((w,i)=>{if(pl[i][r])Q.push([w,pl[i][r]])});
-  Q.forEach(([w])=>TOT[w.id]=(TOT[w.id]||0)+1);
+  else{const qp=pl.map(a=>a.filter(m=>!isDict(m))),dp=pl.map(a=>a.filter(isDict));
+    for(let r=0;r<4;r++)ws.forEach((w,i)=>{if(qp[i][r])Q.push([w,qp[i][r]])});
+    for(let r=0;r<2;r++)ws.forEach((w,i)=>{if(dp[i][r])DQ.push([w,dp[i][r]])})}
+  Q.concat(DQ).forEach(([w])=>TOT[w.id]=(TOT[w.id]||0)+1);
   const m=modes(),pool=(p.pool&&p.pool.length?p.pool:words(selBook())),gw=ws.length?ws:pool;ACTS=[];
   const hasSyl=(ws.some(w=>syl(w.de).length>1)||pool.some(w=>syl(w.de).length>1)),hasArt=(ws.some(w=>w.art)||pool.some(w=>w.art));
   if(SCHOOL){ACTS=['q'];if(SD===1&&m.clap&&gw.length)ACTS.push('clap');ACTS.push('xq','sdict')}
-  else if(p.err){if(Q.length)ACTS.push('q')}
+  else if(p.err){if(Q.length)ACTS.push('q');if(DQ.length)ACTS.push('fdict')}
   else{if(m.q&&Q.length)ACTS.push('q');if(m.memo&&(ws.length>=3||pool.length>=3))ACTS.push('memo');if(m.clap&&gw.length)ACTS.push('clap');
-    if(m.syl&&hasSyl)ACTS.push('syl');if(m.hear&&gw.length)ACTS.push('hear');if(m.sort&&hasArt)ACTS.push('sort')}
+    if(m.syl&&hasSyl)ACTS.push('syl');if(m.hear&&gw.length)ACTS.push('hear');if(m.sort&&hasArt)ACTS.push('sort');if(DQ.length)ACTS.push('fdict')}
   if(!ACTS.length)return toast('请在 设置 → 儿童模式 里选择至少一种学习方式');
   sid++;font().then(()=>{if(tok===SES)runAct(tok)})}
 function runAct(tok){if(tok!==SES)return;
-  if(SCHOOL&&ACTS[AX]!=='sdict'&&Date.now()-SST>12*60000){const i=ACTS.indexOf('sdict');if(i>=0)AX=i;else return doneSchool()}
-  if(!SCHOOL&&Date.now()-SST>13*60000)return done();
+  const lim=LIM()*60000;
+  if(SCHOOL&&ACTS[AX]!=='sdict'&&Date.now()-SST>lim-3*60000){const i=ACTS.indexOf('sdict');if(i>=0)AX=i;else return doneSchool()}
+  if(!SCHOOL&&Date.now()-SST>lim){const i=ACTS.indexOf('fdict');if(i>=0&&AX<=i)AX=i;else return done()}
   const a=ACTS[AX++];if(!a)return SCHOOL?doneSchool():done();
   if(a==='q'){QRAN=true;EV=[];EVCUR=EV;miss={};qi=0;ST=Date.now();return step()}
-  if(a==='xq'){if(!SCHOOL||Date.now()-SST>8*60000)return runAct(tok);
+  if(a==='fdict'){if(!DQ.length)return runAct(tok);Q=DQ;DQ=[];qi=0;QRAN=true;EVCUR=EV;return step()}
+  if(a==='xq'){if(!SCHOOL||Date.now()-SST>Math.max(5,LIM()-10)*60000)return runAct(tok);
     const ex=uniqW(regPool().filter(w=>!SW.some(s=>s.id===w.id))).slice(0,3);
     if(!ex.length)return runAct(tok);
     XW=ex;ws=ex;Q=[];miss={};EV2=[];EVCUR=EV2;QRAN=false;qi=0;ADV={};TOT={};ANS={};SETT={};
-    ex.forEach(w=>plan(w).slice(0,2).forEach(mm=>Q.push([w,mm])));Q.forEach(([w])=>TOT[w.id]=(TOT[w.id]||0)+1);
+    ex.forEach(w=>plan(w).filter(m=>!isDict(m)).slice(0,2).forEach(mm=>Q.push([w,mm])));Q.forEach(([w])=>TOT[w.id]=(TOT[w.id]||0)+1);
     return step()}
   if(a==='sdict')return dictation(SW,SD,()=>doneSchool());
   const pool=POOL.length?POOL:words(selBook()),gw=ws.length?ws:pool;
@@ -763,29 +777,72 @@ const PEN=()=>KS.pen==='mid'?13:9;
 function drawInk(x,ss){x.lineWidth=PEN();x.lineCap=x.lineJoin='round';x.strokeStyle=getComputedStyle(document.body).getPropertyValue('--pr').trim()||'#1f5f8b';
   (ss||[]).forEach(s=>{if(!s.length)return;x.beginPath();s.forEach((p,j)=>j?x.lineTo(p[0],p[1]):x.moveTo(p[0],p[1]));x.stroke()})}
 function paint(c,ss){drawInk(cv(c),ss)}
-// 覆盖率=字形被笔迹盖住的比例；出界率=笔迹落在字形外扩范围之外的比例
-function score(t,c){const L=layout(t),g=mk(),d=mk(),u=mk(),gx=g.getContext('2d'),dx=d.getContext('2d'),ux=u.getContext('2d');ux.drawImage(c,0,0,W,H);{const r=Math.max(0,(14-PEN())/2);if(r>0)for(let a=0;a<8;a++)ux.drawImage(c,Math.cos(a*Math.PI/4)*r,Math.sin(a*Math.PI/4)*r,W,H)}   // 笔迹变细后向外补一点，评分口径不变
-  for(const x of[gx,dx]){x.font=L.fs+'px '+FF;x.textAlign='left';x.fillText(t,L.x0,LY[2])}dx.lineWidth=44;dx.lineJoin='round';dx.strokeText(t,L.x0,LY[2]);
-  const G=gx.getImageData(0,0,W,H).data,D=dx.getImageData(0,0,W,H).data,U=ux.getImageData(0,0,W,H).data;let gt=0,gh=0,ut=0,uo=0;
-  for(let i=3;i<G.length;i+=4){const a=G[i]>60,b=U[i]>60;if(a){gt++;if(b)gh++}if(b){ut++;if(D[i]<=60)uo++}}
-  return{cov:gt&&ut?gh/gt:0,out:ut?uo/ut:1}}
+// 严格描红评分：
+// 1) 按当前描红级别生成目标（实心字 / 首字母实心+其余虚线 / 全虚线），和屏幕上看到的一致
+// 2) 覆盖率 recall（目标被笔迹盖住多少）+ 准确率 precision（笔迹有多少落在目标附近）
+// 3) 逐字母 recall：任何字母没描到都不通过
+// 4) 笔迹面积 / 字形面积：挡住来回涂写
+// 5) 包围盒：挡住写错位置或写满整行
+function maskOf(draw){const g=mk(),x=g.getContext('2d');x.fillStyle='#000';x.strokeStyle='#000';x.textAlign='left';x.textBaseline='alphabetic';draw(x);
+  const a=x.getImageData(0,0,W,H).data,m=new Uint8Array(W*H);for(let i=0,j=3;j<a.length;i++,j+=4)if(a[j]>50)m[i]=1;return m}
+function distMap(m){const d=new Uint16Array(W*H),INF=9999;for(let i=0;i<d.length;i++)d[i]=m[i]?0:INF;
+  for(let y=0;y<H;y++)for(let x=0;x<W;x++){const i=y*W+x;let v=d[i];if(!v)continue;
+    if(x>0&&d[i-1]+1<v)v=d[i-1]+1;
+    if(y>0){if(d[i-W]+1<v)v=d[i-W]+1;if(x>0&&d[i-W-1]+1<v)v=d[i-W-1]+1;if(x<W-1&&d[i-W+1]+1<v)v=d[i-W+1]+1}
+    d[i]=v}
+  for(let y=H-1;y>=0;y--)for(let x=W-1;x>=0;x--){const i=y*W+x;let v=d[i];if(!v)continue;
+    if(x<W-1&&d[i+1]+1<v)v=d[i+1]+1;
+    if(y<H-1){if(d[i+W]+1<v)v=d[i+W]+1;if(x>0&&d[i+W-1]+1<v)v=d[i+W-1]+1;if(x<W-1&&d[i+W+1]+1<v)v=d[i+W+1]+1}
+    d[i]=v}
+  return d}
+function score(t,c,lvl=0){
+  const L=layout(t),ch=[...t],mx=mk().getContext('2d');mx.font=L.fs+'px '+FF;
+  let x=L.x0;const ranges=[];
+  for(const cc of ch){const w=mx.measureText(cc).width;ranges.push({c:cc,x0:x,x1:x+w});x+=w}
+  const drawChar=(g,cc,xx,mode)=>{g.font=L.fs+'px '+FF;g.textAlign='left';g.textBaseline='alphabetic';
+    if(mode==='fill'){g.fillText(cc,xx,LY[2])}else{g.lineWidth=2;g.setLineDash([7,7]);g.strokeText(cc,xx,LY[2]);g.setLineDash([])}};
+  const T=maskOf(g=>ranges.forEach((r,i)=>{if(r.c===' ')return;
+    const mode=(lvl===0||(lvl===1&&i===0))?'fill':'line';drawChar(g,r.c,r.x0,mode)}));
+  const F=maskOf(g=>{g.font=L.fs+'px '+FF;g.textAlign='left';g.textBaseline='alphabetic';g.fillText(t,L.x0,LY[2])});
+  const U=maskOf(g=>g.drawImage(c,0,0,W,H));
+  const dtT=distMap(T),dtU=distMap(U),tol=lvl===0?10:12;
+  const rx=new Int8Array(W);rx.fill(-1);ranges.forEach((r,i)=>{for(let xx=Math.max(0,Math.floor(r.x0));xx<Math.min(W,Math.ceil(r.x1));xx++)rx[xx]=i});
+  let tN=0,tHit=0,uN=0,uHit=0,fN=0,ux0=W,uy0=H,ux1=-1,uy1=-1,tx0=W,ty0=H,tx1=-1,ty1=-1;
+  const per=ranges.map(()=>({n:0,h:0}));
+  for(let y=0;y<H;y++)for(let xx=0;xx<W;xx++){const i=y*W+xx;
+    if(F[i]){fN++;if(xx<tx0)tx0=xx;if(xx>tx1)tx1=xx;if(y<ty0)ty0=y;if(y>ty1)ty1=y}
+    if(T[i]){tN++;const ri=rx[xx];if(ri>=0)per[ri].n++;if(dtU[i]<=tol){tHit++;if(ri>=0)per[ri].h++}}
+    if(U[i]){uN++;if(xx<ux0)ux0=xx;if(xx>ux1)ux1=xx;if(y<uy0)uy0=y;if(y>uy1)uy1=y;if(dtT[i]<=tol)uHit++}}
+  const ps=per.filter(p=>p.n>=25).map(p=>p.h/p.n),minPer=ps.length?Math.min(...ps):1;
+  let weak=-1,wr=2;per.forEach((p,i)=>{if(p.n>=25&&p.h/p.n<wr){wr=p.h/p.n;weak=i}});
+  const bw=(ux1>=ux0&&tx1>=tx0)?(ux1-ux0+1)/Math.max(1,tx1-tx0+1):0;
+  const bh=(uy1>=uy0&&ty1>=ty0)?(uy1-uy0+1)/Math.max(1,ty1-ty0+1):0;
+  return{cov:tN?tHit/tN:0,out:uN?1-uHit/uN:1,rec:tN?tHit/tN:0,prec:uN?uHit/uN:0,minPer,weak:weak>=0?ranges[weak].c:'',ratio:fN?uN/fN:9,bw,bh,uN,tN,fN}}
+const traceOK=r=>r.rec>=.78&&r.prec>=.78&&r.minPer>=.55&&r.ratio<=2.4&&r.bw>=.6&&r.bw<=1.4&&r.bh>=.5&&r.bh<=1.6;
 
 function trace(w,m,box,my){const k=ks(w.id),lvl=m==='trace0'?0:Math.min(2,k.tl||0),hint=['沿着灰色的字描一遍','首字母描红，后面沿着虚线写','沿着虚线把单词写出来'][lvl],Ls=layout(w.de),need=Math.max(120,(W-2*Ls.x0)*.4);
   box.innerHTML=toolsHTML('写好了','ok','<button id="sp">🔊 听</button>')+'<div class="hd">'+chip(w)+'<b>'+esc(w.de)+'</b><span>'+esc(w.zh)+'</span></div>'+gw()+'<div class="msg" id="msg">'+hint+'</div>';
   const cs=box.querySelectorAll('canvas'),b=cv(cs[0]);grid(b);ghost(b,w.de,lvl,'rgba(140,150,160,.5)');
-  const q=s=>box.querySelector(s),pad=ink(cs[1]);let tries=0;wireTools(q,pad);q('#sp').onclick=()=>say(w.de,'de');say(w.de,'de');lockBtn(q('#ok'));
+  const q=s=>box.querySelector(s),pad=ink(cs[1]);let tries=0,guided=false;wireTools(q,pad);q('#sp').onclick=()=>say(w.de,'de');say(w.de,'de');lockBtn(q('#ok'));
   q('#ok').onclick=()=>{if(pad.len()<need){q('#msg').textContent='先把字写出来，再点“写好了”';return}   // 没写字不能过关，也不算一次尝试
-    const r=score(w.de,pad.cv);
-    if((r.cov>=.5&&r.out<=.45)||tries>=2){q('#ok').disabled=true;if(tries>0)bad=1;if(m==='trace'&&tries===0)k.tl=Math.min(2,(k.tl||0)+1);toNext(box,my)}
-    else{tries++;q('#msg').textContent=r.cov<.5?'再写完整一点':'写在格子里的字上面哦';pad.clear()}}}
+    const r=score(w.de,pad.cv,lvl);
+    if(traceOK(r)){q('#ok').disabled=true;if(tries>0)bad=1;if(m==='trace'&&tries===0)k.tl=Math.min(2,(k.tl||0)+1);toNext(box,my);return}
+    bad=1;tries++;
+    if(tries>=2&&!guided){guided=true;q('#msg').textContent='跟着灰色的字再慢慢描一遍';grid(b);ghost(b,w.de,0,'rgba(140,150,160,.5)');pad.clear();return}
+    if(guided&&tries>=4){q('#msg').innerHTML='还写不好？<button id="ksk">跳过（本次算错）</button>';
+      q('#ksk').onclick=()=>{q('#ok').disabled=true;toNext(box,my)};return}
+    q('#msg').textContent=r.rec<.78?(r.weak?'字母“'+r.weak+'”还没描到，再描一描':'再写完整一点'):(r.prec<.78||r.ratio>2.4?'不要涂写，沿着灰色的字描':(r.bw<.6||r.bw>1.4||r.bh<.5||r.bh>1.6?'写在格子里的字上面哦':'再写完整一点'));
+    pad.clear()}}
 
-/* 四线格默写：自检（看答案叠加在自己的字迹上，自己或家长判断对错） */
+/* 四线格默写：自检（正确答案在上，自己的字迹在下，不再叠在一起） */
 function dict(w,m,box,my){const ear=m==='dictE',need=Math.max(80,[...dtx(w)].filter(c=>c!==' ').length*16);
-  box.innerHTML=toolsHTML('看答案','ksh')+(ear?'<div class="hd"><button class="p" id="sp">🔊 听一听，写下来</button></div>':'<div class="hd">'+chip(w)+'<b>'+esc(w.zh)+'</b></div>')+gw()+'<div class="msg" id="msg">在四线格里写出德语单词（名词连定冠词一起写）</div>';
+  box.innerHTML=toolsHTML('看答案','ksh')+(ear?'<div class="hd"><button class="p" id="sp">🔊 听一听，写下来</button></div>':'<div class="hd">'+chip(w)+'<b>'+esc(w.zh)+'</b></div>')+'<div id="kans"></div><div class="gwlab" id="kinklab" hidden>你写的</div>'+gw()+'<div class="msg" id="msg">在四线格里写出德语单词（名词连定冠词一起写）</div>';
   const cs=box.querySelectorAll('canvas'),q=s=>box.querySelector(s);grid(cv(cs[0]));const pad=ink(cs[1]);
   if(ear){q('#sp').onclick=()=>say(dtx(w),'de');say(dtx(w),'de')}wireTools(q,pad);lockBtn(q('#ksh'));
   q('#ksh').onclick=()=>{if(pad.len()<need){q('#msg').textContent='先写一写，再看答案';return}
-    ghost(cv(cs[2]),dtx(w),0,'rgba(46,125,79,.5)');cs[1].onpointerdown=null;say(dtx(w),'de');
+    q('#kans').innerHTML='<div class="gwlab">正确答案</div><div class="gw ans"><canvas></canvas></div>';
+    const ac=q('#kans canvas'),ax=cv(ac);grid(ax);ghost(ax,dtx(w),0,'rgba(46,125,79,.5)');
+    q('#kinklab').hidden=false;cs[1].onpointerdown=null;say(dtx(w),'de');
     q('#msg').innerHTML='正确答案：<b>'+esc(dtx(w))+'</b>　和你写的一样吗？';
     q('.ktools').innerHTML='<div class="tg"><button id="n">🔁 不一样</button></div><button class="p" id="y">✅ 一样，写对了</button>';
     lockBtn(q('#y'),900);lockBtn(q('#n'),900);
@@ -839,7 +896,7 @@ function kgap(w,m,box,my){const L=[...w.de],lw=w.de.toLowerCase();let hid=[0];
 /* 错词本：做错的词进入错词本，之后连续 2 次练习全对才移出（含本周校内词） */
 const errPool=bid=>uniqW([...words(bid),...words(BOOK_SCHOOL)]);
 const errCount=bid=>errPool(bid).filter(w=>KS.w[w.id]&&KS.w[w.id].mx).length;
-function pickErr(){const all=errPool(selBook());return{L:shuf(all.filter(w=>KS.w[w.id]&&KS.w[w.id].mx)).slice(0,CAP),n:all.length,practice:true,err:true,pool:all}}
+function pickErr(){const all=errPool(selBook()).filter(w=>!skippedW(w));return{L:shuf(all.filter(w=>KS.w[w.id]&&KS.w[w.id].mx)).slice(0,CAP),n:all.length,practice:true,err:true,pool:all}}
 
 /* ---- 第4批：配对游戏 / 音节拍手 / 家长验证 / 同步与备份 ---- */
 const quit=async()=>{if(await gate()){KS.on=0;save();close()}};
@@ -938,7 +995,7 @@ function merge(r){if(!r||typeof r!=='object')return;let ch=0;
   if(r.goal&&(r.goal.t||0)>(KS.goal.t||0)){KS.goal=r.goal;ch=1}
   if(ch)wr(KEY,KS)}
 const opts=()=>'<option value="*"'+(KS.bk==='*'?' selected':'')+'>全部生词本（'+words('*').length+' 个可练）</option>'+D.books.map(b=>'<option value="'+esc(b.id)+'"'+(b.id===selBook()?' selected':'')+'>'+esc(b.name)+'（'+words(b.id).length+'）</option>').join('');
-document.addEventListener('change',e=>{if(e.target.id==='kbk'){KS.bk=e.target.value;save()}if(e.target.id==='kgl2'){KS.goal={n:+e.target.value,t:Date.now()};save()}if(e.target.id==='khand'){KS.hand=e.target.value==='l'?'l':'r';save()}if(e.target.id==='kpen'){KS.pen=e.target.value==='mid'?'mid':'thin';save()}});
+document.addEventListener('change',e=>{if(e.target.id==='kbk'){KS.bk=e.target.value;save()}if(e.target.id==='kgl2'){KS.goal={n:+e.target.value,t:Date.now()};save()}if(e.target.id==='klim'){KS.lim=Math.max(15,Math.min(30,+e.target.value||20));save();render()}if(e.target.id==='kbn'){KS.bn=Math.max(1,Math.min(100,+e.target.value||10));save()}if(e.target.id==='khand'){KS.hand=e.target.value==='l'?'l':'r';save()}if(e.target.id==='kpen'){KS.pen=e.target.value==='mid'?'mid':'thin';save()}});
 /* ---- 第5批：家长密码 / 练习记录 / 今日目标 / 徽章 ---- */
 const hx=b=>[...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('');
 async function hsh(p,salt){if(window.crypto&&crypto.subtle){try{const k=await crypto.subtle.importKey('raw',new TextEncoder().encode(p),'PBKDF2',false,['deriveBits']);return hx(await crypto.subtle.deriveBits({name:'PBKDF2',salt:new TextEncoder().encode(salt),iterations:100000,hash:'SHA-256'},k,256))}catch(e){}}
@@ -968,6 +1025,10 @@ const goalInfo=()=>({n:KS.goal.n,p:KS.rec.filter(r=>r.k==='s'&&dk(r.t)===day()).
 function ring(){const g=goalInfo(),f=Math.min(1,g.p/g.n),C=2*Math.PI*44;
   return'<svg width="120" height="120" viewBox="0 0 100 100"><circle cx="50" cy="50" r="44" fill="none" stroke="var(--ln)" stroke-width="10"/><circle cx="50" cy="50" r="44" fill="none" stroke="var(--gold)" stroke-width="10" stroke-linecap="round" stroke-dasharray="'+C+'" stroke-dashoffset="'+C*(1-f)+'" transform="rotate(-90 50 50)"/><text x="50" y="58" text-anchor="middle" font-size="24" fill="currentColor">'+g.p+'/'+g.n+'</text></svg><div>'+(g.p>=g.n?'🎯 今日目标达成！':'今日目标：练 '+g.n+' 个词')+'</div>'}
 const goalOpts=()=>{let h='';for(let i=3;i<=12;i++)h+='<option'+(i===KS.goal.n?' selected':'')+'>'+i+'</option>';return h};
+/* 每天练习时长（分钟）：比 v0.39 的 10–15 分钟更长，家长可调 */
+const LIM=()=>Math.max(15,Math.min(30,+KS.lim||20));
+const limHtml=()=>'<label for="klim">每天练习时长</label><select id="klim">'+[15,20,25,30].map(n=>'<option value="'+n+'"'+(n===LIM()?' selected':'')+'>'+n+' 分钟</option>').join('')+'</select>';
+const bnHtml=()=>'<label for="kbn">每次练习词数</label><select id="kbn">'+[6,10,15,20,30,50].map(n=>'<option'+(n===(KS.bn||10)?' selected':'')+'>'+n+'</option>').join('')+'</select>';
 const mst=()=>words('*').filter(w=>{const k=KS.w[w.id];return k&&k.b>=4}).length;
 const BG=[['s3','🔥','三天连击','连续练习 3 天',()=>KS.st.streak>=3],['s7','🔥','七天连击','连续练习 7 天',()=>KS.st.streak>=7],['s14','🌈','十四天连击','连续练习 14 天',()=>KS.st.streak>=14],
  ['t50','⭐','50 颗星','累计 50 颗星',()=>KS.st.stars>=50],['t100','🌟','100 颗星','累计 100 颗星',()=>KS.st.stars>=100],['t300','👑','300 颗星','累计 300 颗星',()=>KS.st.stars>=300],
@@ -976,7 +1037,13 @@ const BG=[['s3','🔥','三天连击','连续练习 3 天',()=>KS.st.streak>=3],
  ['cl','👏','拍手小能手','完成 5 次音节拍手',()=>(KS.bs.cl||0)>=5],['mb','🃏','配对高手','8 步内完成配对游戏',()=>(KS.bs.mb||99)<=8],
  ['cr','🧹','错词清零','从错词本移出 5 个词',()=>(KS.bs.cr||0)>=5],['gd','🎯','说到做到','达成今日目标 5 次',()=>(KS.bs.gd||0)>=5]];
 function badges(){const out=[];BG.forEach(b=>{if(!KS.bd[b[0]]&&b[4]()){KS.bd[b[0]]=Date.now();out.push(b)}});return out}
-const mis=w=>{miss[w.id]=1;bad=1};
+const mis=w=>{miss[w.id]=1;bad=1;const k=ks(w.id);k.kc=0;if(k.sk){k.sk=0;k.b=Math.min(k.b||3,3)}};
+/* 非校内词连续两次整轮做对 → 一个月后再复习；校内词每天都要练，不跳过 */
+function settleKnow(list){const evAll=EV.concat(EV2);if(!evAll.length)return;const sid=new Set(words(BOOK_SCHOOL).map(w=>w.id));
+  uniqW(list||[]).forEach(w=>{if(sid.has(w.id))return;const ev=evAll.filter(e=>e[2]===w.id);if(!ev.length)return;const k=ks(w.id);
+    if(k.sk&&(k.d||0)<=Date.now()){k.sk=0;k.kc=0}   // 跳过满一个月：重新累计，两次全对再跳过
+    if(ev.some(e=>!e[1])){k.kc=0;if(k.sk){k.sk=0;k.b=Math.min(k.b||3,3)}return}
+    k.kc=(k.kc||0)+1;if(k.kc>=2){k.b=5;k.up=day();k.d=Date.now()+30*DAY;k.t=Date.now();k.sk=1}})}
 /* 每个词做完立刻结算并保存：同一天最多升一盒；只有到期/新词（校内每天）才升降盒 */
 function settle(w){if(SETT[w.id])return;SETT[w.id]=1;const t=Date.now(),td=day(),k=ks(w.id),ok=!miss[w.id];
   if(ok){if(k.mx&&++k.cc>=2){k.mx=0;k.cc=0;KS.bs.cr=(KS.bs.cr||0)+1}}else{k.tl=Math.max(0,(k.tl||0)-1);k.mx=1;k.cc=0}
@@ -998,7 +1065,7 @@ function done(){const t=Date.now();let clean=0;
     extra=bonus?'<div class="msg">🎯 今日目标达成！额外 +1 ⭐</div>':'';
   }
   const nb=badges(),gained=Math.max(0,KS.st.stars-STAR0);
-  extra+=nb.map(b=>'<div class="msg">🏅 新徽章：'+b[1]+' '+b[2]+'</div>').join('');save();
+  extra+=nb.map(b=>'<div class="msg">🏅 新徽章：'+b[1]+' '+b[2]+'</div>').join('');settleKnow(ws);save();
   const body=QRAN?'<div class="star">'+('⭐'.repeat(clean)||'💪')+'</div><div class="sum">'+ws.map(w=>'<span>'+(miss[w.id]?'🔁':'✅')+' '+w.art+' '+esc(w.de)+'</span>').join('')+'</div><div class="msg">🔁 的词明天会再出现</div>'
     :'<div class="star">'+('⭐'.repeat(Math.min(gained,12))||'💪')+'</div><div class="msg">游戏完成，真棒！</div>';
   el.innerHTML='<div class="kt"><button id="kx">✕</button></div><div class="kb"><div class="hd">今天练完啦！</div>'+body+extra+'<div class="row"><button class="p" id="ag">再练一轮</button><button id="bk">返回</button></div></div>';
@@ -1021,8 +1088,8 @@ function dictation(L,dn,next){
     sayTwice(dtx(w))};
   const review=j=>{if(my!==sid)return;if(j>=R.length)return finish();
     const x=R[j],w=x.w;el.onclick=null;
-    el.innerHTML='<div class="kt"><button id="kx">✕</button><div class="bar"><i style="width:'+j/R.length*100+'%"></i></div></div><div class="kb"><div class="hd"><b>对答案 '+(j+1)+' / '+R.length+'</b></div><div class="msg">正确答案：<b>'+esc(dtx(w))+'</b></div>'+gw()+'<div class="row"><button class="p" id="y">✅ 对</button><button id="n">🔁 不对</button></div></div>';
-    const cs=el.querySelectorAll('canvas'),q=s=>el.querySelector(s);grid(cv(cs[0]));ghost(cv(cs[0]),dtx(w),0,'rgba(46,125,79,.5)');paint(cs[1],x.st||[]);
+    el.innerHTML='<div class="kt"><button id="kx">✕</button><div class="bar"><i style="width:'+j/R.length*100+'%"></i></div></div><div class="kb"><div class="hd"><b>对答案 '+(j+1)+' / '+R.length+'</b></div><div class="msg">正确答案：<b>'+esc(dtx(w))+'</b></div><div class="gwlab">正确答案</div><div class="gw ans"><canvas></canvas></div><div class="gwlab">你写的</div><div class="gw"><canvas></canvas></div><div class="row"><button class="p" id="y">✅ 对</button><button id="n">🔁 不对</button></div></div>';
+    const cs=el.querySelectorAll('canvas'),q=s=>el.querySelector(s),ac=cv(cs[0]);grid(ac);ghost(ac,dtx(w),0,'rgba(46,125,79,.5)');const mc=cv(cs[1]);grid(mc);drawInk(mc,x.st||[]);
     q('#kx').onclick=home;
     const pick=ok=>{x.ok=ok;DRES[w.id]=ok;record(x);review(j+1)};
     q('#y').onclick=()=>pick(1);q('#n').onclick=()=>pick(0);lockBtn(q('#y'),900);lockBtn(q('#n'),900)};
@@ -1043,7 +1110,7 @@ function doneSchool(){const t=Date.now();const s=KS.st,td=day();
   const c={};EV.forEach(([m,ok])=>{m=m==='trace0'?'trace':m;const a=c[m]||(c[m]=[0,0]);a[0]++;a[1]+=ok});
   KS.rec.push({t,k:'s',dur:Math.round((t-SST)/1000),w:SW.length,c,er:[...new Set(EV.filter(e=>!e[1]).map(e=>e[2]))]});trim();
   const g=goalInfo();let bonus=0;if(g.p>=g.n&&s.gd!==td){s.gd=td;s.stars++;KS.bs.gd=(KS.bs.gd||0)+1;bonus=1}
-  const nb=badges(),gained=Math.max(0,s.stars-STAR0);save();if(wk)saveD();
+  const nb=badges(),gained=Math.max(0,s.stars-STAR0);settleKnow(XW);save();if(wk)saveD();
   const okN=SW.filter(w=>DRES[w.id]).length;
   const body='<div class="star">'+('⭐'.repeat(Math.min(gained,12))||'💪')+'</div><div class="sum">'+SW.map(w=>'<span>'+(DRES[w.id]?'✅':'🔁')+' '+w.art+' '+esc(w.de)+'</span>').join('')+'</div><div class="msg">听写 '+okN+' / '+SW.length+' 个正确'+(okN<SW.length?'，🔁 的词明天会再出现':'')+'</div>';
   el.innerHTML='<div class="kt"><button id="kx">✕</button></div><div class="kb"><div class="hd">今天练完啦！</div>'+body+(bonus?'<div class="msg">🎯 今日目标达成！额外 +1 ⭐</div>':'')+nb.map(b=>'<div class="msg">🏅 新徽章：'+b[1]+' '+b[2]+'</div>').join('')+'<div class="msg sm2">家长可在“学习报告”里查看本周校内词。</div><div class="row"><button class="p" id="bk">返回</button></div></div>';
@@ -1127,7 +1194,7 @@ function report(back){RBACK=back||home;sid++;try{stopAudio()}catch(e){}  const r
   if(pend.length||g7.length){h+='<div class="kbd1"><b>家长批改听写'+(pend.length?'（待批改 '+pend.length+'）':'')+'</b>';
     if(pend.length){h+='<div class="sm2">孩子的手写会从平板同步到这里。对照下面的正确答案，点“写对了 / 写错了”。</div>'+pend.map(d=>{
       const w2=D.vocab.find(v=>bare(v.lemma||v.word)===d.w),txt=d.de||(w2?String(w2.lemma||w2.word):d.w);
-      return '<div class="kdic"><div class="krow"><span><b>'+esc(txt)+'</b></span><span class="sm2">'+(d.d?esc(d.d.slice(5)):'')+' · 孩子自评：'+(d.ok?'✅ 对':'🔁 不对')+'</span></div><div class="gw" style="margin:6px 0"><canvas data-dic="'+esc(d.id)+'"></canvas></div><div class="row kdr"><button class="p" data-grade="1" data-did="'+esc(d.id)+'">✅ 写对了</button><button data-grade="0" data-did="'+esc(d.id)+'">🔁 写错了</button></div></div>'}).join('')}
+      return '<div class="kdic"><div class="krow"><span><b>'+esc(txt)+'</b></span><span class="sm2">'+(d.d?esc(d.d.slice(5)):'')+' · 孩子自评：'+(d.ok?'✅ 对':'🔁 不对')+'</span></div><div class="gwlab">正确答案</div><div class="gw ans" style="margin:6px 0"><canvas data-ans="'+esc(d.id)+'"></canvas></div><div class="gwlab">孩子写的</div><div class="gw" style="margin:6px 0"><canvas data-dic="'+esc(d.id)+'"></canvas></div><div class="row kdr"><button class="p" data-grade="1" data-did="'+esc(d.id)+'">✅ 写对了</button><button data-grade="0" data-did="'+esc(d.id)+'">🔁 写错了</button></div></div>'}).join('')}
     else h+='<div class="sm2">没有待批改的听写。</div>';
     if(g7.length)h+='<div class="sm2" style="margin-top:8px">最近 7 天已批改 '+g7.length+' 个，'+g7.filter(d=>d.g).length+' 个正确。</div>';
     h+='</div>'}
@@ -1144,7 +1211,8 @@ function report(back){RBACK=back||home;sid++;try{stopAudio()}catch(e){}  const r
   h+='<div class="kbd1"><b>错词本（'+errs.length+'）</b>'+(errs.length?errs.slice(0,12).map(w=>'<div class="krow"><span>'+esc((w.art?w.art+' ':'')+w.de)+'</span><span class="sm2">'+esc(w.zh)+'</span></div>').join('')+(errs.length>12?'<div class="sm2">…还有 '+(errs.length-12)+' 个</div>':''):'<div class="sm2">没有错词 🎉</div>')+'</div>';
   h+='</div></div>';
   el.innerHTML=h;
-  el.querySelectorAll('canvas[data-dic]').forEach(c=>{const d=KS.dic.find(x=>x.id===c.getAttribute('data-dic'));if(!d)return;const x=cv(c);grid(x);drawInk(x,d.st)});
+  el.querySelectorAll('canvas[data-dic]').forEach(c=>{const d=KS.dic.find(x=>x.id===c.getAttribute('data-dic'));if(!d)return;const x=cv(c);grid(x);drawInk(x,d.st||[])});
+  el.querySelectorAll('canvas[data-ans]').forEach(c=>{const d=KS.dic.find(x=>x.id===c.getAttribute('data-ans'));if(!d)return;const w2=D.vocab.find(v=>bare(v.lemma||v.word)===d.w),txt=d.de||(w2?String(w2.lemma||w2.word):d.w);const x=cv(c);grid(x);ghost(x,txt,0,'rgba(46,125,79,.5)')});
   el.onclick=e=>{const b=e.target.closest('button');if(!b)return;if(b.id==='kx')return back();if(b.dataset.grade!=null)return gradeDic(b.dataset.did,+b.dataset.grade)}}
 function close(){sid++;try{stopAudio()}catch(e){}el.hidden=true;el.onclick=null;document.body.style.overflow=''}
 /* ---- 本周校内词：家长在设置里录入，儿童模式按天安排 ---- */
@@ -1160,7 +1228,9 @@ async function saveSchool(){const ta=document.getElementById('ksw'),di=document.
     let v=D.vocab.find(x=>bare(x.lemma||x.word)===k);
     if(!v){v={id:uid('v_'),createdAt:Date.now(),due:Date.now(),interval:0,ease:2.5,reps:0,stage:0,seen:0,mst:0,book:BOOK_SCHOOL};D.vocab.push(v)}
     else{v.book=BOOK_SCHOOL;delete D.deleted['w_'+k]}
-    v.word=lemma;v.lemma=lemma;const am=lemma.match(/^(der|die|das)\s+/i);if(am)v.article=am[1].toLowerCase();v.zh=it.zh||v.zh||'';if(!v.zh)noZh++;v.ut=Date.now();v.pt=Date.now()}
+    v.word=lemma;v.lemma=lemma;const am=lemma.match(/^(der|die|das)\s+/i);if(am)v.article=am[1].toLowerCase();v.zh=it.zh||v.zh||'';if(!v.zh)noZh++;v.ut=Date.now();v.pt=Date.now();
+    const kk=ks(k);if(kk.sk||kk.kc){kk.sk=0;kk.kc=0}   // 进入校内词：取消“已跳过一个月”，重新按校内词练
+  }
   if(!keys.length)return toast('没有识别到德语单词');
   const date=di&&di.value?di.value:nextFri(),cur=schoolWk();
   const same=cur&&keys.length===cur.words.length&&keys.every(k=>cur.words.includes(k));
@@ -1176,7 +1246,7 @@ el.addEventListener('touchstart',e=>e.stopPropagation(),{passive:true});   // �
 function boot(){if(KS.on||(KS.auto&&wide.matches))open()}
 const snapBase=()=>({w:KS.w,st:KS.st,rec:KS.rec,bd:KS.bd,bs:KS.bs,goal:KS.goal});
 const snapSync=()=>Object.assign(snapBase(),{dic:KS.dic.filter(d=>d&&d.t>Date.now()-14*DAY).slice(-40).map(d=>({id:d.id,t:d.t,d:d.d,wk:d.wk,w:d.w,de:d.de,zh:d.zh,ok:d.ok,z:encSt(d.st),g:d.g,gt:d.gt,ga:d.ga}))});
-return{open,close,boot,merge,opts,goalOpts,penHtml:()=>'<label for="kpen">笔迹粗细</label><select id="kpen"><option value="thin"'+(KS.pen!=='mid'?' selected':'')+'>细（推荐）</option><option value="mid"'+(KS.pen==='mid'?' selected':'')+'>中</option></select>',handHtml:()=>'<label for="khand">写字时按钮放在（避开握笔的手）</label><select id="khand"><option value="r"'+(KS.hand!=='l'?' selected':'')+'>右手写字：按钮在上方，“写好了”靠右</option><option value="l"'+(KS.hand==='l'?' selected':'')+'>左手写字：按钮在上方，“写好了”靠左</option></select>',modeHtml,qtypesHtml,setMode,setQt,setPw,hasPw:()=>!!KS.pw,snap:()=>Object.assign(snapBase(),{dic:KS.dic}),snapSync,pendN:()=>dicPending().length,auto:()=>!!KS.auto,setAuto:v=>{KS.auto=!!v;save()},report:openReport,schoolHtml,saveSchool,endSchool,schoolActive:()=>!!schoolWk()}})();
-A.kid=()=>KID.open();A.kidauto=t=>{if(t.checked&&!KID.hasPw()){KID.setPw().then(ok=>{if(ok)KID.setAuto(true);else t.checked=false})}else KID.setAuto(t.checked)};A.kidpw=()=>KID.setPw().then(()=>render());A.kidrep=()=>KID.report();A.kidmode=t=>{KID.setMode(t.dataset.m,t.checked);render()};A.kidqt=t=>{KID.setQt(t.dataset.t,t.checked);render()};A.kswsave=()=>KID.saveSchool();A.kswend=()=>KID.endSchool();
+return{open,close,boot,merge,opts,goalOpts,launch,limHtml,bnHtml,lim:()=>LIM(),_score:score,_pick:pick,penHtml:()=>'<label for="kpen">笔迹粗细</label><select id="kpen"><option value="thin"'+(KS.pen!=='mid'?' selected':'')+'>细（推荐）</option><option value="mid"'+(KS.pen==='mid'?' selected':'')+'>中</option></select>',handHtml:()=>'<label for="khand">写字时按钮放在（避开握笔的手）</label><select id="khand"><option value="r"'+(KS.hand!=='l'?' selected':'')+'>右手写字：按钮在上方，“写好了”靠右</option><option value="l"'+(KS.hand==='l'?' selected':'')+'>左手写字：按钮在上方，“写好了”靠左</option></select>',modeHtml,qtypesHtml,setMode,setQt,setPw,hasPw:()=>!!KS.pw,snap:()=>Object.assign(snapBase(),{dic:KS.dic}),snapSync,pendN:()=>dicPending().length,auto:()=>!!KS.auto,setAuto:v=>{KS.auto=!!v;save()},report:openReport,schoolHtml,saveSchool,endSchool,schoolActive:()=>!!schoolWk()}})();
+A.kid=()=>KID.open();A.klaunch=()=>{const n=document.getElementById('kbn');KID.launch(S.bid,n?+n.value:undefined)};A.kidauto=t=>{if(t.checked&&!KID.hasPw()){KID.setPw().then(ok=>{if(ok)KID.setAuto(true);else t.checked=false})}else KID.setAuto(t.checked)};A.kidpw=()=>KID.setPw().then(()=>render());A.kidrep=()=>KID.report();A.kidmode=t=>{KID.setMode(t.dataset.m,t.checked);render()};A.kidqt=t=>{KID.setQt(t.dataset.t,t.checked);render()};A.kswsave=()=>KID.saveSchool();A.kswend=()=>KID.endSchool();
 migrate();if(compact())wr('dl',D);snapAll();KID.boot();render();syncNow();
 </script></body></html>
